@@ -7,11 +7,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type Game struct{}
+type Game struct {
+	Tabs       []string
+	CurrentTab int
+	Screen     ScreenSpecs
+}
 
-const SCREEN_WIDTH = 128;
-const SCREEN_HEIGHT = 128;
-const UPSCALING_FACTOR = 4;
+type ScreenSpecs = struct {
+	Width           int
+	Height          int
+	UpscalingFactor int
+}
 
 func (g *Game) Update() error {
 	return nil
@@ -22,13 +28,23 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return SCREEN_WIDTH, SCREEN_HEIGHT
+	return g.Screen.Width, g.Screen.Height
 }
 
 func main() {
-	ebiten.SetWindowSize(SCREEN_WIDTH * UPSCALING_FACTOR, SCREEN_HEIGHT * UPSCALING_FACTOR)
+	var screen = ScreenSpecs{
+		Width:           128,
+		Height:          128,
+		UpscalingFactor: 4,
+	}
+	var game = Game{
+		Tabs:       []string{"cli", "code", "sprite", "map"},
+		CurrentTab: 1,
+		Screen:     screen,
+	}
+	ebiten.SetWindowSize(game.Screen.Width * game.Screen.UpscalingFactor, game.Screen.Height * game.Screen.UpscalingFactor)
 	ebiten.SetWindowTitle("Dofi! :3")
-	if err := ebiten.RunGame(&Game{}); err != nil {
+	if err := ebiten.RunGame(&game); err != nil {
 		log.Fatal(err)
 	}
 }
