@@ -46,7 +46,7 @@ func main() {
 		Height:          128,
 		UpscalingFactor: 4,
 		Font:            "resources/font.ttf",
-		FontSize:        8,
+		FontSize:        5,
 	}
 
 	var game = Game{
