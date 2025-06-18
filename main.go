@@ -54,7 +54,7 @@ func (g *Game) Update() error {
 		for _, k := range g.Input.Keys {
 			if k == ebiten.KeySpace {
 				g.Input.InputString += " "
-			} else if k == ebiten.KeyBackspace {
+			} else if k == ebiten.KeyBackspace && len(g.Input.InputString) > 0 {
 				g.Input.InputString = g.Input.InputString[:len(g.Input.InputString) - 1]
 			} else if k != ebiten.KeyEscape || k != ebiten.KeyAlt {
 				g.Input.InputString += k.String()
