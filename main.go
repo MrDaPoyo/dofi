@@ -36,10 +36,16 @@ type Navbar = struct {
 	NavbarHeight int
 }
 
+type LinearBuffer = struct {
+	Id      int
+	Content string
+}
+
 type Input = struct {
-	Keys        []ebiten.Key
-	InputString string
-	CursorY     int
+	Keys               []ebiten.Key
+	Inputs             LinearBuffer
+	CurrentInputString string
+	CursorY            int
 }
 
 var (
@@ -48,19 +54,21 @@ var (
 )
 
 func (g *Game) Update() error {
+	log.Println(g.Input.CurrentInputString)
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
 		g.Screen.LineBuffer = append(g.Screen.LineBuffer, ebiten.NewImage(g.Screen.Width, len(g.Screen.LineBuffer)*g.Screen.FontSize+2))
-		g.Input.InputString = ""
 	} else {
 		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
 		for _, k := range g.Input.Keys {
 			if k == ebiten.KeySpace {
-				g.Input.InputString += " "
-			} else if k == ebiten.KeyBackspace && len(g.Input.InputString) > 0 {
-				g.Input.InputString = g.Input.InputString[:len(g.Input.InputString)-1]
+				g.Input.CurrentInputString += " "
+			} else if k == ebiten.KeyBackspace {
+				if len(g.Input.CurrentInputString) > 0 {
+					g.Input.CurrentInputString = g.Input.CurrentInputString[:len(g.Input.CurrentInputString)-1]
+				}
 			} else if k != ebiten.KeyEscape || k != ebiten.KeyAlt {
-				g.Input.InputString += k.String()
+				g.Input.CurrentInputString += k.String()
 			}
 		}
 	}
@@ -84,7 +92,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		h := image.Bounds().Dy()
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(0, float64(h))
-		text.Draw(g.Screen.LineBuffer[len(g.Screen.LineBuffer)-1], "> "+g.Input.InputString, TextFace, &text.DrawOptions{})
+		text.Draw(g.Screen.LineBuffer[len(g.Screen.LineBuffer)-1], "> "+g.Input.CurrentInputString, TextFace, &text.DrawOptions{})
 		screen.DrawImage(image, op)
 	}
 }
@@ -119,7 +127,7 @@ func main() {
 		LuaVM:  lua.NewState(),
 		Input: Input{
 			CursorY:     0,
-			InputString: "",
+			CurrentInputString: "",
 		},
 	}
 
