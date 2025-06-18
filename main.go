@@ -50,9 +50,8 @@ var (
 func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
-		g.Screen.LineBuffer = append(g.Screen.LineBuffer, ebiten.NewImage(g.Screen.Width, len(g.Screen.LineBuffer) * g.Screen.FontSize+2))
+		g.Screen.LineBuffer = append(g.Screen.LineBuffer, ebiten.NewImage(g.Screen.Width, len(g.Screen.LineBuffer) * g.Screen.FontSize + 2))
 		g.Input.InputString = ""
-		log.Println(len(g.Screen.LineBuffer))
 	} else {
 		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
 		for _, k := range g.Input.Keys {
@@ -78,8 +77,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	//
 	text.Draw(g.Screen.LineBuffer[len(g.Screen.LineBuffer)-1], "> " + g.Input.InputString, TextFace, &text.DrawOptions{})
 	screen.Clear()
+	var j = g.Screen.FontSize * g.Input.CursorY
 	for _, image := range g.Screen.LineBuffer {
-		screen.DrawImage(image, nil)
+		h := image.Bounds().Dy()
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(0, float64(h + j + 2))
+		screen.DrawImage(image, op)
 	}
 }
 
