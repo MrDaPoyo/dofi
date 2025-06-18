@@ -26,6 +26,7 @@ type ScreenSpecs = struct {
 	UpscalingFactor int
 	Font            string
 	FontSize        int
+	LineBuffer      []*ebiten.Image
 }
 
 type Navbar = struct {
@@ -38,6 +39,7 @@ type Navbar = struct {
 type Input = struct {
 	Keys        []ebiten.Key
 	InputString string
+	CursorY     int
 }
 
 var (
@@ -48,14 +50,16 @@ var (
 func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
+		g.Screen.LineBuffer = append(g.Screen.LineBuffer, ebiten.NewImage(g.Screen.Width, len(g.Screen.LineBuffer) * g.Screen.FontSize+2))
 		g.Input.InputString = ""
+		log.Println(len(g.Screen.LineBuffer))
 	} else {
 		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
 		for _, k := range g.Input.Keys {
 			if k == ebiten.KeySpace {
 				g.Input.InputString += " "
 			} else if k == ebiten.KeyBackspace && len(g.Input.InputString) > 0 {
-				g.Input.InputString = g.Input.InputString[:len(g.Input.InputString) - 1]
+				g.Input.InputString = g.Input.InputString[:len(g.Input.InputString)-1]
 			} else if k != ebiten.KeyEscape || k != ebiten.KeyAlt {
 				g.Input.InputString += k.String()
 			}
@@ -72,7 +76,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// op.GeoM.Translate(0, 0)
 	// screen.DrawImage(NavbarBackground, op)
 	//
-	text.Draw(screen, g.Input.InputString, TextFace, &text.DrawOptions{})
+	text.Draw(g.Screen.LineBuffer[len(g.Screen.LineBuffer)-1], "> " + g.Input.InputString, TextFace, &text.DrawOptions{})
+	screen.Clear()
+	for _, image := range g.Screen.LineBuffer {
+		screen.DrawImage(image, nil)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -95,10 +103,18 @@ func main() {
 		NavbarHeight: 10,
 	}
 
+	var lineBuffer = make([]*ebiten.Image, 1)
+	lineBuffer[0] = ebiten.NewImage(screen.Width, screen.FontSize+2)
+	screen.LineBuffer = lineBuffer
+
 	var game = Game{
 		Navbar: navbar,
-		Screen: screen,
+		Screen:	screen,
 		LuaVM:  lua.NewState(),
+		Input: Input{
+			CursorY: 0,
+			InputString: "",
+		},
 	}
 
 	var font, err = os.ReadFile(screen.Font)
