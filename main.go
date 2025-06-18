@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/yuin/gopher-lua"
@@ -16,6 +17,7 @@ type Game struct {
 	Screen ScreenSpecs
 	LuaVM  *lua.LState
 	Navbar Navbar
+	Input  Input
 }
 
 type ScreenSpecs = struct {
@@ -33,23 +35,38 @@ type Navbar = struct {
 	NavbarHeight int
 }
 
+type Input = struct {
+	Keys        []ebiten.Key
+	InputString string
+}
+
 var (
 	TextFaceSource *text.GoTextFaceSource
 	TextFace       text.Face
 )
 
 func (g *Game) Update() error {
-	g.LuaVM.DoString(`print("hello")`)
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		g.Input.Keys = []ebiten.Key{}
+		g.Input.InputString = ""
+	} else {
+		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
+		for _, k := range g.Input.Keys {
+			g.Input.InputString += k.String()
+		}
+	}
+	// g.LuaVM.DoString(`print("hello")`)
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	var NavbarBackground = ebiten.NewImage(g.Screen.Width, g.Navbar.NavbarHeight)
-	NavbarBackground.Fill(g.Navbar.NavbarColor)
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, 0)
-	screen.DrawImage(NavbarBackground, op)
-	// text.Draw(screen, "Ellos World :333", TextFace, &text.DrawOptions{})
+	// var NavbarBackground = ebiten.NewImage(g.Screen.Width, g.Navbar.NavbarHeight)
+	// NavbarBackground.Fill(g.Navbar.NavbarColor)
+	// op := &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(0, 0)
+	// screen.DrawImage(NavbarBackground, op)
+	//
+	text.Draw(screen, g.Input.InputString, TextFace, &text.DrawOptions{})
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -66,9 +83,9 @@ func main() {
 	}
 
 	var navbar = Navbar{
-		Tabs:       []string{"cli", "code", "sprite", "map"},
-		CurrentTab: 1,
-		NavbarColor: color.RGBA{0x7F, 0x11, 0xE0, 0xff}, // purple-ish
+		Tabs:         []string{"cli", "code", "sprite", "map"},
+		CurrentTab:   1,
+		NavbarColor:  color.RGBA{0x7F, 0x11, 0xE0, 0xff}, // purple-ish
 		NavbarHeight: 10,
 	}
 
