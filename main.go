@@ -2,17 +2,20 @@ package main
 
 import (
 	"bytes"
+	"image/color"
 	"log"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+
+	"github.com/yuin/gopher-lua"
 )
 
 type Game struct {
-	Tabs       []string
-	CurrentTab int
-	Screen     ScreenSpecs
+	Screen ScreenSpecs
+	LuaVM  *lua.LState
+	Navbar Navbar
 }
 
 type ScreenSpecs = struct {
@@ -23,17 +26,30 @@ type ScreenSpecs = struct {
 	FontSize        int
 }
 
+type Navbar = struct {
+	Tabs         []string
+	CurrentTab   int
+	NavbarColor  color.RGBA
+	NavbarHeight int
+}
+
 var (
 	TextFaceSource *text.GoTextFaceSource
 	TextFace       text.Face
 )
 
 func (g *Game) Update() error {
+	g.LuaVM.DoString(`print("hello")`)
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	text.Draw(screen, "Ellos World :333", TextFace, &text.DrawOptions{})
+	var NavbarBackground = ebiten.NewImage(g.Screen.Width, g.Navbar.NavbarHeight)
+	NavbarBackground.Fill(g.Navbar.NavbarColor)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(0, 0)
+	screen.DrawImage(NavbarBackground, op)
+	// text.Draw(screen, "Ellos World :333", TextFace, &text.DrawOptions{})
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -49,10 +65,17 @@ func main() {
 		FontSize:        5,
 	}
 
-	var game = Game{
+	var navbar = Navbar{
 		Tabs:       []string{"cli", "code", "sprite", "map"},
 		CurrentTab: 1,
-		Screen:     screen,
+		NavbarColor: color.RGBA{0x7F, 0x11, 0xE0, 0xff}, // purple-ish
+		NavbarHeight: 10,
+	}
+
+	var game = Game{
+		Navbar: navbar,
+		Screen: screen,
+		LuaVM:  lua.NewState(),
 	}
 
 	var font, err = os.ReadFile(screen.Font)
