@@ -10,7 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 type Game struct {
@@ -66,13 +66,12 @@ func (g *Game) Update() error {
 				if len(g.Input.CurrentInputString) > 0 {
 					g.Input.CurrentInputString = g.Input.CurrentInputString[:len(g.Input.CurrentInputString)-1]
 				}
-			} else if k != ebiten.KeyEscape || k != ebiten.KeyAlt {
+			} else if k != ebiten.KeyEscape && k != ebiten.KeyAlt {
 				g.Input.CurrentInputString += k.String()
 			}
 		}
 	}
-	g.ModifyLine(len(g.LinearBuffer) - 1, g.Input.CurrentInputString)
-	// g.LuaVM.DoString(`print("hello")`)
+	g.ModifyLine(len(g.LinearBuffer)-1, g.Input.CurrentInputString)
 	return nil
 }
 
@@ -82,13 +81,13 @@ func (g *Game) AppendLine(value string) {
 		Content: value,
 	}
 	g.LinearBuffer = append(g.LinearBuffer, line)
-	if len(g.LinearBuffer) > (g.Screen.Height / g.Screen.FontSize - 4) {
+	if len(g.LinearBuffer) > (g.Screen.Height/g.Screen.FontSize - 4) {
 		g.LinearBuffer = g.LinearBuffer[1:]
 	}
 }
 
 func (g *Game) ModifyLine(index int, value string) {
-	g.LinearBuffer[index].Content = value 
+	g.LinearBuffer[index].Content = value
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -97,13 +96,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
 	// screen.DrawImage(NavbarBackground, op)
-	
+
 	screen.Clear()
 	for index := range g.LinearBuffer {
 		var image = g.LinearBuffer[index]
 		// h := image.Image.Bounds().Dy()
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(0, float64(index * g.Screen.FontSize + index))
+		op.GeoM.Translate(0, float64(index*g.Screen.FontSize+index))
 		image.Image.Fill(color.Black)
 		text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
 		screen.DrawImage(image.Image, op)
@@ -119,7 +118,7 @@ func main() {
 		Width:           128,
 		Height:          128,
 		UpscalingFactor: 4,
-		Font:            "resources/font.ttf",
+		Font:            "resources/cg-pixel-4x5-mono.otf",
 		FontSize:        5,
 	}
 
