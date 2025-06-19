@@ -139,7 +139,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		if image.IsInput {
 			text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
 		} else {
-			text.Draw(image.Image, image.Content, TextFace, &text.DrawOptions{})
+			text.Draw(image.Image, "- "+image.Content, TextFace, &text.DrawOptions{})
 		}
 		screen.DrawImage(image.Image, op)
 	}
