@@ -39,12 +39,12 @@ type Navbar = struct {
 type LinearBuffer = struct {
 	Image   *ebiten.Image
 	Content string
+	IsInput bool
 }
 
 type Input = struct {
 	Keys               []ebiten.Key
 	CurrentInputString string
-	CursorY            int
 }
 
 var (
@@ -52,37 +52,60 @@ var (
 	TextFace       text.Face
 )
 
+func (g *Game) HandleCommand(command string) {
+	g.AppendLine(g.Input.CurrentInputString, true)
+}
+
 func (g *Game) Update() error {
+	var inputChars []rune
+	inputChars = ebiten.AppendInputChars(inputChars[:0])
+
+	for _, r := range inputChars {
+		switch r {
+		case '\r', '\n':
+			g.HandleCommand(g.Input.CurrentInputString)
+			g.Input.CurrentInputString = ""
+		default:
+			g.Input.CurrentInputString += string(r)
+		}
+	}
+
+	// on enter, just clear the "buffer" (if that's the word) and append the contents as a new line.
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
 		g.Input.CurrentInputString = ""
-		g.AppendLine(g.Input.CurrentInputString)
-	} else {
-		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
-		for _, k := range g.Input.Keys {
-			if k == ebiten.KeySpace {
-				g.Input.CurrentInputString += " "
-			} else if k == ebiten.KeyBackspace {
-				if len(g.Input.CurrentInputString) > 0 {
-					g.Input.CurrentInputString = g.Input.CurrentInputString[:len(g.Input.CurrentInputString)-1]
-				}
-			} else if k != ebiten.KeyEscape && k != ebiten.KeyAlt {
-				g.Input.CurrentInputString += k.String()
-			}
+		g.AppendLine(g.Input.CurrentInputString, true)
+	}
+
+	// if backspace'd, remove one character
+	if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) {
+		if len(g.Input.CurrentInputString) > 0 {
+			g.Input.CurrentInputString = g.Input.CurrentInputString[:len(g.Input.CurrentInputString)-1]
 		}
 	}
-	g.ModifyLine(len(g.LinearBuffer)-1, g.Input.CurrentInputString)
+
+	// if escaped, switch tabs (POYO (yes me) THIS IS A TODO)
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		g.Input.CurrentInputString = ""
+	}
+
+	// if input, change the contents
+	if len(g.LinearBuffer) > 0 {
+		g.ModifyLine(len(g.LinearBuffer)-1, g.Input.CurrentInputString)
+	}
+
 	return nil
 }
 
-func (g *Game) AppendLine(value string) {
+func (g *Game) AppendLine(value string, input bool) {
 	var line = LinearBuffer{
 		Image:   ebiten.NewImage(g.Screen.Width, g.Screen.FontSize+1),
 		Content: value,
+		IsInput: input,
 	}
 	g.LinearBuffer = append(g.LinearBuffer, line)
 	if len(g.LinearBuffer) > (g.Screen.Height/g.Screen.FontSize - 4) {
-		g.LinearBuffer = g.LinearBuffer[1:]
+		g.LinearBuffer = g.LinearBuffer[1:] // slice and push older lines upwards
 	}
 }
 
@@ -102,7 +125,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		var image = g.LinearBuffer[index]
 		// h := image.Image.Bounds().Dy()
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(0, float64(index*g.Screen.FontSize+index))
+		op.GeoM.Translate(0, float64(index*g.Screen.FontSize+index+1))
 		image.Image.Fill(color.Black)
 		text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
 		screen.DrawImage(image.Image, op)
@@ -137,12 +160,11 @@ func main() {
 		Screen: screen,
 		LuaVM:  lua.NewState(),
 		Input: Input{
-			CursorY:            0,
 			CurrentInputString: "",
 		},
 	}
 
-	game.AppendLine("")
+	game.AppendLine("", false)
 
 	var font, err = os.ReadFile(screen.Font)
 	if err != nil {
