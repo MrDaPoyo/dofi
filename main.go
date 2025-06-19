@@ -53,11 +53,10 @@ var (
 )
 
 func (g *Game) Update() error {
-	log.Println(g.Input.CurrentInputString)
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
-		g.AppendLine(g.Input.CurrentInputString)
 		g.Input.CurrentInputString = ""
+		g.AppendLine(g.Input.CurrentInputString)
 	} else {
 		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
 		for _, k := range g.Input.Keys {
@@ -72,6 +71,7 @@ func (g *Game) Update() error {
 			}
 		}
 	}
+	g.ModifyLine(len(g.LinearBuffer) - 1, g.Input.CurrentInputString)
 	// g.LuaVM.DoString(`print("hello")`)
 	return nil
 }
@@ -82,9 +82,13 @@ func (g *Game) AppendLine(value string) {
 		Content: value,
 	}
 	g.LinearBuffer = append(g.LinearBuffer, line)
-	if len(g.LinearBuffer) > g.Screen.Height / g.Screen.FontSize  {
-		g.LinearBuffer = g.LinearBuffer[0:g.Screen.Height / g.Screen.FontSize]
+	if len(g.LinearBuffer) > (g.Screen.Height / g.Screen.FontSize - 4) {
+		g.LinearBuffer = g.LinearBuffer[1:]
 	}
+}
+
+func (g *Game) ModifyLine(index int, value string) {
+	g.LinearBuffer[index].Content = value 
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -93,14 +97,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
 	// screen.DrawImage(NavbarBackground, op)
-	//
+	
 	screen.Clear()
-	for _, image := range g.LinearBuffer {
-		h := image.Image.Bounds().Dy()
+	for index := range g.LinearBuffer {
+		var image = g.LinearBuffer[index]
+		// h := image.Image.Bounds().Dy()
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(0, float64(h))
+		op.GeoM.Translate(0, float64(index * g.Screen.FontSize + index))
 		image.Image.Fill(color.Black)
-		text.Draw(image.Image, "> "+g.Input.CurrentInputString, TextFace, &text.DrawOptions{})
+		text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
 		screen.DrawImage(image.Image, op)
 	}
 }
@@ -137,6 +142,8 @@ func main() {
 			CurrentInputString: "",
 		},
 	}
+
+	game.AppendLine("")
 
 	var font, err = os.ReadFile(screen.Font)
 	if err != nil {
