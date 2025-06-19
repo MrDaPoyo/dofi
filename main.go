@@ -27,6 +27,7 @@ type ScreenSpecs = struct {
 	UpscalingFactor int
 	Font            string
 	FontSize        int
+	Buffer          [128][128]color.RGBA
 }
 
 type Navbar = struct {
@@ -53,6 +54,10 @@ var (
 )
 
 func (g *Game) HandleCommand(command string) {
+	var err = g.LuaVM.DoString(command)
+	if err != nil {
+		g.AppendLine(err.Error(), false)
+	}
 	g.AppendLine(g.Input.CurrentInputString, true)
 }
 
@@ -73,8 +78,8 @@ func (g *Game) Update() error {
 	// on enter, just clear the "buffer" (if that's the word) and append the contents as a new line.
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
+		g.HandleCommand(g.Input.CurrentInputString)
 		g.Input.CurrentInputString = ""
-		g.AppendLine(g.Input.CurrentInputString, true)
 	}
 
 	// if backspace'd, remove one character
@@ -84,7 +89,7 @@ func (g *Game) Update() error {
 		}
 	}
 
-	// if escaped, switch tabs (POYO (yes me) THIS IS A TODO)
+	// if escaped, switch tabs (POYO (yes me) THIS IS A TODO) (switching tabs here)
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		g.Input.CurrentInputString = ""
 	}
@@ -113,6 +118,10 @@ func (g *Game) ModifyLine(index int, value string) {
 	g.LinearBuffer[index].Content = value
 }
 
+func (g *Game) ClearLines() {
+	g.LinearBuffer = []LinearBuffer{}
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	// var NavbarBackground = ebiten.NewImage(g.Screen.Width, g.Navbar.NavbarHeight)
 	// NavbarBackground.Fill(g.Navbar.NavbarColor)
@@ -127,7 +136,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(0, float64(index*g.Screen.FontSize+index+1))
 		image.Image.Fill(color.Black)
-		text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
+		if image.IsInput {
+			text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
+		} else {
+			text.Draw(image.Image, image.Content, TextFace, &text.DrawOptions{})
+		}
 		screen.DrawImage(image.Image, op)
 	}
 }
@@ -164,7 +177,9 @@ func main() {
 		},
 	}
 
-	game.AppendLine("", false)
+	game.setupLuaAPI()
+	defer game.LuaVM.Close()
+	game.AppendLine("", true)
 
 	var font, err = os.ReadFile(screen.Font)
 	if err != nil {
