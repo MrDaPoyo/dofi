@@ -14,10 +14,11 @@ import (
 )
 
 type Game struct {
-	Screen ScreenSpecs
-	LuaVM  *lua.LState
-	Navbar Navbar
-	Input  Input
+	Screen       ScreenSpecs
+	LuaVM        *lua.LState
+	Navbar       Navbar
+	Input        Input
+	LinearBuffer []LinearBuffer
 }
 
 type ScreenSpecs = struct {
@@ -26,7 +27,6 @@ type ScreenSpecs = struct {
 	UpscalingFactor int
 	Font            string
 	FontSize        int
-	LineBuffer      []*ebiten.Image
 }
 
 type Navbar = struct {
@@ -37,13 +37,12 @@ type Navbar = struct {
 }
 
 type LinearBuffer = struct {
-	Id      int
+	Image   *ebiten.Image
 	Content string
 }
 
 type Input = struct {
 	Keys               []ebiten.Key
-	Inputs             LinearBuffer
 	CurrentInputString string
 	CursorY            int
 }
@@ -57,7 +56,8 @@ func (g *Game) Update() error {
 	log.Println(g.Input.CurrentInputString)
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.Input.Keys = []ebiten.Key{}
-		g.Screen.LineBuffer = append(g.Screen.LineBuffer, ebiten.NewImage(g.Screen.Width, len(g.Screen.LineBuffer)*g.Screen.FontSize+2))
+		g.AppendLine(g.Input.CurrentInputString)
+		g.Input.CurrentInputString = ""
 	} else {
 		g.Input.Keys = inpututil.AppendJustPressedKeys(g.Input.Keys[:0])
 		for _, k := range g.Input.Keys {
@@ -72,12 +72,19 @@ func (g *Game) Update() error {
 			}
 		}
 	}
-	if len(g.Screen.LineBuffer) > 14 {
-		g.Screen.LineBuffer = g.Screen.LineBuffer[0:14]
-		g.Input.CursorY = g.Screen.Height - g.Screen.FontSize
-	}
 	// g.LuaVM.DoString(`print("hello")`)
 	return nil
+}
+
+func (g *Game) AppendLine(value string) {
+	var line = LinearBuffer{
+		Image:   ebiten.NewImage(g.Screen.Width, g.Screen.FontSize+1),
+		Content: value,
+	}
+	g.LinearBuffer = append(g.LinearBuffer, line)
+	if len(g.LinearBuffer) > g.Screen.Height / g.Screen.FontSize  {
+		g.LinearBuffer = g.LinearBuffer[0:g.Screen.Height / g.Screen.FontSize]
+	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -88,12 +95,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// screen.DrawImage(NavbarBackground, op)
 	//
 	screen.Clear()
-	for _, image := range g.Screen.LineBuffer {
-		h := image.Bounds().Dy()
+	for _, image := range g.LinearBuffer {
+		h := image.Image.Bounds().Dy()
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(0, float64(h))
-		text.Draw(g.Screen.LineBuffer[len(g.Screen.LineBuffer)-1], "> "+g.Input.CurrentInputString, TextFace, &text.DrawOptions{})
-		screen.DrawImage(image, op)
+		image.Image.Fill(color.Black)
+		text.Draw(image.Image, "> "+g.Input.CurrentInputString, TextFace, &text.DrawOptions{})
+		screen.DrawImage(image.Image, op)
 	}
 }
 
@@ -119,14 +127,13 @@ func main() {
 
 	var lineBuffer = make([]*ebiten.Image, 1)
 	lineBuffer[0] = ebiten.NewImage(screen.Width, 128)
-	screen.LineBuffer = lineBuffer
 
 	var game = Game{
 		Navbar: navbar,
 		Screen: screen,
 		LuaVM:  lua.NewState(),
 		Input: Input{
-			CursorY:     0,
+			CursorY:            0,
 			CurrentInputString: "",
 		},
 	}
