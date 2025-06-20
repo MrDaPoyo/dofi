@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -55,13 +56,32 @@ var (
 
 func (g *Game) HandleCommand(command string) {
 	var err = g.LuaVM.DoString(command)
+	if strings.Split(command, " ")[0] == "run" {
+		err := g.LuaVM.DoFile(strings.TrimSpace(strings.Split(command, " ")[1]))
+		if err != nil {
+			log.Println("Error executing file:", err)
+			g.AppendLine(err.Error(), false)
+		}
+		return
+	}
 	if err != nil {
+		log.Println("Error executing command:", err)
 		g.AppendLine(err.Error(), false)
 	}
 	g.AppendLine(g.Input.CurrentInputString, true)
 }
 
 func (g *Game) Update() error {
+	if updateFn := g.LuaVM.GetGlobal("_update"); updateFn != lua.LNil {
+		if err := g.LuaVM.CallByParam(lua.P{
+			Fn:      updateFn,
+			NRet:    0,
+			Protect: true,
+		}); err != nil {
+			g.AppendLine("Lua error in _update: "+err.Error(), false)
+		}
+	}
+
 	var inputChars []rune
 	inputChars = ebiten.AppendInputChars(inputChars[:0])
 
@@ -104,6 +124,33 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
+
+	if drawFn := g.LuaVM.GetGlobal("_draw"); drawFn != lua.LNil {
+		if err := g.LuaVM.CallByParam(lua.P{
+			Fn:      drawFn,
+			NRet:    0,
+			Protect: true,
+		}); err != nil {
+			g.AppendLine("Lua error in _draw: "+err.Error(), false)
+		}
+	}
+
+	bufferImg := ebiten.NewImage(len(g.Screen.Buffer[0]), len(g.Screen.Buffer))
+	
+	pixels := make([]byte, len(g.Screen.Buffer)*len(g.Screen.Buffer[0])*4)
+	for y := 0; y < len(g.Screen.Buffer); y++ {
+		for x := 0; x < len(g.Screen.Buffer[y]); x++ {
+			pixel := g.Screen.Buffer[y][x]
+			idx := (y*len(g.Screen.Buffer[0])+x)*4
+			pixels[idx] = pixel.R
+			pixels[idx+1] = pixel.G
+			pixels[idx+2] = pixel.B
+			pixels[idx+3] = pixel.A
+		}
+	}
+	
+	bufferImg.WritePixels(pixels)
+	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
 
 	lineHeight := g.Screen.FontSize + 1
 	var totalLines int

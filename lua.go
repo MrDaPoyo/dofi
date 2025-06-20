@@ -2,9 +2,10 @@ package main
 
 import (
 	"image/color"
-	"log"
 	"strings"
 
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -13,12 +14,14 @@ func (g *Game) setupLuaAPI() {
 	g.LuaVM.SetGlobal("dofi", dofiTable)
 
 	// cls function - clear screen
+	g.LuaVM.SetGlobal("cls", g.LuaVM.NewFunction(func(L *lua.LState) int {
+		g.Screen.Buffer = [128][128]color.RGBA{}
+		g.ClearLines()
+		return 0
+	}))
+
 	g.LuaVM.SetField(dofiTable, "cls", g.LuaVM.NewFunction(func(L *lua.LState) int {
-		for x := 0; x < 128; x++ {
-			for y := 0; y < 128; y++ {
-				g.Screen.Buffer[x][y] = color.RGBA{0, 0, 0, 255}
-			}
-		}
+		g.Screen.Buffer = [128][128]color.RGBA{}
 		g.ClearLines()
 		return 0
 	}))
@@ -37,14 +40,54 @@ func (g *Game) setupLuaAPI() {
 
 	g.LuaVM.SetGlobal("print", g.LuaVM.NewFunction(func(L *lua.LState) int {
 		top := L.GetTop()
+		if top == 0 {
+			return 0
+		}
+		
+		if L.GetTop() >= 1 && L.CheckAny(1).Type() == lua.LTString {
+			var parts []string
+			for i := 1; i <= top; i++ {
+				parts = append(parts, L.ToString(i))
+			}
+			g.AppendLine(strings.Join(parts, " "), false)
+			return 0
+		}
+		
+		x := int(L.OptNumber(1, 0))
+		y := int(L.OptNumber(2, 0))
 		var parts []string
-		for i := 1; i <= top; i++ {
+		for i := 3; i <= top; i++ {
 			parts = append(parts, L.ToString(i))
 		}
-		log.Println(strings.Join(parts, " "))
+		g.DrawText(x, y, strings.Join(parts, " "), color.RGBA{255, 255, 255, 255})
 		g.AppendLine(strings.Join(parts, " "), false)
 		return 0
 	}))
+}
+
+func (g *Game) RunLuaScript(script string) error {
+	return g.LuaVM.DoString(script)
+}
+
+func (g *Game) CallLuaFunction(name string) {
+	if fn := g.LuaVM.GetGlobal(name); fn != lua.LNil {
+		g.LuaVM.Push(fn)
+		g.LuaVM.Call(0, 0)
+	}
+}
+
+func (g *Game) UpdateLua() {
+	if fn := g.LuaVM.GetGlobal("_update"); fn != lua.LNil {
+		g.LuaVM.Push(fn)
+		g.LuaVM.Call(0, 0)
+	}
+}
+
+func (g *Game) DrawLua() {
+	if fn := g.LuaVM.GetGlobal("_draw"); fn != lua.LNil {
+		g.LuaVM.Push(fn)
+		g.LuaVM.Call(0, 0)
+	}
 }
 
 func (g *Game) ClearLines() {
@@ -56,4 +99,12 @@ func (g *Game) DrawPixel(x, y int, c color.RGBA) {
 	if x >= 0 && x < 128 && y >= 0 && y < 128 {
 		g.Screen.Buffer[x][y] = c
 	}
+}
+
+func (g *Game) DrawText(x, y int, value string, c color.RGBA) {
+	var op = &text.DrawOptions{}
+	op.ColorScale.Scale(float32(c.R)/255, float32(c.G)/255, float32(c.B)/255, float32(c.A)/255)
+	op.GeoM.Translate(float64(x), float64(y))
+	image := ebiten.NewImage(g.Screen.Width, g.Screen.Height)
+	text.Draw(image, value, TextFace, op)
 }
