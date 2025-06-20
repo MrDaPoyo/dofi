@@ -34,6 +34,7 @@ type ScreenSpecs = struct {
 	Buffer          [128][128]color.RGBA
 	ImageBuffer     []*ebiten.Image
 	BgColor         color.RGBA
+	CliBgColor      color.RGBA
 }
 
 type Navbar = struct {
@@ -50,6 +51,7 @@ type Tab = struct {
 	Enabled  bool
 	IconPath string
 	Icon     *ebiten.Image
+	Function func(*Game) error
 }
 
 type LinearBuffer = struct {
@@ -149,7 +151,6 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
-	screen.Fill(g.Screen.BgColor)
 
 	if drawFn := g.LuaVM.GetGlobal("_draw"); drawFn != lua.LNil {
 		if err := g.LuaVM.CallByParam(lua.P{
@@ -179,6 +180,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
 
 	if g.Navbar.CliEnabled {
+		screen.Fill(g.Screen.CliBgColor)
 		lineHeight := g.Screen.FontSize + 1
 		var totalLines int
 		for _, line := range g.LinearBuffer {
@@ -204,6 +206,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 		}
 	} else {
+		screen.Fill(g.Screen.BgColor)
 		navbarHeight := g.Navbar.NavbarHeight
 		navbarImg := ebiten.NewImage(g.Screen.Width, navbarHeight)
 		navbarImg.Fill(g.Navbar.NavbarColor)
@@ -243,7 +246,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 			xPosition += iconWidth + 2
 		}
-		
+
 		mouseOp := &ebiten.DrawImageOptions{}
 		mouseOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
 		mouseShadowOp := &ebiten.DrawImageOptions{}
@@ -257,7 +260,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return g.Screen.Width, g.Screen.Height
 }
 
-func main() {
+func MakeGame() *Game {
 	var screen = ScreenSpecs{
 		Width:           128,
 		Height:          128,
@@ -266,6 +269,7 @@ func main() {
 		FontSize:        5,
 		FontWidth:       4,
 		BgColor:         color.RGBA{255, 169, 133, 255},
+		CliBgColor:      color.RGBA{70, 82, 113, 255},
 	}
 
 	var navbar = Navbar{
@@ -325,7 +329,6 @@ func main() {
 	game.Input.Mouse = mouse
 	game.Input.MouseShadow = mouseShadow
 	game.setupLuaAPI()
-	defer game.LuaVM.Close()
 	game.AppendLine("", true)
 
 	font, err := os.ReadFile(screen.Font)
@@ -341,9 +344,16 @@ func main() {
 		Size:   float64(game.Screen.FontSize),
 	}
 
+	return &game
+}
+
+func main() {
+	game := MakeGame()
+	defer game.LuaVM.Close()
+
 	ebiten.SetWindowSize(game.Screen.Width*game.Screen.UpscalingFactor, game.Screen.Height*game.Screen.UpscalingFactor)
 	ebiten.SetWindowTitle("Dofi! :3")
-	if err := ebiten.RunGame(&game); err != nil {
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }
