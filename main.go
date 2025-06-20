@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -71,9 +72,18 @@ type Input = struct {
 	IsMouseDown        bool
 }
 
+type CodeEditor struct {
+	Content []string
+	Line    int
+	Column  int
+	ScrollY int
+	Saved   bool
+}
+
 var (
 	TextFaceSource *text.GoTextFaceSource
 	TextFace       text.Face
+	CodeEditors    = make(map[int]*CodeEditor) // map of file ids to CodeEditor instances
 )
 
 func (g *Game) HandleCommand(command string) {
@@ -247,13 +257,84 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			xPosition += iconWidth + 2
 		}
 
-		mouseOp := &ebiten.DrawImageOptions{}
-		mouseOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
-		mouseShadowOp := &ebiten.DrawImageOptions{}
-		mouseShadowOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
-		screen.DrawImage(g.Input.MouseShadow, mouseShadowOp)
-		screen.DrawImage(g.Input.Mouse, mouseOp)
+		var contentImage = ebiten.NewImage(g.Screen.Width, g.Screen.Height-navbarHeight)
+		contentImage.Fill(g.Screen.BgColor)
+		
+		if g.Navbar.Tabs[g.Navbar.CurrentTab].Name == "code" {
+			if editor, exists := CodeEditors[g.Navbar.CurrentTab]; exists {
+				g.CodeEditor(contentImage, editor, navbarHeight)
+			} else {
+				CodeEditors[g.Navbar.CurrentTab] = &CodeEditor{
+					Content: []string{""},
+					Line:    0,
+					Column:  0,
+					ScrollY: 0,
+					Saved:   false,
+				}
+				g.CodeEditor(screen, CodeEditors[g.Navbar.CurrentTab], navbarHeight)
+			}
+		}
+		var contentImageOp = &ebiten.DrawImageOptions{}
+		contentImageOp.GeoM.Translate(0, float64(navbarHeight))
+		screen.DrawImage(contentImage, contentImageOp)
+		
+		g.DrawMouse(screen)
 	}
+}
+
+func (g *Game) DrawMouse(screen *ebiten.Image) {
+	mouseOp := &ebiten.DrawImageOptions{}
+	mouseOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
+	mouseShadowOp := &ebiten.DrawImageOptions{}
+	mouseShadowOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
+	screen.DrawImage(g.Input.MouseShadow, mouseShadowOp)
+	screen.DrawImage(g.Input.Mouse, mouseOp)
+}
+
+func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight int) *Game {
+	screen.Fill(g.Screen.BgColor)
+
+	lineHeight := g.Screen.FontSize + 1
+	availableHeight := g.Screen.Height - navbarHeight
+	maxVisibleLines := availableHeight / lineHeight
+
+	startLine := 0
+	if len(g.LinearBuffer) > maxVisibleLines {
+		startLine = len(g.LinearBuffer) - maxVisibleLines
+	}
+
+	y := navbarHeight
+	for i := startLine; i < len(g.LinearBuffer) && i < startLine+maxVisibleLines; i++ {
+		line := g.LinearBuffer[i]
+		lineNumber := i + 1
+
+		for j, wrappedLine := range line.Content {
+			img := ebiten.NewImage(g.Screen.Width, lineHeight)
+
+			prefix := ""
+			if j == 0 {
+				prefix = fmt.Sprintf("%3d ", lineNumber)
+			} else {
+				prefix = "    "
+			}
+
+			content := prefix + wrappedLine
+
+			if i == len(g.LinearBuffer)-1 && line.IsInput {
+				content = prefix + g.Input.CurrentInputString
+			}
+
+			text.Draw(img, content, TextFace, &text.DrawOptions{})
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(0, float64(y))
+			screen.DrawImage(img, op)
+
+			y += lineHeight
+		}
+	}
+
+	return g
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -280,7 +361,7 @@ func MakeGame() *Game {
 			{Name: "play", Enabled: true, IconPath: "resources/icons/play.png"},
 			{Name: "music", Enabled: true, IconPath: "resources/icons/music.png"},
 		},
-		CurrentTab:   1,
+		CurrentTab:   0,
 		NavbarColor:  color.RGBA{204, 116, 83, 255},
 		TabColor:     color.RGBA{154, 56, 63, 255},
 		NavbarHeight: 10,
