@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"image/color"
+	_ "image/png"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
@@ -30,14 +32,23 @@ type ScreenSpecs = struct {
 	FontSize        int
 	FontWidth       int
 	Buffer          [128][128]color.RGBA
+	ImageBuffer     []*ebiten.Image
 }
 
 type Navbar = struct {
-	Tabs         []string
+	Tabs         []Tab
 	CurrentTab   int
 	CliEnabled   bool
 	NavbarColor  color.RGBA
+	TabColor     color.RGBA
 	NavbarHeight int
+}
+
+type Tab = struct {
+	Name     string
+	Enabled  bool
+	IconPath string
+	Icon     *ebiten.Image
 }
 
 type LinearBuffer = struct {
@@ -179,6 +190,46 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				prefix = "  "
 			}
 		}
+	} else {
+		navbarHeight := g.Navbar.NavbarHeight
+		navbarImg := ebiten.NewImage(g.Screen.Width, navbarHeight)
+		navbarImg.Fill(g.Navbar.NavbarColor)
+		screen.DrawImage(navbarImg, nil)
+
+		totalTabWidth := 0
+		enabledTabs := 0
+		for _, tab := range g.Navbar.Tabs {
+			if tab.Enabled {
+				enabledTabs++
+				totalTabWidth += tab.Icon.Bounds().Dx() + 2
+			}
+		}
+		if enabledTabs > 0 {
+			totalTabWidth += (enabledTabs - 1) * 2 // spacing between tabs
+		}
+		
+		xPosition := g.Screen.Width - totalTabWidth - 1
+		for _, tab := range g.Navbar.Tabs {
+			if !tab.Enabled {
+				continue
+			}
+			
+			iconWidth := tab.Icon.Bounds().Dx() + 2
+			iconHeight := tab.Icon.Bounds().Dy() + 2
+
+			tabImg := ebiten.NewImage(iconWidth, iconHeight)
+			tabImg.Fill(g.Navbar.TabColor)
+
+			iconOP := &ebiten.DrawImageOptions{}
+			iconOP.GeoM.Translate(float64((iconWidth-tab.Icon.Bounds().Dx())/2), float64((iconHeight-tab.Icon.Bounds().Dy())/2))
+			tabImg.DrawImage(tab.Icon, iconOP)
+
+			tabOp := &ebiten.DrawImageOptions{}
+			tabOp.GeoM.Translate(float64(xPosition), float64((navbarHeight-iconHeight)/2))
+			screen.DrawImage(tabImg, tabOp)
+			
+			xPosition += iconWidth + 2
+		}
 	}
 }
 
@@ -197,15 +248,34 @@ func main() {
 	}
 
 	var navbar = Navbar{
-		Tabs:         []string{"cli", "code", "sprite", "map"},
+		Tabs: []Tab{
+			{Name: "code", Enabled: true, IconPath: "resources/icons/code.png"},
+			{Name: "draw", Enabled: true, IconPath: "resources/icons/brush.png"},
+			{Name: "tile", Enabled: true, IconPath: "resources/icons/tile.png"},
+			{Name: "play", Enabled: true, IconPath: "resources/icons/play.png"},
+			{Name: "music", Enabled: true, IconPath: "resources/icons/music.png"},
+		},
 		CurrentTab:   1,
-		NavbarColor:  color.RGBA{0x7F, 0x11, 0xE0, 0xff}, // purple-ish
+		NavbarColor:  color.RGBA{204, 116, 83, 255},
+		TabColor:     color.RGBA{154, 56, 63, 255},
 		NavbarHeight: 10,
 		CliEnabled:   true,
 	}
 
 	var lineBuffer = make([]*ebiten.Image, 1)
 	lineBuffer[0] = ebiten.NewImage(screen.Width, 128)
+
+	// load every icon
+	for i := range navbar.Tabs {
+		iconData, err := os.ReadFile(navbar.Tabs[i].IconPath)
+		if err != nil {
+			log.Fatal("Error reading icon file:", err)
+		}
+		navbar.Tabs[i].Icon, _, err = ebitenutil.NewImageFromReader(bytes.NewReader(iconData))
+		if err != nil {
+			log.Fatal("Error loading icon:", err)
+		}
+	}
 
 	var game = Game{
 		Navbar: navbar,
