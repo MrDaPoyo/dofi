@@ -84,6 +84,7 @@ var (
 	TextFaceSource *text.GoTextFaceSource
 	TextFace       text.Face
 	CodeEditors    = make(map[int]*CodeEditor) // map of file ids to CodeEditor instances
+	CodeEditorIndex = 0
 )
 
 func (g *Game) HandleCommand(command string) {
@@ -125,24 +126,56 @@ func (g *Game) Update() error {
 	for _, r := range inputChars {
 		switch r {
 		case '\r', '\n':
-			g.HandleCommand(g.Input.CurrentInputString)
-			g.Input.CurrentInputString = ""
+			if g.Navbar.CliEnabled {
+				g.HandleCommand(g.Input.CurrentInputString)
+				g.Input.CurrentInputString = ""
+			}
 		default:
-			g.Input.CurrentInputString += string(r)
+			if g.Navbar.CliEnabled {
+				g.Input.CurrentInputString += string(r)
+			} else {
+				if editor, exists := CodeEditors[CodeEditorIndex]; exists {
+					if editor.Line < len(editor.Content) {
+						line := editor.Content[editor.Line]
+						if editor.Column <= len(line) {
+							editor.Content[editor.Line] = line[:editor.Column] + string(r) + line[editor.Column:]
+							editor.Column++
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// on enter, just clear the "buffer" (if that's the word) and append the contents as a new line.
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
-		g.Input.Keys = []ebiten.Key{}
-		g.HandleCommand(g.Input.CurrentInputString)
-		g.Input.CurrentInputString = ""
+		if g.Navbar.CliEnabled {
+			g.Input.Keys = []ebiten.Key{}
+			g.HandleCommand(g.Input.CurrentInputString)
+			g.Input.CurrentInputString = ""
+		} else {
+			if editor, exists := CodeEditors[CodeEditorIndex]; exists {
+				editor.Content = append(editor.Content, "")
+				editor.Line++
+				editor.Column = 0
+			}
+		}
 	}
 
 	// if backspace'd, remove one character
 	if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) {
-		if len(g.Input.CurrentInputString) > 0 {
-			g.Input.CurrentInputString = g.Input.CurrentInputString[:len(g.Input.CurrentInputString)-1]
+		if g.Navbar.CliEnabled {
+			if len(g.Input.CurrentInputString) > 0 {
+				g.Input.CurrentInputString = g.Input.CurrentInputString[:len(g.Input.CurrentInputString)-1]
+			}
+		} else {
+			if editor, exists := CodeEditors[CodeEditorIndex]; exists {
+				if editor.Line < len(editor.Content) && editor.Column > 0 {
+					line := editor.Content[editor.Line]
+					editor.Content[editor.Line] = line[:editor.Column-1] + line[editor.Column:]
+					editor.Column--
+				}
+			}
 		}
 	}
 
@@ -277,7 +310,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		var contentImageOp = &ebiten.DrawImageOptions{}
 		contentImageOp.GeoM.Translate(0, float64(navbarHeight))
 		screen.DrawImage(contentImage, contentImageOp)
-		
+
 		g.DrawMouse(screen)
 	}
 }
