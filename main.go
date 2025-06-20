@@ -117,12 +117,14 @@ func (g *Game) wrapText(value string) []string {
 
 func (g *Game) AppendLine(value string, input bool) {
 	wrapped := g.wrapText(value)
-	newLineHeight := g.Screen.FontSize*len(wrapped) + 1
+	lineHeight := g.Screen.FontSize + 1
+	newLineHeight := lineHeight * len(wrapped)
+	removedHeights := 0
 
 	for {
 		totalHeight := 0
 		for _, line := range g.LinearBuffer {
-			totalHeight += g.Screen.FontSize*len(line.Content) + 1
+			totalHeight += lineHeight * len(line.Content)
 		}
 
 		if totalHeight+newLineHeight <= g.Screen.Height {
@@ -132,24 +134,44 @@ func (g *Game) AppendLine(value string, input bool) {
 		if len(g.LinearBuffer) == 0 {
 			break
 		}
-
-		g.LinearBuffer = g.LinearBuffer[1:] // drop the oldest line
+		removedHeights += lineHeight * len(g.LinearBuffer[0].Content)
+		g.LinearBuffer = g.LinearBuffer[1:]
 	}
 
-	newBuffer := LinearBuffer{
+	g.LinearBuffer = append(g.LinearBuffer, LinearBuffer{
 		Image:   ebiten.NewImage(g.Screen.Width, newLineHeight),
 		Content: wrapped,
 		IsInput: input,
-	}
-	g.LinearBuffer = append(g.LinearBuffer, newBuffer)
+	})
 }
 
 func (g *Game) ModifyLine(index int, value string) {
 	wrapped := g.wrapText(value)
-	if len(wrapped) > 0 {
-		g.LinearBuffer[index].Content = wrapped
+	lineHeight := g.Screen.FontSize + 1
+	newLineHeight := lineHeight * len(wrapped)
+	
+	// remove lines from top if there isn't enough space
+	for {
+		totalHeight := 0
+		for _, line := range g.LinearBuffer {
+			totalHeight += lineHeight * len(line.Content)
+		}
+
+		if totalHeight <= g.Screen.Height {
+			break
+		}
+
+		if len(g.LinearBuffer) == 0 {
+			break
+		}
+
+		g.LinearBuffer = g.LinearBuffer[1:]
 	}
-	g.LinearBuffer[index].Image = ebiten.NewImage(g.Screen.Width, g.Screen.FontSize*len(wrapped)+1)
+	
+	if len(wrapped) > 0 && index < len(g.LinearBuffer) {
+		g.LinearBuffer[index].Content = wrapped
+		g.LinearBuffer[index].Image = ebiten.NewImage(g.Screen.Width, newLineHeight)
+	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
