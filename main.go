@@ -116,87 +116,61 @@ func (g *Game) wrapText(value string) []string {
 
 func (g *Game) AppendLine(value string, input bool) {
 	wrapped := g.wrapText(value)
-	lineHeight := g.Screen.FontSize + 1
-	newLineHeight := lineHeight * len(wrapped)
-	removedHeights := 0
-
-	for {
-		totalHeight := 0
-		for _, line := range g.LinearBuffer {
-			totalHeight += lineHeight * len(line.Content)
-		}
-
-		if totalHeight+newLineHeight <= g.Screen.Height {
-			break
-		}
-
-		if len(g.LinearBuffer) == 0 {
-			break
-		}
-		removedHeights += lineHeight * len(g.LinearBuffer[0].Content)
-		g.LinearBuffer = g.LinearBuffer[1:]
-	}
 
 	g.LinearBuffer = append(g.LinearBuffer, LinearBuffer{
 		Content: wrapped,
 		IsInput: input,
 	})
+
+	g.TruncateLines(g.Screen.Height / g.Screen.FontSize * 2)
 }
 
 func (g *Game) ModifyLine(index int, value string) {
 	wrapped := g.wrapText(value)
-	lineHeight := g.Screen.FontSize + 1
-	
-	// remove lines from top if there isn't enough space
-	for {
-		totalHeight := 0
-		for _, line := range g.LinearBuffer {
-			totalHeight += lineHeight * len(line.Content)
-		}
-
-		if totalHeight <= g.Screen.Height {
-			break
-		}
-
-		if len(g.LinearBuffer) == 0 {
-			break
-		}
-
-		g.LinearBuffer = g.LinearBuffer[1:]
-	}
 	
 	if len(wrapped) > 0 && index < len(g.LinearBuffer) {
 		g.LinearBuffer[index].Content = wrapped
 	}
+	
+	g.TruncateLines(g.Screen.Height / g.Screen.FontSize * 2)
+}
+
+func (g *Game) TruncateLines(length int) {
+	if length < 0 {
+		return
+	}
+	if length >= len(g.LinearBuffer) {
+		return
+	}
+	g.LinearBuffer = g.LinearBuffer[len(g.LinearBuffer)-length:]
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// var NavbarBackground = ebiten.NewImage(g.Screen.Width, g.Navbar.NavbarHeight)
-	// NavbarBackground.Fill(g.Navbar.NavbarColor)
-	// op := &ebiten.DrawImageOptions{}
-	// op.GeoM.Translate(0, 0)
-	// screen.DrawImage(NavbarBackground, op)
-
 	screen.Clear()
 
-	y := 1 // global vertical position
+	lineHeight := g.Screen.FontSize + 1
+	var totalLines int
+	for _, line := range g.LinearBuffer {
+		totalLines += len(line.Content)
+	}
+
+	y := g.Screen.Height - totalLines*lineHeight
 	for _, line := range g.LinearBuffer {
 		prefix := "- "
 		if line.IsInput {
 			prefix = "> "
 		}
 		for _, wrappedLine := range line.Content {
-			img := ebiten.NewImage(g.Screen.Width, g.Screen.FontSize+1)
+			img := ebiten.NewImage(g.Screen.Width, lineHeight)
 			img.Fill(color.Black)
-
 			text.Draw(img, prefix+wrappedLine, TextFace, &text.DrawOptions{})
 
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(0, float64(y))
 			screen.DrawImage(img, op)
 
-			y += g.Screen.FontSize + 1
-			prefix = "  " // indent
+			y += lineHeight
+			prefix = "  "
 		}
 	}
 }
