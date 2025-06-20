@@ -117,16 +117,31 @@ func (g *Game) wrapText(value string) []string {
 
 func (g *Game) AppendLine(value string, input bool) {
 	wrapped := g.wrapText(value)
-	var buffer = LinearBuffer{
-		Image:   ebiten.NewImage(g.Screen.Width, g.Screen.FontSize*len(wrapped)+1),
+	newLineHeight := g.Screen.FontSize*len(wrapped) + 1
+
+	for {
+		totalHeight := 0
+		for _, line := range g.LinearBuffer {
+			totalHeight += g.Screen.FontSize*len(line.Content) + 1
+		}
+
+		if totalHeight+newLineHeight <= g.Screen.Height {
+			break
+		}
+
+		if len(g.LinearBuffer) == 0 {
+			break
+		}
+
+		g.LinearBuffer = g.LinearBuffer[1:] // drop the oldest line
+	}
+
+	newBuffer := LinearBuffer{
+		Image:   ebiten.NewImage(g.Screen.Width, newLineHeight),
 		Content: wrapped,
 		IsInput: input,
 	}
-	g.LinearBuffer = append(g.LinearBuffer, buffer)
-	var maxLines = g.Screen.Height / g.Screen.FontSize
-	if len(g.LinearBuffer) > maxLines {
-		g.LinearBuffer = g.LinearBuffer[len(g.LinearBuffer)-maxLines:]
-	}
+	g.LinearBuffer = append(g.LinearBuffer, newBuffer)
 }
 
 func (g *Game) ModifyLine(index int, value string) {
@@ -146,7 +161,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.Clear()
 
-	y := 0 // global vertical position
+	y := 1 // global vertical position
 	for _, line := range g.LinearBuffer {
 		prefix := "- "
 		if line.IsInput {
