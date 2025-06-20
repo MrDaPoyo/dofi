@@ -33,6 +33,7 @@ type ScreenSpecs = struct {
 	FontWidth       int
 	Buffer          [128][128]color.RGBA
 	ImageBuffer     []*ebiten.Image
+	BgColor         color.RGBA
 }
 
 type Navbar = struct {
@@ -62,7 +63,9 @@ type Input = struct {
 	Mouse              *ebiten.Image
 	MouseX             int
 	MouseY             int
-	MouseSkinX         string
+	MouseSkin          string
+	MouseShadowPath    string
+	MouseShadow        *ebiten.Image
 	IsMouseDown        bool
 }
 
@@ -146,6 +149,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
+	screen.Fill(g.Screen.BgColor)
 
 	if drawFn := g.LuaVM.GetGlobal("_draw"); drawFn != lua.LNil {
 		if err := g.LuaVM.CallByParam(lua.P{
@@ -189,7 +193,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 			for _, wrappedLine := range line.Content {
 				img := ebiten.NewImage(g.Screen.Width, lineHeight)
-				img.Fill(color.Black)
 				text.Draw(img, prefix+wrappedLine, TextFace, &text.DrawOptions{})
 
 				op := &ebiten.DrawImageOptions{}
@@ -240,8 +243,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 			xPosition += iconWidth + 2
 		}
+		
 		mouseOp := &ebiten.DrawImageOptions{}
-		mouseOp.GeoM.Translate(float64(g.Input.MouseX) - 1, float64(g.Input.MouseY) - 1)
+		mouseOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
+		mouseShadowOp := &ebiten.DrawImageOptions{}
+		mouseShadowOp.GeoM.Translate(float64(g.Input.MouseX)-1, float64(g.Input.MouseY)-1)
+		screen.DrawImage(g.Input.MouseShadow, mouseShadowOp)
 		screen.DrawImage(g.Input.Mouse, mouseOp)
 	}
 }
@@ -258,6 +265,7 @@ func main() {
 		Font:            "resources/cg-pixel-4x5-mono.otf",
 		FontSize:        5,
 		FontWidth:       4,
+		BgColor:         color.RGBA{255, 169, 133, 255},
 	}
 
 	var navbar = Navbar{
@@ -298,18 +306,24 @@ func main() {
 			CurrentInputString: "",
 			MouseX:             0,
 			MouseY:             0,
-			MouseSkinX:        "resources/icons/mouse.png",
-			IsMouseDown: false,
+			MouseSkin:          "resources/icons/mouse.png",
+			MouseShadowPath:    "resources/icons/mouse_shadow.png",
+			IsMouseDown:        false,
 		},
 	}
 
 	ebiten.SetCursorMode(ebiten.CursorModeHidden)
-	var mouse, _, err = ebitenutil.NewImageFromFile(game.Input.MouseSkinX)
+	var mouse, _, err = ebitenutil.NewImageFromFile(game.Input.MouseSkin)
 	if err != nil {
 		log.Fatal("Error loading mouse skin:", err)
 	}
+	mouseShadow, _, err := ebitenutil.NewImageFromFile(game.Input.MouseShadowPath)
+	if err != nil {
+		log.Fatal("Error loading mouse shadow:", err)
+	}
 
-	game.Input.Mouse = mouse	
+	game.Input.Mouse = mouse
+	game.Input.MouseShadow = mouseShadow
 	game.setupLuaAPI()
 	defer game.LuaVM.Close()
 	game.AppendLine("", true)
