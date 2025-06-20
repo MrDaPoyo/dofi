@@ -35,6 +35,7 @@ type ScreenSpecs = struct {
 type Navbar = struct {
 	Tabs         []string
 	CurrentTab   int
+	CliEnabled   bool
 	NavbarColor  color.RGBA
 	NavbarHeight int
 }
@@ -111,11 +112,11 @@ func (g *Game) Update() error {
 
 	// if escaped, switch tabs (POYO (yes me) THIS IS A TODO) (switching tabs here)
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		g.Input.CurrentInputString = ""
+		g.Navbar.CliEnabled = !g.Navbar.CliEnabled
 	}
 
-	// if input, change the contents
-	if len(g.LinearBuffer) > 0 {
+	// if input and CliEnabled, change the contents
+	if len(g.LinearBuffer) > 0 && g.Navbar.CliEnabled {
 		g.ModifyLine(len(g.LinearBuffer)-1, g.Input.CurrentInputString)
 	}
 
@@ -152,29 +153,31 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	bufferImg.WritePixels(pixels)
 	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
 
-	lineHeight := g.Screen.FontSize + 1
-	var totalLines int
-	for _, line := range g.LinearBuffer {
-		totalLines += len(line.Content)
-	}
-
-	y := g.Screen.Height - totalLines*lineHeight
-	for _, line := range g.LinearBuffer {
-		prefix := "- "
-		if line.IsInput {
-			prefix = "> "
+	if g.Navbar.CliEnabled {
+		lineHeight := g.Screen.FontSize + 1
+		var totalLines int
+		for _, line := range g.LinearBuffer {
+			totalLines += len(line.Content)
 		}
-		for _, wrappedLine := range line.Content {
-			img := ebiten.NewImage(g.Screen.Width, lineHeight)
-			img.Fill(color.Black)
-			text.Draw(img, prefix+wrappedLine, TextFace, &text.DrawOptions{})
 
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(0, float64(y))
-			screen.DrawImage(img, op)
+		y := g.Screen.Height - totalLines*lineHeight
+		for _, line := range g.LinearBuffer {
+			prefix := "- "
+			if line.IsInput {
+				prefix = "> "
+			}
+			for _, wrappedLine := range line.Content {
+				img := ebiten.NewImage(g.Screen.Width, lineHeight)
+				img.Fill(color.Black)
+				text.Draw(img, prefix+wrappedLine, TextFace, &text.DrawOptions{})
 
-			y += lineHeight
-			prefix = "  "
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Translate(0, float64(y))
+				screen.DrawImage(img, op)
+
+				y += lineHeight
+				prefix = "  "
+			}
 		}
 	}
 }
@@ -198,6 +201,7 @@ func main() {
 		CurrentTab:   1,
 		NavbarColor:  color.RGBA{0x7F, 0x11, 0xE0, 0xff}, // purple-ish
 		NavbarHeight: 10,
+		CliEnabled:   true,
 	}
 
 	var lineBuffer = make([]*ebiten.Image, 1)
