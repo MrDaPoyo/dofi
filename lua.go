@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hajimehoshi/ebiten/v2"
+	
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -47,4 +49,10 @@ func (g *Game) setupLuaAPI() {
 		g.AppendLine(strings.Join(parts, " "), false)
 		return 0
 	}))
+}
+
+func (g *Game) ClearLines() {
+	g.LinearBuffer = []LinearBuffer{}
+	g.Input.CurrentInputString = ""
+	g.Input.Keys = []ebiten.Key{}
 }

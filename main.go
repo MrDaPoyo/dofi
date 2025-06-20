@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image/color"
 	"log"
+	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -27,6 +28,7 @@ type ScreenSpecs = struct {
 	UpscalingFactor int
 	Font            string
 	FontSize        int
+	FontWidth       int
 	Buffer          [128][128]color.RGBA
 }
 
@@ -39,7 +41,7 @@ type Navbar = struct {
 
 type LinearBuffer = struct {
 	Image   *ebiten.Image
-	Content string
+	Content []string
 	IsInput bool
 }
 
@@ -102,24 +104,37 @@ func (g *Game) Update() error {
 	return nil
 }
 
+func (g *Game) wrapText(value string) []string {
+	maxChars := int(math.Round(float64(g.Screen.Width)/float64(g.Screen.FontWidth))) - g.Screen.FontWidth*2 - g.Screen.FontWidth/2
+	var lines []string
+	for len(value) > maxChars {
+		lines = append(lines, value[:maxChars])
+		value = value[maxChars:]
+	}
+	lines = append(lines, value)
+	return lines
+}
+
 func (g *Game) AppendLine(value string, input bool) {
-	var line = LinearBuffer{
-		Image:   ebiten.NewImage(g.Screen.Width, g.Screen.FontSize+1),
-		Content: value,
+	wrapped := g.wrapText(value)
+	var buffer = LinearBuffer{
+		Image:   ebiten.NewImage(g.Screen.Width, g.Screen.FontSize*len(wrapped)+1),
+		Content: wrapped,
 		IsInput: input,
 	}
-	g.LinearBuffer = append(g.LinearBuffer, line)
-	if len(g.LinearBuffer) > (g.Screen.Height/g.Screen.FontSize - 4) {
-		g.LinearBuffer = g.LinearBuffer[1:] // slice and push older lines upwards
+	g.LinearBuffer = append(g.LinearBuffer, buffer)
+	var maxLines = g.Screen.Height / g.Screen.FontSize
+	if len(g.LinearBuffer) > maxLines {
+		g.LinearBuffer = g.LinearBuffer[len(g.LinearBuffer)-maxLines:]
 	}
 }
 
 func (g *Game) ModifyLine(index int, value string) {
-	g.LinearBuffer[index].Content = value
-}
-
-func (g *Game) ClearLines() {
-	g.LinearBuffer = []LinearBuffer{}
+	wrapped := g.wrapText(value)
+	if len(wrapped) > 0 {
+		g.LinearBuffer[index].Content = wrapped
+	}
+	g.LinearBuffer[index].Image = ebiten.NewImage(g.Screen.Width, g.Screen.FontSize*len(wrapped)+1)
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -130,18 +145,26 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// screen.DrawImage(NavbarBackground, op)
 
 	screen.Clear()
-	for index := range g.LinearBuffer {
-		var image = g.LinearBuffer[index]
-		// h := image.Image.Bounds().Dy()
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(0, float64(index*g.Screen.FontSize+index+1))
-		image.Image.Fill(color.Black)
-		if image.IsInput {
-			text.Draw(image.Image, "> "+image.Content, TextFace, &text.DrawOptions{})
-		} else {
-			text.Draw(image.Image, "- "+image.Content, TextFace, &text.DrawOptions{})
+
+	y := 0 // global vertical position
+	for _, line := range g.LinearBuffer {
+		prefix := "- "
+		if line.IsInput {
+			prefix = "> "
 		}
-		screen.DrawImage(image.Image, op)
+		for _, wrappedLine := range line.Content {
+			img := ebiten.NewImage(g.Screen.Width, g.Screen.FontSize+1)
+			img.Fill(color.Black)
+
+			text.Draw(img, prefix+wrappedLine, TextFace, &text.DrawOptions{})
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(0, float64(y))
+			screen.DrawImage(img, op)
+
+			y += g.Screen.FontSize + 1
+			prefix = "  " // indent
+		}
 	}
 }
 
@@ -156,6 +179,7 @@ func main() {
 		UpscalingFactor: 4,
 		Font:            "resources/cg-pixel-4x5-mono.otf",
 		FontSize:        5,
+		FontWidth:       4,
 	}
 
 	var navbar = Navbar{
