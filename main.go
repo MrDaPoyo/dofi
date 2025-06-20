@@ -40,7 +40,6 @@ type Navbar = struct {
 }
 
 type LinearBuffer = struct {
-	Image   *ebiten.Image
 	Content []string
 	IsInput bool
 }
@@ -139,7 +138,6 @@ func (g *Game) AppendLine(value string, input bool) {
 	}
 
 	g.LinearBuffer = append(g.LinearBuffer, LinearBuffer{
-		Image:   ebiten.NewImage(g.Screen.Width, newLineHeight),
 		Content: wrapped,
 		IsInput: input,
 	})
@@ -148,7 +146,6 @@ func (g *Game) AppendLine(value string, input bool) {
 func (g *Game) ModifyLine(index int, value string) {
 	wrapped := g.wrapText(value)
 	lineHeight := g.Screen.FontSize + 1
-	newLineHeight := lineHeight * len(wrapped)
 	
 	// remove lines from top if there isn't enough space
 	for {
@@ -170,7 +167,6 @@ func (g *Game) ModifyLine(index int, value string) {
 	
 	if len(wrapped) > 0 && index < len(g.LinearBuffer) {
 		g.LinearBuffer[index].Content = wrapped
-		g.LinearBuffer[index].Image = ebiten.NewImage(g.Screen.Width, newLineHeight)
 	}
 }
 
