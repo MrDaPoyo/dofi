@@ -136,19 +136,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	bufferImg := ebiten.NewImage(len(g.Screen.Buffer[0]), len(g.Screen.Buffer))
-	
+
 	pixels := make([]byte, len(g.Screen.Buffer)*len(g.Screen.Buffer[0])*4)
 	for y := 0; y < len(g.Screen.Buffer); y++ {
 		for x := 0; x < len(g.Screen.Buffer[y]); x++ {
 			pixel := g.Screen.Buffer[y][x]
-			idx := (y*len(g.Screen.Buffer[0])+x)*4
+			idx := (y*len(g.Screen.Buffer[0]) + x) * 4
 			pixels[idx] = pixel.R
 			pixels[idx+1] = pixel.G
 			pixels[idx+2] = pixel.B
 			pixels[idx+3] = pixel.A
 		}
 	}
-	
+
 	bufferImg.WritePixels(pixels)
 	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
 
