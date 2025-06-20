@@ -59,6 +59,11 @@ type LinearBuffer = struct {
 type Input = struct {
 	Keys               []ebiten.Key
 	CurrentInputString string
+	Mouse              *ebiten.Image
+	MouseX             int
+	MouseY             int
+	MouseSkinX         string
+	IsMouseDown        bool
 }
 
 var (
@@ -92,6 +97,11 @@ func (g *Game) Update() error {
 		}); err != nil {
 			g.AppendLine("Lua error in _update: "+err.Error(), false)
 		}
+	}
+
+	if !g.Navbar.CliEnabled {
+		g.Input.MouseX, g.Input.MouseY = ebiten.CursorPosition()
+		g.Input.IsMouseDown = ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	}
 
 	var inputChars []rune
@@ -207,13 +217,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		if enabledTabs > 0 {
 			totalTabWidth += (enabledTabs - 1) * 2 // spacing between tabs
 		}
-		
+
 		xPosition := g.Screen.Width - totalTabWidth - 1
 		for _, tab := range g.Navbar.Tabs {
 			if !tab.Enabled {
 				continue
 			}
-			
+
 			iconWidth := tab.Icon.Bounds().Dx() + 2
 			iconHeight := tab.Icon.Bounds().Dy() + 2
 
@@ -227,9 +237,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			tabOp := &ebiten.DrawImageOptions{}
 			tabOp.GeoM.Translate(float64(xPosition), float64((navbarHeight-iconHeight)/2))
 			screen.DrawImage(tabImg, tabOp)
-			
+
 			xPosition += iconWidth + 2
 		}
+		mouseOp := &ebiten.DrawImageOptions{}
+		mouseOp.GeoM.Translate(float64(g.Input.MouseX) - 1, float64(g.Input.MouseY) - 1)
+		screen.DrawImage(g.Input.Mouse, mouseOp)
 	}
 }
 
@@ -283,14 +296,25 @@ func main() {
 		LuaVM:  lua.NewState(),
 		Input: Input{
 			CurrentInputString: "",
+			MouseX:             0,
+			MouseY:             0,
+			MouseSkinX:        "resources/icons/mouse.png",
+			IsMouseDown: false,
 		},
 	}
 
+	ebiten.SetCursorMode(ebiten.CursorModeHidden)
+	var mouse, _, err = ebitenutil.NewImageFromFile(game.Input.MouseSkinX)
+	if err != nil {
+		log.Fatal("Error loading mouse skin:", err)
+	}
+
+	game.Input.Mouse = mouse	
 	game.setupLuaAPI()
 	defer game.LuaVM.Close()
 	game.AppendLine("", true)
 
-	var font, err = os.ReadFile(screen.Font)
+	font, err := os.ReadFile(screen.Font)
 	if err != nil {
 		log.Fatal(err)
 	}
