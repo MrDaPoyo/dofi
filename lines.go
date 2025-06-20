@@ -2,12 +2,23 @@ package main
 
 import (
 	"math"
+	"strings"
 )
 
 func (g *Game) wrapText(value string) []string {
 	maxChars := int(math.Round(float64(g.Screen.Width)/float64(g.Screen.FontWidth))) - g.Screen.FontWidth*2 - g.Screen.FontWidth/2
 	var lines []string
-	for len(value) > maxChars {
+	for len(value) > 0 {
+		if newlineIndex := strings.Index(value, "\n"); newlineIndex != -1 && newlineIndex < maxChars {
+			lines = append(lines, value[:newlineIndex])
+			value = value[newlineIndex+1:]
+			continue
+		}
+		
+		if len(value) <= maxChars {
+			break
+		}
+		
 		lines = append(lines, value[:maxChars])
 		value = value[maxChars:]
 	}
@@ -16,7 +27,7 @@ func (g *Game) wrapText(value string) []string {
 }
 
 func (g *Game) AppendLine(value string, input bool) {
-	wrapped := g.wrapText(value)
+	wrapped := g.wrapText(strings.Replace(value, "\t", "", -1))
 
 	g.LinearBuffer = append(g.LinearBuffer, LinearBuffer{
 		Content: wrapped,
