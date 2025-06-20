@@ -5,8 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -33,9 +31,7 @@ func (g *Game) setupLuaAPI() {
 		green := uint8(L.CheckNumber(4))
 		b := uint8(L.CheckNumber(5))
 
-		if x >= 0 && x < 128 && y >= 0 && y < 128 {
-			g.Screen.Buffer[x][y] = color.RGBA{r, green, b, 255}
-		}
+		g.DrawPixel(x, y, color.RGBA{r, green, b, 255})
 		return 0
 	}))
 
@@ -54,5 +50,10 @@ func (g *Game) setupLuaAPI() {
 func (g *Game) ClearLines() {
 	g.LinearBuffer = []LinearBuffer{}
 	g.Input.CurrentInputString = ""
-	g.Input.Keys = []ebiten.Key{}
+}
+
+func (g *Game) DrawPixel(x, y int, c color.RGBA) {
+	if x >= 0 && x < 128 && y >= 0 && y < 128 {
+		g.Screen.Buffer[x][y] = c
+	}
 }
