@@ -373,8 +373,6 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 	screen.Clear()
 	screen.Fill(g.Screen.CliBgColor)
 
-	log.Println("Cursor Column:", editor.Column, "Line:", editor.Line)
-
 	lineHeight := g.Screen.FontSize + 2
 	availableHeight := g.Screen.Height - navbarHeight
 	maxVisibleLines := availableHeight / lineHeight
