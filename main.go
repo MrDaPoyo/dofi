@@ -35,7 +35,9 @@ type ScreenSpecs = struct {
 	Buffer          [128][128]color.RGBA
 	ImageBuffer     []*ebiten.Image
 	BgColor         color.RGBA
+	BgTextColor     color.RGBA
 	CliBgColor      color.RGBA
+	CliColor        color.RGBA
 }
 
 type Navbar = struct {
@@ -81,9 +83,9 @@ type CodeEditor struct {
 }
 
 var (
-	TextFaceSource *text.GoTextFaceSource
-	TextFace       text.Face
-	CodeEditors    = make(map[int]*CodeEditor) // map of file ids to CodeEditor instances
+	TextFaceSource  *text.GoTextFaceSource
+	TextFace        text.Face
+	CodeEditors     = make(map[int]*CodeEditor) // map of file ids to CodeEditor instances
 	CodeEditorIndex = 0
 )
 
@@ -238,7 +240,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 			for _, wrappedLine := range line.Content {
 				img := ebiten.NewImage(g.Screen.Width, lineHeight)
-				text.Draw(img, prefix+wrappedLine, TextFace, &text.DrawOptions{})
+				textOP := &text.DrawOptions{}
+				textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
+				text.Draw(img, prefix+wrappedLine, TextFace, textOP)
 
 				op := &ebiten.DrawImageOptions{}
 				op.GeoM.Translate(0, float64(y))
@@ -292,7 +296,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 		var contentImage = ebiten.NewImage(g.Screen.Width, g.Screen.Height-navbarHeight)
 		contentImage.Fill(g.Screen.BgColor)
-		
+
 		if g.Navbar.Tabs[g.Navbar.CurrentTab].Name == "code" {
 			if editor, exists := CodeEditors[g.Navbar.CurrentTab]; exists {
 				g.CodeEditor(contentImage, editor, navbarHeight)
@@ -325,7 +329,7 @@ func (g *Game) DrawMouse(screen *ebiten.Image) {
 }
 
 func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight int) *Game {
-	screen.Fill(g.Screen.BgColor)
+	screen.Fill(g.Screen.CliBgColor)
 
 	lineHeight := g.Screen.FontSize + 1
 	availableHeight := g.Screen.Height - navbarHeight
@@ -349,7 +353,7 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 		}
 
 		maxCharsPerLine := g.Screen.Width / g.Screen.FontWidth
-		
+
 		wrappedLines := []string{}
 		for len(content) > maxCharsPerLine {
 			wrappedLines = append(wrappedLines, content[:maxCharsPerLine])
@@ -362,7 +366,9 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 		for _, wrappedLine := range wrappedLines {
 			if y >= navbarHeight && y < g.Screen.Height {
 				img := ebiten.NewImage(g.Screen.Width, lineHeight)
-				text.Draw(img, wrappedLine, TextFace, &text.DrawOptions{})
+				textOP := &text.DrawOptions{}
+				textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
+				text.Draw(img, wrappedLine, TextFace, textOP)
 
 				op := &ebiten.DrawImageOptions{}
 				op.GeoM.Translate(0, float64(y))
@@ -389,6 +395,8 @@ func MakeGame() *Game {
 		FontWidth:       4,
 		BgColor:         color.RGBA{255, 169, 133, 255},
 		CliBgColor:      color.RGBA{70, 82, 113, 255},
+		CliColor:        color.RGBA{255, 255, 255, 255},
+		BgTextColor:     color.RGBA{0, 86, 122, 255},
 	}
 
 	var navbar = Navbar{
