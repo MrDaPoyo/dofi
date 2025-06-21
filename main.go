@@ -150,6 +150,7 @@ func (g *Game) HandleCommand(command string) {
 		} else {
 			g.AppendLine("Example not found: "+exampleName, false)
 		}
+		g.AppendLine("", true)
 		return
 	}
 }
@@ -497,6 +498,7 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 
 	// only draw the cursor if it's on the screen
 	if cursorVisualLine < maxVisibleLines && cursorVisualLine >= 0 {
+
 		cursorX := cursorVisualColumn * (g.Screen.FontWidth + 1)
 		if cursorX <= g.Screen.Width {
 			cursorImg := ebiten.NewImage(1, lineHeight-2)
@@ -615,6 +617,7 @@ func main() {
 
 	ebiten.SetWindowSize(game.Screen.Width*game.Screen.UpscalingFactor, game.Screen.Height*game.Screen.UpscalingFactor)
 	ebiten.SetWindowTitle("Dofi! :3")
+	ebiten.SetTPS(60)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
