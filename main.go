@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -176,6 +175,15 @@ func (g *Game) Update() error {
 					line := editor.Content[editor.Line]
 					editor.Content[editor.Line] = line[:editor.Column-1] + line[editor.Column:]
 					editor.Column--
+				} else if editor.Line > 0 {
+					prevLine := editor.Content[editor.Line-1]
+					editor.Column = len(prevLine)
+					if editor.Line < len(editor.Content)-1 {
+						editor.Content = append(editor.Content[:editor.Line], editor.Content[editor.Line+1:]...)
+					} else {
+						editor.Content = editor.Content[:editor.Line]
+					}
+					editor.Line--
 				}
 			}
 		}
@@ -331,7 +339,7 @@ func (g *Game) DrawMouse(screen *ebiten.Image) {
 func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight int) *Game {
 	screen.Fill(g.Screen.CliBgColor)
 
-	lineHeight := g.Screen.FontSize + 1
+	lineHeight := g.Screen.FontSize + 2
 	availableHeight := g.Screen.Height - navbarHeight
 	maxVisibleLines := availableHeight / lineHeight
 
@@ -340,49 +348,28 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 		startLine = len(g.LinearBuffer) - maxVisibleLines
 	}
 
+	var y = 0
+
 	for i := startLine; i < len(CodeEditors[CodeEditorIndex].Content) && i < startLine+maxVisibleLines; i++ {
 		line := CodeEditors[CodeEditorIndex].Content[i]
-		lineNumber := i + 1
-		y := navbarHeight + (i-startLine)*lineHeight
-
-		lineNumberStr := fmt.Sprintf("%d", lineNumber)
-		padding := ""
-		if len(lineNumberStr) == 1 {
-			padding = "  "
-		} else if len(lineNumberStr) == 2 {
-			padding = " "
-		}
-
-		prefix := fmt.Sprintf("%s%d ", padding, lineNumber)
-		content := prefix + line
-
-		if i == len(CodeEditors[CodeEditorIndex].Content)-1 {
-			content = prefix + line + g.Input.CurrentInputString
-		}
-
-		maxCharsPerLine := g.Screen.Width / g.Screen.FontWidth
-
-		wrappedLines := []string{}
-		for len(content) > maxCharsPerLine {
-			wrappedLines = append(wrappedLines, content[:maxCharsPerLine])
-			content = "    " + content[maxCharsPerLine:]
-		}
-		if len(content) > 0 {
-			wrappedLines = append(wrappedLines, content)
-		}
-
+		wrappedLines := g.wrapText(line, g.Screen.Width)
 		for _, wrappedLine := range wrappedLines {
-			if y >= navbarHeight && y < g.Screen.Height {
-				img := ebiten.NewImage(g.Screen.Width, lineHeight)
-				textOP := &text.DrawOptions{}
-				textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
-				text.Draw(img, wrappedLine, TextFace, textOP)
+			img := ebiten.NewImage(g.Screen.Width, lineHeight)
 
-				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Translate(0, float64(y))
-				screen.DrawImage(img, op)
+			if i % 2 == 0 {
+				img.Fill(color.RGBA{g.Screen.CliBgColor.R - 10, g.Screen.CliBgColor.G - 10, g.Screen.CliBgColor.B - 10, g.Screen.CliBgColor.A})
+			} else {
+				img.Fill(color.RGBA{g.Screen.CliBgColor.R + 20, g.Screen.CliBgColor.G + 20, g.Screen.CliBgColor.B + 20, g.Screen.CliBgColor.A})
 			}
-			y += lineHeight
+			textOP := &text.DrawOptions{}
+			textOP.GeoM.Translate(0, 1)
+			textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
+			text.Draw(img, wrappedLine, TextFace, textOP)
+
+			screenOP := &ebiten.DrawImageOptions{}
+			screenOP.GeoM.Translate(0, float64(y * lineHeight))
+			screen.DrawImage(img, screenOP)
+			y++
 		}
 	}
 

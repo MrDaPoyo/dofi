@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-func (g *Game) wrapText(value string) []string {
-	maxChars := int(math.Round(float64(g.Screen.Width)/float64(g.Screen.FontWidth))) - g.Screen.FontWidth*2 - g.Screen.FontWidth/2
+func (g *Game) wrapText(value string, width int) []string {
+	maxChars := int(math.Round(float64(width)/float64(g.Screen.FontWidth))) - g.Screen.FontWidth*2 - g.Screen.FontWidth/2
 	var lines []string
 	for len(value) > 0 {
 		if newlineIndex := strings.Index(value, "\n"); newlineIndex != -1 && newlineIndex < maxChars {
@@ -27,7 +27,7 @@ func (g *Game) wrapText(value string) []string {
 }
 
 func (g *Game) AppendLine(value string, input bool) {
-	wrapped := g.wrapText(strings.Replace(value, "\t", "", -1))
+	wrapped := g.wrapText(strings.Replace(value, "\t", "", -1), g.Screen.Width)
 
 	g.LinearBuffer = append(g.LinearBuffer, LinearBuffer{
 		Content: wrapped,
@@ -38,7 +38,7 @@ func (g *Game) AppendLine(value string, input bool) {
 }
 
 func (g *Game) ModifyLine(index int, value string) {
-	wrapped := g.wrapText(value)
+	wrapped := g.wrapText(value, g.Screen.Width)
 	
 	if len(wrapped) > 0 && index < len(g.LinearBuffer) {
 		g.LinearBuffer[index].Content = wrapped
