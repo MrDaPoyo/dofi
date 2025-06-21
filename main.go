@@ -201,6 +201,32 @@ func (g *Game) Update() error {
 		g.ModifyLine(len(g.LinearBuffer)-1, g.Input.CurrentInputString)
 	}
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+		if !g.Navbar.CliEnabled {
+			if editor, exists := CodeEditors[CodeEditorIndex]; exists {
+				if editor.Column > 0 {
+					editor.Column--
+				} else if editor.Line > 0 {
+					editor.Line--
+					editor.Column = len(editor.Content[editor.Line])
+				}
+			}
+		}
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+		if !g.Navbar.CliEnabled {
+			if editor, exists := CodeEditors[CodeEditorIndex]; exists {
+				if editor.Column < len(editor.Content[editor.Line]) {
+					editor.Column++
+				} else if editor.Line < len(editor.Content)-1 {
+					editor.Line++
+					editor.Column = 0
+				}
+			}
+		}
+	}
+
 	CursorBlinkFrames++
 	if CursorBlinkFrames > 60 {
 		CursorBlinkFrames = 0
@@ -346,6 +372,8 @@ func (g *Game) DrawMouse(screen *ebiten.Image) {
 func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight int) *Game {
 	screen.Clear()
 	screen.Fill(g.Screen.CliBgColor)
+
+	log.Println("Cursor Column:", editor.Column, "Line:", editor.Line)
 
 	lineHeight := g.Screen.FontSize + 2
 	availableHeight := g.Screen.Height - navbarHeight
