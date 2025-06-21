@@ -345,7 +345,15 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 		lineNumber := i + 1
 		y := navbarHeight + (i-startLine)*lineHeight
 
-		prefix := fmt.Sprintf(" %d ", lineNumber)
+		lineNumberStr := fmt.Sprintf("%d", lineNumber)
+		padding := ""
+		if len(lineNumberStr) == 1 {
+			padding = "  "
+		} else if len(lineNumberStr) == 2 {
+			padding = " "
+		}
+
+		prefix := fmt.Sprintf("%s%d ", padding, lineNumber)
 		content := prefix + line
 
 		if i == len(CodeEditors[CodeEditorIndex].Content)-1 {
