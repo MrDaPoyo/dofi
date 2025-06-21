@@ -106,7 +106,7 @@ if (5 < 10) {
 		{EOF, ""},
 	}
 
-	l := New(input)
+	l := NewLexer(input)
 
 	for i, tt := range tests {
 		tok := l.NextToken()
@@ -141,7 +141,7 @@ func TestLexerBasicTokens(t *testing.T) {
 		{EOF, ""},
 	}
 
-	l := New(input)
+	l := NewLexer(input)
 
 	for i, tt := range tests {
 		tok := l.NextToken()
@@ -171,7 +171,7 @@ func TestLexerNumbers(t *testing.T) {
 		{EOF, ""},
 	}
 
-	l := New(input)
+	l := NewLexer(input)
 
 	for i, tt := range tests {
 		tok := l.NextToken()
