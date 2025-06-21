@@ -68,7 +68,9 @@ func (g *Game) setupLuaAPI() {
 
 func (g *Game) RunLuaScript(script string) error {
 	g.ScriptRunning = true
-
+	defer func() {
+		g.ScriptRunning = false
+	}()
 	err := g.LuaVM.DoString(script)
 	return err
 }

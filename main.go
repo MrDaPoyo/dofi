@@ -156,6 +156,12 @@ func (g *Game) HandleCommand(command string) {
 
 func (g *Game) Update() (err error) {
 	if g.ScriptRunning {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+			g.ScriptRunning = false
+			g.AppendLine("Script stopped.", false)
+			g.AppendLine("", true)
+			return nil
+		}
 		if updateFn := g.LuaVM.GetGlobal("_update"); updateFn != lua.LNil {
 			if err := g.LuaVM.CallByParam(lua.P{
 				Fn:      updateFn,
