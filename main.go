@@ -2,10 +2,11 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
+	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,6 +16,23 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 )
+
+//go:embed resources/cg-pixel-4x5-mono.otf
+var fontBytes []byte
+//go:embed resources/icons/code.png
+var codeIcon []byte
+//go:embed resources/icons/brush.png
+var brushIcon []byte
+//go:embed resources/icons/tile.png
+var tileIcon []byte
+//go:embed resources/icons/play.png
+var playIcon []byte
+//go:embed resources/icons/music.png
+var musicIcon []byte
+//go:embed resources/icons/mouse.png
+var mouseIcon []byte
+//go:embed resources/icons/mouse_shadow.png
+var mouseShadowIcon []byte
 
 type Game struct {
 	Screen       ScreenSpecs
@@ -107,7 +125,7 @@ func (g *Game) HandleCommand(command string) {
 	g.AppendLine(g.Input.CurrentInputString, true)
 }
 
-func (g *Game) Update() error {
+func (g *Game) Update() (err error) {
 	if updateFn := g.LuaVM.GetGlobal("_update"); updateFn != lua.LNil {
 		if err := g.LuaVM.CallByParam(lua.P{
 			Fn:      updateFn,
@@ -231,6 +249,13 @@ func (g *Game) Update() error {
 	if CursorBlinkFrames > 60 {
 		CursorBlinkFrames = 0
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("recovered: %v", r)
+			log.Println(err)
+		}
+	}()
 
 	return nil
 }
@@ -483,17 +508,21 @@ func MakeGame() *Game {
 
 	var lineBuffer = make([]*ebiten.Image, 1)
 	lineBuffer[0] = ebiten.NewImage(screen.Width, 128)
+	
+	iconMap := map[string][]byte{
+		"resources/icons/code.png":  codeIcon,
+		"resources/icons/brush.png": brushIcon,
+		"resources/icons/tile.png":  tileIcon,
+		"resources/icons/play.png":  playIcon,
+		"resources/icons/music.png": musicIcon,
+	}
 
-	// load every icon
 	for i := range navbar.Tabs {
-		iconData, err := os.ReadFile(navbar.Tabs[i].IconPath)
-		if err != nil {
-			log.Fatal("Error reading icon file:", err)
-		}
-		navbar.Tabs[i].Icon, _, err = ebitenutil.NewImageFromReader(bytes.NewReader(iconData))
+		iconData, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(iconMap[navbar.Tabs[i].IconPath]))
 		if err != nil {
 			log.Fatal("Error loading icon:", err)
 		}
+		navbar.Tabs[i].Icon = iconData
 	}
 
 	var game = Game{
@@ -511,11 +540,12 @@ func MakeGame() *Game {
 	}
 
 	ebiten.SetCursorMode(ebiten.CursorModeHidden)
-	var mouse, _, err = ebitenutil.NewImageFromFile(game.Input.MouseSkin)
+	
+	mouse, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(mouseIcon))
 	if err != nil {
 		log.Fatal("Error loading mouse skin:", err)
 	}
-	mouseShadow, _, err := ebitenutil.NewImageFromFile(game.Input.MouseShadowPath)
+	mouseShadow, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(mouseShadowIcon))
 	if err != nil {
 		log.Fatal("Error loading mouse shadow:", err)
 	}
@@ -525,11 +555,7 @@ func MakeGame() *Game {
 	game.setupLuaAPI()
 	game.AppendLine("", true)
 
-	font, err := os.ReadFile(screen.Font)
-	if err != nil {
-		log.Fatal(err)
-	}
-	TextFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(font))
+	TextFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(fontBytes))
 	if err != nil {
 		log.Fatal(err)
 	}
