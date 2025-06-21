@@ -336,33 +336,38 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 		startLine = len(g.LinearBuffer) - maxVisibleLines
 	}
 
-	y := navbarHeight
-	for i := startLine; i < len(g.LinearBuffer) && i < startLine+maxVisibleLines; i++ {
-		line := g.LinearBuffer[i]
+	for i := startLine; i < len(CodeEditors[CodeEditorIndex].Content) && i < startLine+maxVisibleLines; i++ {
+		line := CodeEditors[CodeEditorIndex].Content[i]
 		lineNumber := i + 1
+		y := navbarHeight + (i-startLine)*lineHeight
 
-		for j, wrappedLine := range line.Content {
-			img := ebiten.NewImage(g.Screen.Width, lineHeight)
+		prefix := fmt.Sprintf("%3d ", lineNumber)
+		content := prefix + line
 
-			prefix := ""
-			if j == 0 {
-				prefix = fmt.Sprintf("%3d ", lineNumber)
-			} else {
-				prefix = "    "
+		if i == len(CodeEditors[CodeEditorIndex].Content)-1 {
+			content = prefix + line + g.Input.CurrentInputString
+		}
+
+		maxCharsPerLine := g.Screen.Width / g.Screen.FontWidth
+		
+		wrappedLines := []string{}
+		for len(content) > maxCharsPerLine {
+			wrappedLines = append(wrappedLines, content[:maxCharsPerLine])
+			content = "    " + content[maxCharsPerLine:]
+		}
+		if len(content) > 0 {
+			wrappedLines = append(wrappedLines, content)
+		}
+
+		for _, wrappedLine := range wrappedLines {
+			if y >= navbarHeight && y < g.Screen.Height {
+				img := ebiten.NewImage(g.Screen.Width, lineHeight)
+				text.Draw(img, wrappedLine, TextFace, &text.DrawOptions{})
+
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Translate(0, float64(y))
+				screen.DrawImage(img, op)
 			}
-
-			content := prefix + wrappedLine
-
-			if i == len(g.LinearBuffer)-1 && line.IsInput {
-				content = prefix + g.Input.CurrentInputString
-			}
-
-			text.Draw(img, content, TextFace, &text.DrawOptions{})
-
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(0, float64(y))
-			screen.DrawImage(img, op)
-
 			y += lineHeight
 		}
 	}
