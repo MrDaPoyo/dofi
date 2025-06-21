@@ -6,6 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -66,28 +67,10 @@ func (g *Game) setupLuaAPI() {
 }
 
 func (g *Game) RunLuaScript(script string) error {
-	return g.LuaVM.DoString(script)
-}
+	g.ScriptRunning = true
 
-func (g *Game) CallLuaFunction(name string) {
-	if fn := g.LuaVM.GetGlobal(name); fn != lua.LNil {
-		g.LuaVM.Push(fn)
-		g.LuaVM.Call(0, 0)
-	}
-}
-
-func (g *Game) UpdateLua() {
-	if fn := g.LuaVM.GetGlobal("_update"); fn != lua.LNil {
-		g.LuaVM.Push(fn)
-		g.LuaVM.Call(0, 0)
-	}
-}
-
-func (g *Game) DrawLua() {
-	if fn := g.LuaVM.GetGlobal("_draw"); fn != lua.LNil {
-		g.LuaVM.Push(fn)
-		g.LuaVM.Call(0, 0)
-	}
+	err := g.LuaVM.DoString(script)
+	return err
 }
 
 func (g *Game) ClearLines() {
@@ -97,8 +80,13 @@ func (g *Game) ClearLines() {
 
 func (g *Game) DrawPixel(x, y int, c color.RGBA) {
 	if x >= 0 && x < 128 && y >= 0 && y < 128 {
-		g.Screen.Buffer[x][y] = c
+		g.Screen.Buffer[y][x] = c
 	}
+	if x < 0 || x >= 128 || y < 0 || y >= 128 {
+		g.AppendLine("Error: Pixel out of bounds", true)
+		return
+	}
+	g.Screen.Buffer[y][x] = c
 }
 
 func (g *Game) DrawText(x, y int, value string, c color.RGBA) {
@@ -107,4 +95,13 @@ func (g *Game) DrawText(x, y int, value string, c color.RGBA) {
 	op.GeoM.Translate(float64(x), float64(y))
 	image := ebiten.NewImage(g.Screen.Width, g.Screen.Height)
 	text.Draw(image, value, TextFace, op)
+	buffer := make([]byte, 4*g.Screen.Width*g.Screen.Height)
+	image.ReadPixels(buffer)
+	for i := 0; i < len(buffer); i += 4 {
+		r := buffer[i]
+		green := buffer[i+1]
+		b := buffer[i+2]
+		a := buffer[i+3]
+		g.Screen.Buffer[y+i/4/128][x+i/4%128] = color.RGBA{r, green, b, a}
+	}
 }

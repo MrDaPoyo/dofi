@@ -33,7 +33,7 @@ func (g *Game) AppendLine(value string, input bool) {
 		Content: wrapped,
 		IsInput: input,
 	})
-
+	
 	g.TruncateLines(g.Screen.Height / g.Screen.FontSize * 2)
 }
 
