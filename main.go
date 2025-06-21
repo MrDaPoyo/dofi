@@ -82,10 +82,12 @@ type CodeEditor struct {
 }
 
 var (
-	TextFaceSource  *text.GoTextFaceSource
-	TextFace        text.Face
-	CodeEditors     = make(map[int]*CodeEditor) // map of file ids to CodeEditor instances
-	CodeEditorIndex = 0
+	TextFaceSource    *text.GoTextFaceSource
+	TextFace          text.Face
+	CodeEditors       = make(map[int]*CodeEditor) // map of file ids to CodeEditor instances
+	CodeEditorIndex   = 0
+	CursorBlinkFrames = 0
+	CursorBlinkRate   = 30
 )
 
 func (g *Game) HandleCommand(command string) {
@@ -197,6 +199,11 @@ func (g *Game) Update() error {
 	// if input and CliEnabled, change the contents
 	if len(g.LinearBuffer) > 0 && g.Navbar.CliEnabled {
 		g.ModifyLine(len(g.LinearBuffer)-1, g.Input.CurrentInputString)
+	}
+
+	CursorBlinkFrames++
+	if CursorBlinkFrames > 60 {
+		CursorBlinkFrames = 0
 	}
 
 	return nil
@@ -337,6 +344,7 @@ func (g *Game) DrawMouse(screen *ebiten.Image) {
 }
 
 func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight int) *Game {
+	screen.Clear()
 	screen.Fill(g.Screen.CliBgColor)
 
 	lineHeight := g.Screen.FontSize + 2
@@ -356,7 +364,7 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 		for _, wrappedLine := range wrappedLines {
 			img := ebiten.NewImage(g.Screen.Width, lineHeight)
 
-			if i % 2 == 0 {
+			if i%2 == 0 {
 				img.Fill(color.RGBA{g.Screen.CliBgColor.R - 10, g.Screen.CliBgColor.G - 10, g.Screen.CliBgColor.B - 10, g.Screen.CliBgColor.A})
 			} else {
 				img.Fill(color.RGBA{g.Screen.CliBgColor.R + 20, g.Screen.CliBgColor.G + 20, g.Screen.CliBgColor.B + 20, g.Screen.CliBgColor.A})
@@ -367,9 +375,47 @@ func (g *Game) CodeEditor(screen *ebiten.Image, editor *CodeEditor, navbarHeight
 			text.Draw(img, wrappedLine, TextFace, textOP)
 
 			screenOP := &ebiten.DrawImageOptions{}
-			screenOP.GeoM.Translate(0, float64(y * lineHeight))
+			screenOP.GeoM.Translate(0, float64(y*lineHeight))
 			screen.DrawImage(img, screenOP)
 			y++
+		}
+	}
+
+	cursorVisualLine := 0
+	cursorVisualColumn := editor.Column
+	
+	for i := startLine; i < editor.Line && i < len(editor.Content); i++ {
+		wrappedLines := g.wrapText(editor.Content[i], g.Screen.Width)
+		cursorVisualLine += len(wrappedLines)
+	}
+	
+	if editor.Line < len(editor.Content) {
+		currentLineWrapped := g.wrapText(editor.Content[editor.Line], g.Screen.Width)
+		charsProcessed := 0
+		for wrapIndex, wrappedSegment := range currentLineWrapped {
+			if editor.Column <= charsProcessed + len(wrappedSegment) {
+				cursorVisualLine += wrapIndex
+				cursorVisualColumn = editor.Column - charsProcessed
+				break
+			}
+			charsProcessed += len(wrappedSegment)
+		}
+	}
+	
+	// only draw the cursor if it's on the screen
+	if cursorVisualLine < maxVisibleLines && cursorVisualLine >= 0 {
+		cursorX := cursorVisualColumn * (g.Screen.FontWidth + 1)
+		if cursorX <= g.Screen.Width {
+			cursorImg := ebiten.NewImage(1, lineHeight-2)
+			cursorImg.Fill(color.White)
+			cursorOP := &ebiten.DrawImageOptions{}
+			if CursorBlinkFrames < CursorBlinkRate {
+				cursorOP.ColorScale.ScaleWithColor(color.White)
+			} else {
+				cursorOP.ColorScale.ScaleWithColor(color.RGBA{180, 180, 180, 255})
+			}
+			cursorOP.GeoM.Translate(float64(cursorX), float64(cursorVisualLine*lineHeight + 1))
+			screen.DrawImage(cursorImg, cursorOP)
 		}
 	}
 
