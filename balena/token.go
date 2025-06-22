@@ -33,6 +33,8 @@ const (
 	SLASH    = "/"
 	LT       = "<"
 	GT       = ">"
+
+	STRING = "STRING"
 )
 
 type TokenType string

@@ -20,6 +20,20 @@ func Eval(node Node, env *Environment) Object {
 	// Statements
 	case *Program:
 		return evalProgram(node, env)
+	case *FunctionLiteral:
+		params := node.Parameters
+		body := node.Body
+		return &Function{Parameters: params, Env: env, Body: body}
+	case *CallExpression:
+		function := Eval(node.Function, env)
+		if isError(function) {
+			return function
+		}
+		args := evalExpressions(node.Arguments, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+		return applyFunction(function, args)
 	case *LetStatement:
 		val := Eval(node.Value, env)
 		if isError(val) {
@@ -28,7 +42,6 @@ func Eval(node Node, env *Environment) Object {
 		env.Set(node.Name.Value, val)
 	case *ExpressionStatement:
 		return Eval(node.Expression, env)
-	// Expressions
 	case *IntegerLiteral:
 		return &ObjectInteger{Value: node.Value}
 	case *Boolean:
@@ -61,10 +74,37 @@ func Eval(node Node, env *Environment) Object {
 		return &ReturnValue{Value: val}
 	case *Identifier:
 		return evalIdentifier(node, env)
-
+	case *StringLiteral:
+		return &String{Value: node.Value}
 	}
 
 	return nil
+}
+
+func applyFunction(fn Object, args []Object) Object {
+	function, ok := fn.(*Function)
+	if !ok {
+		return newError("not a function: %s", fn.Type())
+	}
+	extendedEnv := extendFunctionEnv(function, args)
+	evaluated := Eval(function.Body, extendedEnv)
+	return unwrapReturnValue(evaluated)
+}
+func extendFunctionEnv(
+	fn *Function,
+	args []Object,
+) *Environment {
+	env := NewEnclosedEnvironment(fn.Env)
+	for paramIdx, param := range fn.Parameters {
+		env.Set(param.Value, args[paramIdx])
+	}
+	return env
+}
+func unwrapReturnValue(obj Object) Object {
+	if returnValue, ok := obj.(*ReturnValue); ok {
+		return returnValue.Value
+	}
+	return obj
 }
 
 func evalStatements(stmts []Statement, env *Environment) Object {
@@ -90,6 +130,21 @@ func evalIfExpression(ie *IfExpression, env *Environment) Object {
 	} else {
 		return EVAL_NULL
 	}
+}
+
+func evalExpressions(
+	exps []Expression,
+	env *Environment,
+) []Object {
+	var result []Object
+	for _, e := range exps {
+		evaluated := Eval(e, env)
+		if isError(evaluated) {
+			return []Object{evaluated}
+		}
+		result = append(result, evaluated)
+	}
+	return result
 }
 
 func evalIdentifier(
@@ -169,10 +224,26 @@ func evalInfixExpression(
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s",
 			left.Type(), operator, right.Type())
+	case left.Type() == STRING_OBJ && right.Type() == STRING_OBJ:
+		return evalStringInfixExpression(operator, left, right)
+
 	default:
 		return newError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
+}
+
+func evalStringInfixExpression(
+	operator string,
+	left, right Object,
+) Object {
+	if operator != "+" {
+		return newError("unknown operator: %s %s %s",
+			left.Type(), operator, right.Type())
+	}
+	leftVal := left.(*String).Value
+	rightVal := right.(*String).Value
+	return &String{Value: leftVal + rightVal}
 }
 
 func evalIntegerInfixExpression(
