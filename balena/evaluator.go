@@ -83,32 +83,30 @@ func Eval(node Node, env *Environment) Object {
 }
 
 func applyFunction(fn Object, args []Object) Object {
-	function, ok := fn.(*Function)
-	if !ok {
+	switch fn := fn.(type) {
+	case *Function:
+		if len(fn.Parameters) != len(args) {
+			return newError("wrong number of arguments. got=%d, want=%d",
+				len(args), len(fn.Parameters))
+		}
+		extendedEnv := extendFunctionEnv(fn, args)
+		evaluated := Eval(fn.Body, extendedEnv)
+		return unwrapReturnValue(evaluated)
+	case *Builtin:
+		return fn.Fn(args...)
+	default:
 		return newError("not a function: %s", fn.Type())
 	}
-	if len(args) > len(function.Parameters) {
-		return newError("too many function parameters: %d, expected %d", len(args)-1, len(function.Parameters)-1)
-	}
-	extendedEnv := extendFunctionEnv(function, args)
-	evaluated := Eval(function.Body, extendedEnv)
-	return unwrapReturnValue(evaluated)
 }
 
-func extendFunctionEnv(
-	fn *Function,
-	args []Object,
-) *Environment {
+func extendFunctionEnv(fn *Function, args []Object) *Environment {
 	env := NewEnclosedEnvironment(fn.Env)
 	for paramIdx, param := range fn.Parameters {
-		if paramIdx < len(args) {
-			env.Set(param.Value, args[paramIdx])
-		} else {
-			env.Set(param.Value, newError("missing function parameters: %s", param.Value))
-		}
+		env.Set(param.Value, args[paramIdx])
 	}
 	return env
 }
+
 
 func unwrapReturnValue(obj Object) Object {
 	if returnValue, ok := obj.(*ReturnValue); ok {
@@ -161,11 +159,13 @@ func evalIdentifier(
 	node *Identifier,
 	env *Environment,
 ) Object {
-	val, ok := env.Get(node.Value)
-	if !ok {
-		return newError("%s", "identifier not found: "+node.Value)
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
-	return val
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+	return newError("identifier not found: %s", node.Value)
 }
 
 func isTruthy(obj Object) bool {
