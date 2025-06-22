@@ -77,6 +77,22 @@ func Eval(node Node, env *Environment) Object {
 		return evalIdentifier(node, env)
 	case *StringLiteral:
 		return &String{Value: node.Value}
+	case *ArrayLiteral:
+		elements := evalExpressions(node.Elements, env)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+		return &Array{Elements: elements}
+	case *IndexExpression:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+		index := Eval(node.Index, env)
+		if isError(index) {
+			return index
+		}
+		return evalIndexExpression(left, index)
 	}
 
 	return nil
@@ -106,7 +122,6 @@ func extendFunctionEnv(fn *Function, args []Object) *Environment {
 	}
 	return env
 }
-
 
 func unwrapReturnValue(obj Object) Object {
 	if returnValue, ok := obj.(*ReturnValue); ok {
@@ -166,6 +181,25 @@ func evalIdentifier(
 		return builtin
 	}
 	return newError("identifier not found: %s", node.Value)
+}
+
+func evalIndexExpression(left, index Object) Object {
+	switch {
+	case left.Type() == ARRAY_OBJ && index.Type() == INTEGER_OBJ:
+		return evalArrayIndexExpression(left, index)
+	default:
+		return newError("index operator not supported: %s", left.Type())
+	}
+}
+
+func evalArrayIndexExpression(array, index Object) Object {
+	arrayObject := array.(*Array)
+	idx := index.(*ObjectInteger).Value
+	max := int64(len(arrayObject.Elements) - 1)
+	if idx < 0 || idx > max {
+		return EVAL_NULL
+	}
+	return arrayObject.Elements[idx]
 }
 
 func isTruthy(obj Object) bool {
