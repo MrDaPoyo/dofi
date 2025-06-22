@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -10,13 +11,36 @@ type Parser struct {
 	curToken  Token
 	peekToken Token
 	errors    []string
+
+	prefixParseFns map[TokenType]prefixParseFn
+	infixParseFns  map[TokenType]infixParseFn
 }
+
+type (
+	prefixParseFn func() Expression
+	infixParseFn  func(Expression) Expression
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
 
 func NewParser(l *Lexer) *Parser {
 	p := &Parser{
 		l:      l,
 		errors: []string{},
 	}
+
+	p.prefixParseFns = make(map[TokenType]prefixParseFn)
+	p.registerPrefix(IDENT, p.parseIdentifier)
+	p.registerPrefix(INT, p.parseIntegerLiteral)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -52,6 +76,10 @@ func (p *Parser) ParseProgram() *Program {
 	return program
 }
 
+func (p *Parser) parseIdentifier() Expression {
+	return &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
 func (p *Parser) parseStatement() Statement {
 	switch p.curToken.Type {
 	case LET:
@@ -59,7 +87,7 @@ func (p *Parser) parseStatement() Statement {
 	case RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -91,6 +119,36 @@ func (p *Parser) parseLetStatement() *LetStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpressionStatement() *ExpressionStatement {
+	stmt := &ExpressionStatement{Token: p.curToken}
+	stmt.Expression = p.parseExpression(LOWEST)
+	if p.peekTokenIs(SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+	return leftExp
+}
+
+func (p *Parser) parseIntegerLiteral() Expression {
+	lit := &IntegerLiteral{Token: p.curToken}
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	lit.Value = value
+	return lit
+}
+
 func (p *Parser) curTokenIs(t TokenType) bool {
 	return p.curToken.Type == t
 }
@@ -119,4 +177,11 @@ func CheckParserErrors(t *testing.T, p *Parser) {
 		t.Errorf("parser error: %q", msg)
 	}
 	t.FailNow()
+}
+
+func (p *Parser) registerPrefix(tokenType TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+func (p *Parser) registerInfix(tokenType TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
