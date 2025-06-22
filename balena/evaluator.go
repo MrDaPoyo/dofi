@@ -87,6 +87,9 @@ func applyFunction(fn Object, args []Object) Object {
 	if !ok {
 		return newError("not a function: %s", fn.Type())
 	}
+	if len(args) > len(function.Parameters) {
+		return newError("too many function parameters: %d, expected %d", len(args)-1, len(function.Parameters)-1)
+	}
 	extendedEnv := extendFunctionEnv(function, args)
 	evaluated := Eval(function.Body, extendedEnv)
 	return unwrapReturnValue(evaluated)
@@ -106,6 +109,7 @@ func extendFunctionEnv(
 	}
 	return env
 }
+
 func unwrapReturnValue(obj Object) Object {
 	if returnValue, ok := obj.(*ReturnValue); ok {
 		return returnValue.Value

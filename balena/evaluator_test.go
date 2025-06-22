@@ -219,6 +219,16 @@ return 1;
 			function()`,
 			"missing function parameters: x",
 		},
+		{
+			`let function = fn(x, y) { return x + y; };
+			function(5)`,
+			"missing function parameters: y",
+		},
+		{
+			`let function = fn(x, y) { return x + y; };
+			function(5, 10, 15)`,
+			"too many function parameters: 2, expected 1",
+		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
