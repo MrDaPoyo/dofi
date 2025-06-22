@@ -214,6 +214,11 @@ return 1;
 			`"Hello" - "World"`,
 			"unknown operator: STRING - STRING",
 		},
+		{
+			`let function = fn(x) { return x; };
+			function()`,
+			"missing function parameters: x",
+		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)

@@ -25,6 +25,7 @@ func Eval(node Node, env *Environment) Object {
 		body := node.Body
 		return &Function{Parameters: params, Env: env, Body: body}
 	case *CallExpression:
+
 		function := Eval(node.Function, env)
 		if isError(function) {
 			return function
@@ -90,13 +91,18 @@ func applyFunction(fn Object, args []Object) Object {
 	evaluated := Eval(function.Body, extendedEnv)
 	return unwrapReturnValue(evaluated)
 }
+
 func extendFunctionEnv(
 	fn *Function,
 	args []Object,
 ) *Environment {
 	env := NewEnclosedEnvironment(fn.Env)
 	for paramIdx, param := range fn.Parameters {
-		env.Set(param.Value, args[paramIdx])
+		if paramIdx < len(args) {
+			env.Set(param.Value, args[paramIdx])
+		} else {
+			env.Set(param.Value, newError("missing function parameters: %s", param.Value))
+		}
 	}
 	return env
 }
