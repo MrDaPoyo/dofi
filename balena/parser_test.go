@@ -13,6 +13,7 @@ let foobar = 838383;
 	l := NewLexer(input)
 	p := NewParser(l)
 	program := p.ParseProgram()
+	CheckParserErrors(t, p)
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
 	}
@@ -34,6 +35,7 @@ let foobar = 838383;
 		}
 	}
 }
+
 func testLetStatement(t *testing.T, s Statement, name string) bool {
 	if s.TokenLiteral() != "let" {
 		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
