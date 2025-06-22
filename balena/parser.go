@@ -61,6 +61,7 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(IF, p.parseIfExpression)
 	p.registerPrefix(FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(STRING, p.parseStringLiteral)
+	p.registerPrefix(LBRACKET, p.parseArrayLiteral)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -285,6 +286,31 @@ func (p *Parser) parseIntegerLiteral() Expression {
 	}
 	lit.Value = value
 	return lit
+}
+
+func (p *Parser) parseArrayLiteral() Expression {
+	array := &ArrayLiteral{Token: p.curToken}
+	array.Elements = p.parseExpressionList(RBRACKET)
+	return array
+}
+
+func (p *Parser) parseExpressionList(end TokenType) []Expression {
+	list := []Expression{}
+	if p.peekTokenIs(end) {
+		p.nextToken()
+		return list
+	}
+	p.nextToken()
+	list = append(list, p.parseExpression(LOWEST))
+	for p.peekTokenIs(COMMA) {
+		p.nextToken()
+		p.nextToken()
+		list = append(list, p.parseExpression(LOWEST))
+	}
+	if !p.expectPeek(end) {
+		return nil
+	}
+	return list
 }
 
 func (p *Parser) curTokenIs(t TokenType) bool {

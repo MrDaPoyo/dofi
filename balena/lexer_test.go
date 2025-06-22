@@ -22,6 +22,7 @@ return false;
 10 != 9;
 "foobar"
 "foo bar"
+[1, 2];
 `
 
 	tests := []struct {
@@ -103,6 +104,12 @@ return false;
 		{SEMICOLON, ";"},
 		{STRING, "foobar"},
 		{STRING, "foo bar"},
+		{LBRACKET, "["},
+		{INT, "1"},
+		{COMMA, ","},
+		{INT, "2"},
+		{RBRACKET, "]"},
+		{SEMICOLON, ";"},
 		{EOF, ""},
 	}
 
