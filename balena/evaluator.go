@@ -97,15 +97,6 @@ func Eval(node Node, env *Environment) Object {
 		return evalWhileStatement(node, env)
 	case *ForStatement:
 		return evalForStatement(node, env)
-	case *AssignmentStatement:
-		val := Eval(node.Value, env)
-		if isError(val) {
-			return val
-		}
-		env.Set(node.Name.Value, val)
-		return val
-	case *CompoundAssignmentStatement:
-		return evalCompoundAssignmentStatement(node, env)
 	case *GoObjectLiteral:
 		return &GoObject{Value: node.Value}
 	}
@@ -296,67 +287,11 @@ func evalInfixExpression(
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
-		if left.Type() == INTEGER_OBJ && right.Type() == FLOAT_OBJ {
-			leftVal := left.(*ObjectInteger).Value
-			return evalFloatInfixExpression(operator, &ObjectFloat{Value: float64(leftVal)}, right)
-		}
-		if left.Type() == FLOAT_OBJ && right.Type() == INTEGER_OBJ {
-			rightVal := right.(*ObjectInteger).Value
-			return evalFloatInfixExpression(operator, left, &ObjectFloat{Value: float64(rightVal)})
-		}
 		return NewError("type mismatch: %s %s %s",
 			left.Type(), operator, right.Type())
 	case left.Type() == STRING_OBJ && right.Type() == STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
 
-	default:
-		return NewError("unknown operator: %s %s %s",
-			left.Type(), operator, right.Type())
-	}
-}
-
-func evalFloatInfixExpression(
-	operator string,
-	left, right Object,
-) Object {
-	var leftVal, rightVal float64
-	switch left := left.(type) {
-	case *ObjectFloat:
-		leftVal = left.Value
-	case *ObjectInteger:
-		leftVal = float64(left.Value)
-	default:
-		return NewError("left operand is not a number: %s", left.Type())
-	}
-	switch right := right.(type) {
-	case *ObjectFloat:
-		rightVal = right.Value
-	case *ObjectInteger:
-		rightVal = float64(right.Value)
-	default:
-		return NewError("right operand is not a number: %s", right.Type())
-	}
-
-	switch operator {
-	case "+":
-		return &ObjectFloat{Value: leftVal + rightVal}
-	case "-":
-		return &ObjectFloat{Value: leftVal - rightVal}
-	case "*":
-		return &ObjectFloat{Value: leftVal * rightVal}
-	case "/":
-		if rightVal == 0 {
-			return NewError("division by zero")
-		}
-		return &ObjectFloat{Value: leftVal / rightVal}
-	case "<":
-		return nativeBoolToBooleanObject(leftVal < rightVal)
-	case ">":
-		return nativeBoolToBooleanObject(leftVal > rightVal)
-	case "==":
-		return nativeBoolToBooleanObject(leftVal == rightVal)
-	case "!=":
-		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
 		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
@@ -489,38 +424,4 @@ func evalForStatement(stmt *ForStatement, env *Environment) Object {
 
 func NewError(format string, a ...any) *Error {
 	return &Error{Message: fmt.Sprintf(format, a...)}
-}
-
-func evalCompoundAssignmentStatement(stmt *CompoundAssignmentStatement, env *Environment) Object {
-	// Get the current value of the variable
-	current := evalIdentifier(stmt.Name, env)
-	if isError(current) {
-		return current
-	}
-
-	// Evaluate the right-hand side expression
-	val := Eval(stmt.Value, env)
-	if isError(val) {
-		return val
-	}
-
-	var result Object
-
-	// Perform the compound operation
-	switch stmt.Operator {
-	case "+=":
-		result = evalInfixExpression("+", current, val)
-	case "-=":
-		result = evalInfixExpression("-", current, val)
-	default:
-		return NewError("unknown compound assignment operator: %s", stmt.Operator)
-	}
-
-	if isError(result) {
-		return result
-	}
-
-	// Set the new value
-	env.Set(stmt.Name.Value, result)
-	return result
 }
