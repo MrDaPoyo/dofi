@@ -17,7 +17,6 @@ func isError(obj Object) bool {
 
 func Eval(node Node, env *Environment) Object {
 	switch node := node.(type) {
-	// Statements
 	case *Program:
 		return evalProgram(node, env)
 	case *LetStatement:
@@ -128,7 +127,6 @@ func HasFunction(env *Environment, name string) bool {
 		_, isFunc := obj.(*Function)
 		return isFunc
 	}
-	// Check if it exists as a builtin (includes external bindings)
 	_, exists := builtins[name]
 	return exists
 }
@@ -142,7 +140,6 @@ func CallFunction(env *Environment, name string, args ...Object) Object {
 		}
 		return applyFunction(fn, args)
 	}
-	// Check if it exists as a builtin (includes external bindings)
 	builtin, exists := builtins[name]
 	if !exists {
 		return NewError("function not found: %s", name)
@@ -411,7 +408,6 @@ func evalForStatement(stmt *ForStatement, env *Environment) Object {
 		return NewError("for loop end value must be integer, got %s", end.Type())
 	}
 
-	// Create new environment for loop variable
 	forEnv := NewEnclosedEnvironment(env)
 
 	for i := startInt.Value; i <= endInt.Value; i++ {
