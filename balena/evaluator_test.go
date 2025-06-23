@@ -424,3 +424,30 @@ func TestArrayIndexExpressions(t *testing.T) {
 		}
 	}
 }
+
+func TestBinding(t *testing.T) {
+	env := NewEnvironment()
+
+	RegisterExternalBinding("test", bindingTest)
+
+	if !HasFunction(env, "test") {
+		t.Errorf("expected function 'test' to be registered in the environment")
+	}
+
+	input := `test(5, 10);`
+	evaluated := testEval(input)
+	testIntegerObject(t, evaluated, 15)
+
+	// Call the function using the environment
+	result := CallFunction(env, "test", &ObjectInteger{Value: 5}, &ObjectInteger{Value: 10})
+	testIntegerObject(t, result, 15)
+}
+
+func bindingTest(args ...Object) Object {
+	if len(args) != 2 {
+		return newError("wrong number of arguments. got=%d, want=2", len(args))
+	}
+	x := args[0].(*ObjectInteger).Value
+	y := args[1].(*ObjectInteger).Value
+	return &ObjectInteger{Value: x + y}
+}

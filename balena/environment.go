@@ -5,6 +5,14 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env.outer = outer
 	return env
 }
+
+func RegisterExternalBinding(name string, fn func(args ...Object) Object) {
+	if _, exists := builtins[name]; exists {
+		panic("builtin already exists: " + name)
+	}
+	builtins[name] = &Builtin{Fn: fn}
+}
+
 func NewEnvironment() *Environment {
 	s := make(map[string]Object)
 	return &Environment{store: s, outer: nil}

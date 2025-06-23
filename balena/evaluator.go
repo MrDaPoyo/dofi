@@ -20,21 +20,6 @@ func Eval(node Node, env *Environment) Object {
 	// Statements
 	case *Program:
 		return evalProgram(node, env)
-	case *FunctionLiteral:
-		params := node.Parameters
-		body := node.Body
-		return &Function{Parameters: params, Env: env, Body: body}
-	case *CallExpression:
-
-		function := Eval(node.Function, env)
-		if isError(function) {
-			return function
-		}
-		args := evalExpressions(node.Arguments, env)
-		if len(args) == 1 && isError(args[0]) {
-			return args[0]
-		}
-		return applyFunction(function, args)
 	case *LetStatement:
 		val := Eval(node.Value, env)
 		if isError(val) {
@@ -93,6 +78,20 @@ func Eval(node Node, env *Environment) Object {
 			return index
 		}
 		return evalIndexExpression(left, index)
+	case *FunctionLiteral:
+		params := node.Parameters
+		body := node.Body
+		return &Function{Parameters: params, Env: env, Body: body}
+	case *CallExpression:
+		function := Eval(node.Function, env)
+		if isError(function) {
+			return function
+		}
+		args := evalExpressions(node.Arguments, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+		return applyFunction(function, args)
 	}
 
 	return nil
@@ -113,6 +112,32 @@ func applyFunction(fn Object, args []Object) Object {
 	default:
 		return newError("not a function: %s", fn.Type())
 	}
+}
+
+func HasFunction(env *Environment, name string) bool {
+    obj, ok := env.Get(name)
+    if !ok {
+		_, exists := builtins[name]
+		return exists
+    }
+    _, isFunc := obj.(*Function)
+    return isFunc
+}
+
+func CallFunction(env *Environment, name string, args ...Object) Object {
+    obj, ok := env.Get(name)
+    if !ok {
+		builtin, exists := builtins[name]
+		if !exists {
+			return newError("function not found: %s", name)
+		}
+		return applyFunction(builtin, args)
+    }
+    fn, ok := obj.(*Function)
+    if !ok {
+        return newError("%s is not a function", name)
+    }
+    return applyFunction(fn, args)
 }
 
 func extendFunctionEnv(fn *Function, args []Object) *Environment {
