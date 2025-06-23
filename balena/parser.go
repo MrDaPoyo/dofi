@@ -65,8 +65,8 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(STRING, p.parseStringLiteral)
 	p.registerPrefix(LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(LBRACE, p.parseHashLiteral)
-	p.registerPrefix(WHILE, p.parseWhileExpression)
-	p.registerPrefix(FOR, p.parseForExpression)
+	// p.registerPrefix(WHILE, p.parseWhileExpression)
+    // p.registerPrefix(FOR, p.parseForExpression)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -527,37 +527,34 @@ func (p *Parser) parseWhileStatement() *WhileStatement {
 }
 
 func (p *Parser) parseForStatement() *ForStatement {
-	stmt := &ForStatement{Token: p.curToken}
+    stmt := &ForStatement{Token: p.curToken}
 
-	p.nextToken()
-	if p.curToken.Type != IDENT {
-		p.errors = append(p.errors, fmt.Sprintf("expected identifier, got %s", p.curToken.Type))
-		return nil
-	}
+    if !p.expectPeek(IDENT) {
+        return nil
+    }
 
-	stmt.Variable = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+    stmt.Variable = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-	if !p.expectPeek(ASSIGN) {
-		return nil
-	}
+    if !p.expectPeek(ASSIGN) {
+        return nil
+    }
 
-	p.nextToken()
-	stmt.Start = p.parseExpression(LOWEST)
+    p.nextToken()
+    stmt.Start = p.parseExpression(LOWEST)
 
-	if !p.expectPeek(COMMA) {
-		return nil
-	}
+    if !p.expectPeek(COMMA) {
+        return nil
+    }
 
-	p.nextToken()
-	stmt.End = p.parseExpression(LOWEST)
+    p.nextToken()
+    stmt.End = p.parseExpression(LOWEST)
 
-	if !p.expectPeek(LBRACE) {
-		return nil
-	}
+    if !p.expectPeek(LBRACE) {
+        return nil
+    }
 
-	stmt.Body = p.parseBlockStatement()
-
-	return stmt
+    stmt.Body = p.parseBlockStatement()
+    return stmt
 }
 
 func (p *Parser) parseAssignmentStatement() *AssignmentStatement {

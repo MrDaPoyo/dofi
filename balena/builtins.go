@@ -130,12 +130,16 @@ var builtins = map[string]*Builtin{
 	},
 	"array": &Builtin{
 		Fn: func(args ...Object) Object {
-			if len(args) == 0 {
-				return &Array{Elements: []Object{}}
+			if len(args) == 2 {
+				if size, ok := args[0].(*ObjectInteger); ok {
+					elements := make([]Object, size.Value)
+					for i := range elements {
+						elements[i] = args[1]
+					}
+					return &Array{Elements: elements}
+				}
 			}
-			elements := make([]Object, len(args))
-			copy(elements, args)
-			return &Array{Elements: elements}
+			return &Array{Elements: args}
 		},
 	},
 	"int": &Builtin{
@@ -175,6 +179,29 @@ var builtins = map[string]*Builtin{
 			default:
 				return NewError("argument to `float` must be INTEGER or FLOAT, got %s",
 					args[0].Type())
+			}
+		},
+	},
+	"abs": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			switch arg := args[0].(type) {
+			case *ObjectInteger:
+				v := arg.Value
+				if v < 0 {
+					v = -v
+				}
+				return &ObjectInteger{Value: v}
+			case *ObjectFloat:
+				v := arg.Value
+				if v < 0 {
+					v = -v
+				}
+				return &ObjectFloat{Value: v}
+			default:
+				return NewError("argument to `abs` must be INTEGER or FLOAT, got %s", args[0].Type())
 			}
 		},
 	},

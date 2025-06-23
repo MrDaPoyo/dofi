@@ -37,8 +37,8 @@ let _draw = fn() {
             let z = K2 + cosA * circlex * sinphi + sinA * circley;
 
             let ooz = 1.0 / z;
-            let xp = int((cx + K1 * ooz * x));
-            let yp = int((cy + K1 * ooz * y));
+            let xp = int(cx + K1 * ooz * x);
+            let yp = int(cy + K1 * ooz * y);
 
             let idx = xp + yp * screen_width;
             let L = cosphi * costheta * sinB - cosB * sintheta + cosA * (cosB * costheta + sinB * sinphi * sintheta);
@@ -46,9 +46,9 @@ let _draw = fn() {
             if (xp >= 0 && xp < screen_width && yp >= 0 && yp < screen_height) {
                 buf[idx] = luminance * 32;
             }
-            let phi = phi + 0.07;
+            phi = phi + 0.07;
         }
-        let theta = theta + 0.07;
+        theta = theta + 0.07;
     }
 
     let y = 0;
