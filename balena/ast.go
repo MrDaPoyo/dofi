@@ -149,7 +149,6 @@ type BlockStatement struct {
 	Statements []Statement
 }
 
-// expressionNode implements Expression.
 func (bs *BlockStatement) expressionNode() {
 	panic("unimplemented")
 }
@@ -426,7 +425,7 @@ func (we *WhileExpression) String() string {
 }
 
 type ForExpression struct {
-	Token    Token       // the 'for' token
+	Token    Token // the 'for' token
 	Variable *Identifier
 	Start    Expression
 	End      Expression
@@ -445,5 +444,44 @@ func (fe *ForExpression) String() string {
 	out.WriteString(fe.End.String())
 	out.WriteString(" ")
 	out.WriteString(fe.Body.String())
+	return out.String()
+}
+
+type CStyleForStatement struct {
+    Token     Token // the 'for' token
+    Init      Statement   // let x = 0
+    Condition Expression  // x < screen_width  
+    Increment Statement   // x += 1
+    Body      *BlockStatement
+}
+
+func (cfs *CStyleForStatement) TokenLiteral() string { 
+    return cfs.Token.Literal 
+}
+
+func (cfs *CStyleForStatement) statementNode()       {}
+
+func (cfs *CStyleForStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("for (")
+
+	if cfs.Init != nil {
+		out.WriteString(cfs.Init.String())
+	}
+	out.WriteString("; ")
+
+	if cfs.Condition != nil {
+		out.WriteString(cfs.Condition.String())
+	}
+	out.WriteString("; ")
+
+	if cfs.Increment != nil {
+		out.WriteString(cfs.Increment.String())
+	}
+	out.WriteString(") ")
+
+	if cfs.Body != nil {
+		out.WriteString(cfs.Body.String())
+	}
 	return out.String()
 }

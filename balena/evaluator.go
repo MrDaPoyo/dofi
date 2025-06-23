@@ -98,6 +98,8 @@ func Eval(node Node, env *Environment) Object {
 		return evalWhileStatement(node, env)
 	case *ForStatement:
 		return evalForStatement(node, env)
+	case *CStyleForStatement:
+		return evalCStyleForStatement(node, env)
 	case *GoObjectLiteral:
 		return &GoObject{Value: node.Value}
 	case *HashLiteral:
@@ -537,6 +539,50 @@ func evalWhileStatement(stmt *WhileStatement, env *Environment) Object {
 			return result
 		}
 	}
+	return EVAL_NULL
+}
+
+// New C-style for loop evaluation function
+func evalCStyleForStatement(stmt *CStyleForStatement, env *Environment) Object {
+	// Create a new scope for the for loop
+	forEnv := NewEnclosedEnvironment(env)
+	
+	// Execute initialization (e.g., let x = 0)
+	if stmt.Init != nil {
+		initResult := Eval(stmt.Init, forEnv)
+		if isError(initResult) {
+			return initResult
+		}
+	}
+	
+	// Loop while condition is true
+	for {
+		// Check condition (e.g., x < screen_width)
+		if stmt.Condition != nil {
+			condition := Eval(stmt.Condition, forEnv)
+			if isError(condition) {
+				return condition
+			}
+			if !isTruthy(condition) {
+				break
+			}
+		}
+		
+		// Execute loop body
+		result := Eval(stmt.Body, forEnv)
+		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
+			return result
+		}
+		
+		// Execute increment (e.g., x += 1)
+		if stmt.Increment != nil {
+			incResult := Eval(stmt.Increment, forEnv)
+			if isError(incResult) {
+				return incResult
+			}
+		}
+	}
+	
 	return EVAL_NULL
 }
 

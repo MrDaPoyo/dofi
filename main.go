@@ -604,9 +604,9 @@ func MakeGame() *Game {
 func main() {
 	game := MakeGame()
 
-	if os.Args[0] == "run" {
-		if len(os.Args) > 1 {	
-			scriptPath := os.Args[1]
+	if os.Args[1] == "-run" {
+		if len(os.Args) > 2 {
+			scriptPath := os.Args[2]
 			scriptContent, err := os.ReadFile(scriptPath)
 			if err != nil {
 				log.Fatalf("Error reading script file: %v", err)
@@ -615,6 +615,7 @@ func main() {
 				err != nil {
 				log.Fatalf("Error running script: %v", err)
 			}
+			game.ScriptRunning = true
 		} else {
 			log.Fatal("No script file provided. Usage: go run main.go <script.bal>")
 		}

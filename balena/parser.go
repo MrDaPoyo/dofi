@@ -33,6 +33,10 @@ const (
 	INDEX       // array[index]
 )
 
+const (
+	IN TokenType = "IN"
+)
+
 var precedences = map[TokenType]int{
 	EQ:       EQUALS,
 	NOT_EQ:   EQUALS,
@@ -66,7 +70,7 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(LBRACE, p.parseHashLiteral)
 	// p.registerPrefix(WHILE, p.parseWhileExpression)
-    // p.registerPrefix(FOR, p.parseForExpression)
+    p.registerPrefix(FOR, p.parseForExpression)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -256,7 +260,10 @@ func (p *Parser) parseStatement() Statement {
 	case WHILE:
 		return p.parseWhileStatement()
 	case FOR:
-		return p.parseForStatement()
+		if p.peekToken.Type == LPAREN {
+        	return p.parseCStyleForStatement()
+    	}
+    	return p.parseRangeForStatement()
 	case IDENT:
 		if p.peekTokenIs(ASSIGN) {
 			return p.parseAssignmentStatement()
@@ -267,6 +274,57 @@ func (p *Parser) parseStatement() Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
+}
+
+func (p *Parser) parseCStyleForStatement() *CStyleForStatement {
+	stmt := &CStyleForStatement{Token: p.curToken}
+	if !p.expectPeek(LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Init = p.parseExpressionStatement()
+	if !p.expectPeek(SEMICOLON) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Condition = p.parseExpression(LOWEST)
+	if !p.expectPeek(SEMICOLON) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Increment = p.parseExpressionStatement()
+	if !p.expectPeek(RPAREN) {
+		return nil
+	}
+	p.nextToken()
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+	stmt.Body = p.parseBlockStatement()
+	return stmt
+}
+
+func (p *Parser) parseRangeForStatement() *ForStatement {
+	stmt := &ForStatement{Token: p.curToken}
+	if !p.expectPeek(IDENT) {
+		return nil
+	}
+	stmt.Variable = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	if !p.expectPeek(IN) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Start = p.parseExpression(LOWEST)
+	if !p.expectPeek(COMMA) {
+		return nil
+	}
+	p.nextToken()
+	stmt.End = p.parseExpression(LOWEST)
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+	stmt.Body = p.parseBlockStatement()
+	return stmt
 }
 
 func (p *Parser) parseReturnStatement() *ReturnStatement {

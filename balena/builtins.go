@@ -205,10 +205,53 @@ var builtins = map[string]*Builtin{
 			}
 		},
 	},
-}
-
-var mathObject = map[string]*Builtin{
-	"floor": &Builtin{
+	"acos": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			if args[0].Type() != INTEGER_OBJ && args[0].Type() != FLOAT_OBJ {
+				return NewError("argument to `acos` must be INTEGER or FLOAT, got %s",
+					args[0].Type())
+			}
+			if args[0].Type() == INTEGER_OBJ {
+				intArg := args[0].(*ObjectInteger)
+				return &ObjectFloat{Value: math.Acos(float64(intArg.Value))}
+			}
+			floatArg := args[0].(*ObjectFloat)
+			return &ObjectFloat{Value: math.Acos(floatArg.Value)}
+		},
+	},
+	"atan2": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 2 {
+				return NewError("wrong number of arguments. got=%d, want=2",
+					len(args))
+			}
+			if args[0].Type() != INTEGER_OBJ && args[0].Type() != FLOAT_OBJ {
+				return NewError("first argument to `atan2` must be INTEGER or FLOAT, got %s",
+					args[0].Type())
+			}
+			if args[1].Type() != INTEGER_OBJ && args[1].Type() != FLOAT_OBJ {
+				return NewError("second argument to `atan2` must be INTEGER or FLOAT, got %s",
+					args[1].Type())
+			}
+			var x, y float64
+			if args[0].Type() == INTEGER_OBJ {
+				x = float64(args[0].(*ObjectInteger).Value)
+			} else {
+				x = args[0].(*ObjectFloat).Value
+			}
+			if args[1].Type() == INTEGER_OBJ {
+				y = float64(args[1].(*ObjectInteger).Value)
+			} else {
+				y = args[1].(*ObjectFloat).Value
+			}
+			return &ObjectFloat{Value: math.Atan2(y, x)}
+		},
+	},
+	"sqrt": &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
 				return NewError("wrong number of arguments. got=%d, want=1",
@@ -216,11 +259,19 @@ var mathObject = map[string]*Builtin{
 			}
 			switch arg := args[0].(type) {
 			case *ObjectInteger:
-				return &ObjectInteger{Value: int64(math.Floor(float64(arg.Value)))}
+				if arg.Value < 0 {
+					return NewError("argument to `sqrt` must be non-negative, got %d",
+						arg.Value)
+				}
+				return &ObjectFloat{Value: math.Sqrt(float64(arg.Value))}
 			case *ObjectFloat:
-				return &ObjectInteger{Value: int64(math.Floor(arg.Value))}
+				if arg.Value < 0 {
+					return NewError("argument to `sqrt` must be non-negative, got %f",
+						arg.Value)
+				}
+				return &ObjectFloat{Value: math.Sqrt(arg.Value)}
 			default:
-				return NewError("argument to `floor` must be INTEGER or FLOAT, got %s",
+				return NewError("argument to `sqrt` must be INTEGER or FLOAT, got %s",
 					args[0].Type())
 			}
 		},
