@@ -30,6 +30,8 @@ func Eval(node Node, env *Environment) Object {
 		return Eval(node.Expression, env)
 	case *IntegerLiteral:
 		return &ObjectInteger{Value: node.Value}
+	case *FloatLiteral:
+		return &ObjectFloat{Value: node.Value}
 	case *Boolean:
 		return nativeBoolToBooleanObject(node.Value)
 	case *PrefixExpression:
@@ -92,6 +94,12 @@ func Eval(node Node, env *Environment) Object {
 			return args[0]
 		}
 		return applyFunction(function, args)
+	case *WhileStatement:
+		return evalWhileStatement(node, env)
+	case *ForStatement:
+		return evalForStatement(node, env)
+	case *GoObjectLiteral:
+		return &GoObject{Value: node.Value}
 	}
 
 	return nil
@@ -101,7 +109,7 @@ func applyFunction(fn Object, args []Object) Object {
 	switch fn := fn.(type) {
 	case *Function:
 		if len(fn.Parameters) != len(args) {
-			return newError("wrong number of arguments. got=%d, want=%d",
+			return NewError("wrong number of arguments. got=%d, want=%d",
 				len(args), len(fn.Parameters))
 		}
 		extendedEnv := extendFunctionEnv(fn, args)
@@ -110,34 +118,36 @@ func applyFunction(fn Object, args []Object) Object {
 	case *Builtin:
 		return fn.Fn(args...)
 	default:
-		return newError("not a function: %s", fn.Type())
+		return NewError("not a function: %s", fn.Type())
 	}
 }
 
 func HasFunction(env *Environment, name string) bool {
-    obj, ok := env.Get(name)
-    if !ok {
-		_, exists := builtins[name]
-		return exists
-    }
-    _, isFunc := obj.(*Function)
-    return isFunc
+	obj, ok := env.Get(name)
+	if ok {
+		_, isFunc := obj.(*Function)
+		return isFunc
+	}
+	// Check if it exists as a builtin (includes external bindings)
+	_, exists := builtins[name]
+	return exists
 }
 
 func CallFunction(env *Environment, name string, args ...Object) Object {
-    obj, ok := env.Get(name)
-    if !ok {
-		builtin, exists := builtins[name]
-		if !exists {
-			return newError("function not found: %s", name)
+	obj, ok := env.Get(name)
+	if ok {
+		fn, ok := obj.(*Function)
+		if !ok {
+			return NewError("%s is not a function", name)
 		}
-		return applyFunction(builtin, args)
-    }
-    fn, ok := obj.(*Function)
-    if !ok {
-        return newError("%s is not a function", name)
-    }
-    return applyFunction(fn, args)
+		return applyFunction(fn, args)
+	}
+	// Check if it exists as a builtin (includes external bindings)
+	builtin, exists := builtins[name]
+	if !exists {
+		return NewError("function not found: %s", name)
+	}
+	return applyFunction(builtin, args)
 }
 
 func extendFunctionEnv(fn *Function, args []Object) *Environment {
@@ -153,17 +163,6 @@ func unwrapReturnValue(obj Object) Object {
 		return returnValue.Value
 	}
 	return obj
-}
-
-func evalStatements(stmts []Statement, env *Environment) Object {
-	var result Object
-	for _, statement := range stmts {
-		result = Eval(statement, env)
-		if returnValue, ok := result.(*ReturnValue); ok {
-			return returnValue.Value
-		}
-	}
-	return result
 }
 
 func evalIfExpression(ie *IfExpression, env *Environment) Object {
@@ -205,7 +204,7 @@ func evalIdentifier(
 	if builtin, ok := builtins[node.Value]; ok {
 		return builtin
 	}
-	return newError("identifier not found: %s", node.Value)
+	return NewError("identifier not found: %s", node.Value)
 }
 
 func evalIndexExpression(left, index Object) Object {
@@ -213,7 +212,7 @@ func evalIndexExpression(left, index Object) Object {
 	case left.Type() == ARRAY_OBJ && index.Type() == INTEGER_OBJ:
 		return evalArrayIndexExpression(left, index)
 	default:
-		return newError("index operator not supported: %s", left.Type())
+		return NewError("index operator not supported: %s", left.Type())
 	}
 }
 
@@ -254,13 +253,13 @@ func evalPrefixExpression(operator string, right Object) Object {
 	case "-":
 		return evalMinusPrefixOperatorExpression(right)
 	default:
-		return newError("unknown operator: %s%s", operator, right.Type())
+		return NewError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
 func evalMinusPrefixOperatorExpression(right Object) Object {
 	if right.Type() != INTEGER_OBJ {
-		return newError("unknown operator: -%s", right.Type())
+		return NewError("unknown operator: -%s", right.Type())
 	}
 	value := right.(*ObjectInteger).Value
 	return &ObjectInteger{Value: -value}
@@ -291,13 +290,13 @@ func evalInfixExpression(
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
-		return newError("type mismatch: %s %s %s",
+		return NewError("type mismatch: %s %s %s",
 			left.Type(), operator, right.Type())
 	case left.Type() == STRING_OBJ && right.Type() == STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
 
 	default:
-		return newError("unknown operator: %s %s %s",
+		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
 }
@@ -307,7 +306,7 @@ func evalStringInfixExpression(
 	left, right Object,
 ) Object {
 	if operator != "+" {
-		return newError("unknown operator: %s %s %s",
+		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
 	leftVal := left.(*String).Value
@@ -339,7 +338,7 @@ func evalIntegerInfixExpression(
 	case "!=":
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
-		return newError("unknown operator: %s %s %s",
+		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
 }
@@ -372,6 +371,61 @@ func evalBlockStatement(block *BlockStatement, env *Environment) Object {
 	return result
 }
 
-func newError(format string, a ...interface{}) *Error {
+func evalWhileStatement(stmt *WhileStatement, env *Environment) Object {
+	for {
+		condition := Eval(stmt.Condition, env)
+		if isError(condition) {
+			return condition
+		}
+
+		if !isTruthy(condition) {
+			break
+		}
+
+		result := Eval(stmt.Body, env)
+		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
+			return result
+		}
+	}
+	return EVAL_NULL
+}
+
+func evalForStatement(stmt *ForStatement, env *Environment) Object {
+	start := Eval(stmt.Start, env)
+	if isError(start) {
+		return start
+	}
+
+	end := Eval(stmt.End, env)
+	if isError(end) {
+		return end
+	}
+
+	startInt, ok := start.(*ObjectInteger)
+	if !ok {
+		return NewError("for loop start value must be integer, got %s", start.Type())
+	}
+
+	endInt, ok := end.(*ObjectInteger)
+	if !ok {
+		return NewError("for loop end value must be integer, got %s", end.Type())
+	}
+
+	// Create new environment for loop variable
+	forEnv := NewEnclosedEnvironment(env)
+
+	for i := startInt.Value; i <= endInt.Value; i++ {
+		forEnv.Set(stmt.Variable.Value, &ObjectInteger{Value: i})
+
+		result := Eval(stmt.Body, forEnv)
+		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
+			return result
+		}
+	}
+
+	return EVAL_NULL
+}
+
+func NewError(format string, a ...any) *Error {
 	return &Error{Message: fmt.Sprintf(format, a...)}
 }

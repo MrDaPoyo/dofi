@@ -18,6 +18,8 @@ const (
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
+	GO_OBJ           = "GO_OBJ"
+	FLOAT_OBJ        = "FLOAT"
 )
 
 type Object interface {
@@ -115,3 +117,17 @@ func (ao *Array) Inspect() string {
 	out.WriteString("]")
 	return out.String()
 }
+
+type GoObject struct {
+	Value interface{}
+}
+
+func (g *GoObject) Type() ObjectType { return "GO_OBJ" }
+func (g *GoObject) Inspect() string  { return fmt.Sprintf("%#v", g.Value) }
+
+type ObjectFloat struct {
+	Value float64
+}
+
+func (f *ObjectFloat) Type() ObjectType { return "FLOAT_OBJ" }
+func (f *ObjectFloat) Inspect() string  { return fmt.Sprintf("%f", f.Value) }

@@ -1,5 +1,7 @@
 package balena
 
+import "strings"
+
 type Lexer struct {
 	input        string
 	position     int  // current position in input (points to current char)
@@ -38,9 +40,21 @@ func (l *Lexer) NextToken() Token {
 			tok = newToken(ASSIGN, l.ch)
 		}
 	case '+':
-		tok = newToken(PLUS, l.ch)
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = Token{Type: PLUS_EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(PLUS, l.ch)
+		}
 	case '-':
-		tok = newToken(MINUS, l.ch)
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = Token{Type: MINUS_EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(MINUS, l.ch)
+		}
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.ch
@@ -85,8 +99,13 @@ func (l *Lexer) NextToken() Token {
 			tok.Type = LookupIdent(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = INT
-			tok.Literal = l.readNumber()
+			literal := l.readNumber()
+			if strings.Contains(literal, ".") {
+				tok.Type = FLOAT
+			} else {
+				tok.Type = INT
+			}
+			tok.Literal = literal
 			return tok
 		} else {
 			tok = newToken(ILLEGAL, l.ch)
@@ -121,6 +140,13 @@ func (l *Lexer) readNumber() string {
 	position := l.position
 	for isDigit(l.ch) {
 		l.readChar()
+	}
+	// Check for decimal point
+	if l.ch == '.' && isDigit(l.peekChar()) {
+		l.readChar() // consume '.'
+		for isDigit(l.ch) {
+			l.readChar()
+		}
 	}
 	return l.input[position:l.position]
 }

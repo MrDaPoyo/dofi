@@ -14,12 +14,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	lua "github.com/yuin/gopher-lua"
+	balena "github.com/mrdapoyo/dofi/balena"
 )
 
 type Game struct {
 	Screen        ScreenSpecs
-	LuaVM         *lua.LState
+	BalenaEnv     *balena.Environment
 	Navbar        Navbar
 	Input         Input
 	LinearBuffer  []LinearBuffer
@@ -83,8 +83,8 @@ type CodeEditor struct {
 	Saved   bool
 }
 
-//go:embed donut.lua
-var donutLua []byte
+//go:embed donut.bal
+var donutBalena []byte
 
 //go:embed resources/cg-pixel-4x5-mono.otf
 var fontBytes []byte
@@ -118,7 +118,7 @@ var (
 	CursorBlinkFrames = 0
 	CursorBlinkRate   = 30
 	LuaExamples       = map[string]string{
-		"donut": string(donutLua),
+		"donut": string(donutBalena),
 		"print": `print("hello world")`,
 	}
 )
@@ -140,9 +140,11 @@ func (g *Game) HandleCommand(command string) {
 
 	if strings.HasPrefix(command, "example") {
 		exampleName := strings.TrimPrefix(command, "example ")
-		if exampleLua, exists := LuaExamples[exampleName]; exists {
-			if err := g.RunLuaScript(exampleLua); err != nil {
-				g.AppendLine("Error running example: "+err.Error(), false)
+		if exampleBalena, exists := LuaExamples[exampleName]; exists {
+			if err := g.RunBalenaScript(g.BalenaEnv, exampleBalena); err != nil {
+				err := fmt.Sprintf("Error running example: %s", strings.Join(err, " "))
+				g.AppendLine(fmt.Sprintf("Error running example: %s", err), false)
+				log.Println(err)
 			} else {
 				g.ScriptRunning = true
 				g.AppendLine("Running example: "+exampleName, false)
@@ -163,14 +165,8 @@ func (g *Game) Update() (err error) {
 			g.AppendLine("", true)
 			return nil
 		}
-		if updateFn := g.LuaVM.GetGlobal("_update"); updateFn != lua.LNil {
-			if err := g.LuaVM.CallByParam(lua.P{
-				Fn:      updateFn,
-				NRet:    0,
-				Protect: true,
-			}); err != nil {
-				g.AppendLine("Lua error in _update: "+err.Error(), false)
-			}
+		if _, err := g.BalenaEnv.CallFunction("_update"); err != nil {
+			g.AppendLine("Balena error in _update: "+err.Error(), false)
 		}
 		return nil
 	}
@@ -302,23 +298,6 @@ func (g *Game) Update() (err error) {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
 
-	bufferImg := ebiten.NewImage(len(g.Screen.Buffer[0]), len(g.Screen.Buffer))
-
-	pixels := make([]byte, len(g.Screen.Buffer)*len(g.Screen.Buffer[0])*4)
-	for y := 0; y < len(g.Screen.Buffer); y++ {
-		for x := 0; x < len(g.Screen.Buffer[y]); x++ {
-			pixel := g.Screen.Buffer[y][x]
-			idx := (y*len(g.Screen.Buffer[0]) + x) * 4
-			pixels[idx] = pixel.R
-			pixels[idx+1] = pixel.G
-			pixels[idx+2] = pixel.B
-			pixels[idx+3] = pixel.A
-		}
-	}
-
-	bufferImg.WritePixels(pixels)
-	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
-
 	if !g.ScriptRunning {
 		if g.Navbar.CliEnabled {
 			screen.Fill(g.Screen.CliBgColor)
@@ -414,18 +393,27 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.DrawMouse(screen)
 		}
 	} else {
-		if drawFn := g.LuaVM.GetGlobal("_draw"); drawFn != lua.LNil {
-			if err := g.LuaVM.CallByParam(lua.P{
-				Fn:      drawFn,
-				NRet:    0,
-				Protect: true,
-			}); err != nil {
-				log.Println("Lua error in _draw:", err)
-				g.AppendLine("Lua error in _draw: "+err.Error(), false)
-			}
-			screen.DrawImage(bufferImg, nil)
+		if _, err := g.BalenaEnv.CallFunction("_draw"); err != nil {
+			g.AppendLine("Balena error in _draw: "+err.Error(), false)
+			log.Println("Balena error in _draw: " + err.Error())
 		}
 	}
+	bufferImg := ebiten.NewImage(len(g.Screen.Buffer[0]), len(g.Screen.Buffer))
+
+	pixels := make([]byte, len(g.Screen.Buffer)*len(g.Screen.Buffer[0])*4)
+	for y := 0; y < len(g.Screen.Buffer); y++ {
+		for x := 0; x < len(g.Screen.Buffer[y]); x++ {
+			pixel := g.Screen.Buffer[y][x]
+			idx := (y*len(g.Screen.Buffer[0]) + x) * 4
+			pixels[idx] = pixel.R
+			pixels[idx+1] = pixel.G
+			pixels[idx+2] = pixel.B
+			pixels[idx+3] = pixel.A
+		}
+	}
+
+	bufferImg.WritePixels(pixels)
+	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
 }
 
 func (g *Game) DrawMouse(screen *ebiten.Image) {
@@ -572,7 +560,6 @@ func MakeGame() *Game {
 	var game = Game{
 		Navbar: navbar,
 		Screen: screen,
-		LuaVM:  lua.NewState(),
 		Input: Input{
 			CurrentInputString: "",
 			MouseX:             0,
@@ -582,6 +569,8 @@ func MakeGame() *Game {
 			IsMouseDown:        false,
 		},
 	}
+
+	game.BalenaEnv = game.SetupBalenaAPI()
 
 	ebiten.SetCursorMode(ebiten.CursorModeHidden)
 
@@ -596,7 +585,6 @@ func MakeGame() *Game {
 
 	game.Input.Mouse = mouse
 	game.Input.MouseShadow = mouseShadow
-	game.setupLuaAPI()
 	game.AppendLine("", true)
 
 	TextFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(fontBytes))
@@ -613,7 +601,6 @@ func MakeGame() *Game {
 
 func main() {
 	game := MakeGame()
-	defer game.LuaVM.Close()
 
 	ebiten.SetWindowSize(game.Screen.Width*game.Screen.UpscalingFactor, game.Screen.Height*game.Screen.UpscalingFactor)
 	ebiten.SetWindowTitle("Dofi! :3")

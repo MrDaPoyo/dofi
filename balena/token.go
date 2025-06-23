@@ -2,15 +2,17 @@ package balena
 
 const (
 	ILLEGAL = "ILLEGAL"
-	EOF     = "EOF"
-	// Identifiers + literals
-	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT   = "INT"   // 1343456
+	EOF     = "EOF"   // Identifiers + literals
+	IDENT   = "IDENT" // add, foobar, x, y, ...
+	INT     = "INT"   // 1343456
+	FLOAT   = "FLOAT" // 3.14159
 	// Operators
-	ASSIGN = "="
-	PLUS   = "+"
-	EQ     = "=="
-	NOT_EQ = "!="
+	ASSIGN  = "="
+	PLUS    = "+"
+	PLUS_EQ = "+="
+	MINUS_EQ  = "-="
+	EQ      = "=="
+	NOT_EQ  = "!="
 	// Delimiters
 	COMMA     = ","
 	SEMICOLON = ";"
@@ -19,15 +21,16 @@ const (
 	LBRACE    = "{"
 	RBRACE    = "}"
 	LBRACKET  = "["
-	RBRACKET  = "]"
-	// Keywords
-	FUNCTION = "FUNCTION"
-	LET      = "LET"
-	TRUE     = "TRUE"
-	FALSE    = "FALSE"
-	IF       = "IF"
-	ELSE     = "ELSE"
-	RETURN   = "RETURN"
+	RBRACKET  = "]" // Keywords
+	FUNCTION  = "FUNCTION"
+	LET       = "LET"
+	TRUE      = "TRUE"
+	FALSE     = "FALSE"
+	IF        = "IF"
+	ELSE      = "ELSE"
+	RETURN    = "RETURN"
+	WHILE     = "WHILE"
+	FOR       = "FOR"
 
 	MINUS    = "-"
 	BANG     = "!"
@@ -54,6 +57,8 @@ var keywords = map[string]TokenType{
 	"if":     IF,
 	"else":   ELSE,
 	"return": RETURN,
+	"while":  WHILE,
+	"for":    FOR,
 }
 
 func LookupIdent(ident string) TokenType {

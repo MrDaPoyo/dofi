@@ -445,9 +445,44 @@ func TestBinding(t *testing.T) {
 
 func bindingTest(args ...Object) Object {
 	if len(args) != 2 {
-		return newError("wrong number of arguments. got=%d, want=2", len(args))
+		return NewError("wrong number of arguments. got=%d, want=2", len(args))
 	}
 	x := args[0].(*ObjectInteger).Value
 	y := args[1].(*ObjectInteger).Value
 	return &ObjectInteger{Value: x + y}
+}
+
+func TestEnvironmentSetUserData(t *testing.T) {
+	env := NewEnvironment()
+	obj := &ObjectInteger{Value: 42}
+	env.SetUserData("answer", obj)
+
+	val, ok := env.Get("answer")
+	if !ok {
+		t.Fatalf("expected key 'answer' to be set in environment")
+	}
+	intObj, ok := val.(*ObjectInteger)
+	if !ok {
+		t.Fatalf("expected value to be *ObjectInteger, got %T", val)
+	}
+	if intObj.Value != 42 {
+		t.Errorf("expected value 42, got %d", intObj.Value)
+	}
+}
+
+func TestEnvironmentNewGoObject(t *testing.T) {
+	env := NewEnvironment()
+	val := map[string]int{"a": 1, "b": 2}
+	goObj := env.NewGoObject(val)
+	goObjCasted, ok := goObj.(*GoObject)
+	if !ok {
+		t.Fatalf("expected *GoObject, got %T", goObj)
+	}
+	m, ok := goObjCasted.Value.(map[string]int)
+	if !ok {
+		t.Fatalf("expected GoObject.Value to be map[string]int, got %T", goObjCasted.Value)
+	}
+	if m["a"] != 1 || m["b"] != 2 {
+		t.Errorf("unexpected map values: %+v", m)
+	}
 }

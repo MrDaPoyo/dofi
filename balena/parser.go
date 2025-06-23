@@ -51,10 +51,10 @@ func NewParser(l *Lexer) *Parser {
 		l:      l,
 		errors: []string{},
 	}
-
 	p.prefixParseFns = make(map[TokenType]prefixParseFn)
 	p.registerPrefix(IDENT, p.parseIdentifier)
 	p.registerPrefix(INT, p.parseIntegerLiteral)
+	p.registerPrefix(FLOAT, p.parseFloatLiteral)
 	p.registerPrefix(BANG, p.parsePrefixExpression)
 	p.registerPrefix(MINUS, p.parsePrefixExpression)
 	p.registerPrefix(TRUE, p.parseBoolean)
@@ -193,6 +193,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseLetStatement()
 	case RETURN:
 		return p.parseReturnStatement()
+	case WHILE:
+		return p.parseWhileStatement()
+	case FOR:
+		return p.parseForStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -284,6 +288,18 @@ func (p *Parser) parseIntegerLiteral() Expression {
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	lit.Value = value
+	return lit
+}
+
+func (p *Parser) parseFloatLiteral() Expression {
+	lit := &FloatLiteral{Token: p.curToken}
+	value, err := strconv.ParseFloat(p.curToken.Literal, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as float", p.curToken.Literal)
 		p.errors = append(p.errors, msg)
 		return nil
 	}
@@ -418,4 +434,61 @@ func (p *Parser) curPrecedence() int {
 		return p
 	}
 	return LOWEST
+}
+
+func (p *Parser) parseWhileStatement() *WhileStatement {
+	stmt := &WhileStatement{Token: p.curToken}
+
+	if !p.expectPeek(LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+
+	stmt.Body = p.parseBlockStatement()
+
+	return stmt
+}
+
+func (p *Parser) parseForStatement() *ForStatement {
+	stmt := &ForStatement{Token: p.curToken}
+
+	p.nextToken()
+	if p.curToken.Type != IDENT {
+		p.errors = append(p.errors, fmt.Sprintf("expected identifier, got %s", p.curToken.Type))
+		return nil
+	}
+
+	stmt.Variable = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if !p.expectPeek(ASSIGN) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Start = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(COMMA) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.End = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+
+	stmt.Body = p.parseBlockStatement()
+
+	return stmt
 }

@@ -2,6 +2,7 @@ package balena
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 )
 
@@ -283,3 +284,63 @@ func (ie *IndexExpression) String() string {
 	out.WriteString("])")
 	return out.String()
 }
+
+type GoObjectLiteral struct {
+	Token Token
+	Value interface{}
+}
+
+func (gol *GoObjectLiteral) expressionNode()      {}
+func (gol *GoObjectLiteral) TokenLiteral() string { return gol.Token.Literal }
+func (gol *GoObjectLiteral) String() string {
+	return fmt.Sprintf("%#v", gol.Value)
+}
+
+type WhileStatement struct {
+	Token     Token // the 'while' token
+	Condition Expression
+	Body      *BlockStatement
+}
+
+func (ws *WhileStatement) statementNode()       {}
+func (ws *WhileStatement) TokenLiteral() string { return ws.Token.Literal }
+func (ws *WhileStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("while ")
+	out.WriteString(ws.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(ws.Body.String())
+	return out.String()
+}
+
+type ForStatement struct {
+	Token    Token       // the 'for' token
+	Variable *Identifier // loop variable
+	Start    Expression  // start value
+	End      Expression  // end value
+	Body     *BlockStatement
+}
+
+func (fs *ForStatement) statementNode()       {}
+func (fs *ForStatement) TokenLiteral() string { return fs.Token.Literal }
+func (fs *ForStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("for ")
+	out.WriteString(fs.Variable.String())
+	out.WriteString(" = ")
+	out.WriteString(fs.Start.String())
+	out.WriteString(", ")
+	out.WriteString(fs.End.String())
+	out.WriteString(" ")
+	out.WriteString(fs.Body.String())
+	return out.String()
+}
+
+type FloatLiteral struct {
+	Token Token
+	Value float64
+}
+
+func (fl *FloatLiteral) expressionNode()      {}
+func (fl *FloatLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FloatLiteral) String() string       { return fl.Token.Literal }

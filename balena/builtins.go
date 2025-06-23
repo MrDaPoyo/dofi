@@ -1,10 +1,12 @@
 package balena
 
+import "math"
+
 var builtins = map[string]*Builtin{
 	"len": &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1",
+				return NewError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
 			switch arg := args[0].(type) {
@@ -13,7 +15,7 @@ var builtins = map[string]*Builtin{
 			case *String:
 				return &ObjectInteger{Value: int64(len(arg.Value))}
 			default:
-				return newError("argument to `len` not supported, got %s",
+				return NewError("argument to `len` not supported, got %s",
 					args[0].Type())
 			}
 		},
@@ -21,11 +23,11 @@ var builtins = map[string]*Builtin{
 	"first": &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1",
+				return NewError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
 			if args[0].Type() != ARRAY_OBJ {
-				return newError("argument to `first` must be ARRAY, got %s",
+				return NewError("argument to `first` must be ARRAY, got %s",
 					args[0].Type())
 			}
 			arr := args[0].(*Array)
@@ -38,11 +40,11 @@ var builtins = map[string]*Builtin{
 	"last": &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1",
+				return NewError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
 			if args[0].Type() != ARRAY_OBJ {
-				return newError("argument to `last` must be ARRAY, got %s",
+				return NewError("argument to `last` must be ARRAY, got %s",
 					args[0].Type())
 			}
 			arr := args[0].(*Array)
@@ -56,11 +58,11 @@ var builtins = map[string]*Builtin{
 	"rest": &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1",
+				return NewError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
 			if args[0].Type() != ARRAY_OBJ {
-				return newError("argument to `rest` must be ARRAY, got %s",
+				return NewError("argument to `rest` must be ARRAY, got %s",
 					args[0].Type())
 			}
 			arr := args[0].(*Array)
@@ -71,6 +73,72 @@ var builtins = map[string]*Builtin{
 				return &Array{Elements: newElements}
 			}
 			return EVAL_NULL
+		},
+	},
+	"cos": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			if args[0].Type() != INTEGER_OBJ {
+				return NewError("argument to `cos` must be INTEGER, got %s",
+					args[0].Type())
+			}
+			intArg := args[0].(*ObjectInteger)
+			return &ObjectFloat{Value: math.Cos(float64(intArg.Value))}
+		},
+	},
+	"sin": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			if args[0].Type() != INTEGER_OBJ {
+				return NewError("argument to `sin` must be INTEGER, got %s",
+					args[0].Type())
+			}
+			intArg := args[0].(*ObjectInteger)
+			return &ObjectFloat{Value: math.Sin(float64(intArg.Value))}
+		},
+	},
+	"floor": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			switch arg := args[0].(type) {
+			case *ObjectInteger:
+				return &ObjectInteger{Value: int64(math.Floor(float64(arg.Value)))}
+			case *ObjectFloat:
+				return &ObjectInteger{Value: int64(math.Floor(arg.Value))}
+			default:
+				return NewError("argument to `floor` must be INTEGER or FLOAT, got %s",
+					args[0].Type())
+			}
+		},
+	},
+}
+
+// Math object with floor function for compatibility
+var mathObject = map[string]*Builtin{
+	"floor": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			switch arg := args[0].(type) {
+			case *ObjectInteger:
+				return &ObjectInteger{Value: int64(math.Floor(float64(arg.Value)))}
+			case *ObjectFloat:
+				return &ObjectInteger{Value: int64(math.Floor(arg.Value))}
+			default:
+				return NewError("argument to `floor` must be INTEGER or FLOAT, got %s",
+					args[0].Type())
+			}
 		},
 	},
 }
