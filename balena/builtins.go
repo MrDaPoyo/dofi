@@ -1,4 +1,4 @@
-package main
+package balena
 
 var builtins = map[string]*Builtin{
 	"len": &Builtin{

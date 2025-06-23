@@ -1,4 +1,4 @@
-package main
+package balena
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()

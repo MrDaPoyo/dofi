@@ -1,4 +1,4 @@
-package main
+package balena
 
 type Lexer struct {
 	input        string
