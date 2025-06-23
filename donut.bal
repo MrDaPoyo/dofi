@@ -30,18 +30,25 @@ let _draw = fn() {
 
             let cosB = cos(B);
             let sinB = sin(B);
-            let x = circlex * cosB * cosphi - circley * sinB;
-            let y = circlex * sinB * cosphi + circley * cosB;
-            let z = K2 + circlex * sinphi;
+            let cosA = cos(A);
+            let sinA = sin(A);
+            let x = circlex * (cosB * cosphi + sinA * sinB * sinphi) - circley * cosA * sinB;
+            let y = circlex * (sinB * cosphi - sinA * cosB * sinphi) + circley * cosA * cosB;
+            let z = K2 + cosA * circlex * sinphi + sinA * circley;
 
             let ooz = 1.0 / z;
-            let xp = (cx + K1 * ooz * x) as int;
-            let yp = (cy + K1 * ooz * y) as int;
+            let xp = int((cx + K1 * ooz * x));
+            let yp = int((cy + K1 * ooz * y));
 
             let idx = xp + yp * screen_width;
-            phi = phi + 0.07;
+            let L = cosphi * costheta * sinB - cosB * sintheta + cosA * (cosB * costheta + sinB * sinphi * sintheta);
+            let luminance = int(8.0 * abs(L));
+            if (xp >= 0 && xp < screen_width && yp >= 0 && yp < screen_height) {
+                buf[idx] = luminance * 32;
+            }
+            let phi = phi + 0.07;
         }
-        theta = theta + 0.07;
+        let theta = theta + 0.07;
     }
 
     let y = 0;
@@ -50,7 +57,7 @@ let _draw = fn() {
         while (x < screen_width) {
             let idx = x + y * screen_width;
             let c = buf[idx];
-            pset(x, y, c, c, c);
+            pset(int(x), int(y), int(c), int(c), int(c));
             x = x + 1;
         }
         y = y + 1;
@@ -60,4 +67,8 @@ let _draw = fn() {
     if (time > 128) {
         time = 0;
     }
+}
+
+let _update = fn() {
+    pset(0, 0, 33, 33, 33);
 }

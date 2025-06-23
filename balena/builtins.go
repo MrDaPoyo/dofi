@@ -81,12 +81,16 @@ var builtins = map[string]*Builtin{
 				return NewError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
-			if args[0].Type() != INTEGER_OBJ {
-				return NewError("argument to `cos` must be INTEGER, got %s",
+			if args[0].Type() != INTEGER_OBJ && args[0].Type() != FLOAT_OBJ {
+				return NewError("argument to `cos` must be INTEGER or FLOAT, got %s",
 					args[0].Type())
 			}
-			intArg := args[0].(*ObjectInteger)
-			return &ObjectFloat{Value: math.Cos(float64(intArg.Value))}
+			if args[0].Type() == INTEGER_OBJ {
+				intArg := args[0].(*ObjectInteger)
+				return &ObjectFloat{Value: math.Cos(float64(intArg.Value))}
+			}
+			floatArg := args[0].(*ObjectFloat)
+			return &ObjectFloat{Value: math.Cos(floatArg.Value)}
 		},
 	},
 	"sin": &Builtin{
@@ -95,12 +99,16 @@ var builtins = map[string]*Builtin{
 				return NewError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
-			if args[0].Type() != INTEGER_OBJ {
-				return NewError("argument to `sin` must be INTEGER, got %s",
+			if args[0].Type() != INTEGER_OBJ && args[0].Type() != FLOAT_OBJ {
+				return NewError("argument to `sin` must be INTEGER or FLOAT, got %s",
 					args[0].Type())
 			}
-			intArg := args[0].(*ObjectInteger)
-			return &ObjectFloat{Value: math.Sin(float64(intArg.Value))}
+			if args[0].Type() == INTEGER_OBJ {
+				intArg := args[0].(*ObjectInteger)
+				return &ObjectFloat{Value: math.Sin(float64(intArg.Value))}
+			}
+			floatArg := args[0].(*ObjectFloat)
+			return &ObjectFloat{Value: math.Sin(floatArg.Value)}
 		},
 	},
 	"floor": &Builtin{
@@ -120,9 +128,58 @@ var builtins = map[string]*Builtin{
 			}
 		},
 	},
+	"array": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return &Array{Elements: []Object{}}
+			}
+			elements := make([]Object, len(args))
+			copy(elements, args)
+			return &Array{Elements: elements}
+		},
+	},
+	"int": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			if args[0].Type() == NULL_OBJ {
+				return &ObjectInteger{Value: 0}
+			}
+			switch arg := args[0].(type) {
+			case *ObjectInteger:
+				return arg
+			case *ObjectFloat:
+				return &ObjectInteger{Value: int64(arg.Value)}
+			default:
+				return NewError("argument to `int` must be INTEGER or FLOAT, got %s",
+					args[0].Type())
+			}
+		},
+	},
+	"float": &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return NewError("wrong number of arguments. got=%d, want=1",
+					len(args))
+			}
+			if args[0].Type() == NULL_OBJ {
+				return &ObjectFloat{Value: 0.0}
+			}
+			switch arg := args[0].(type) {
+			case *ObjectInteger:
+				return &ObjectFloat{Value: float64(arg.Value)}
+			case *ObjectFloat:
+				return arg
+			default:
+				return NewError("argument to `float` must be INTEGER or FLOAT, got %s",
+					args[0].Type())
+			}
+		},
+	},
 }
 
-// Math object with floor function for compatibility
 var mathObject = map[string]*Builtin{
 	"floor": &Builtin{
 		Fn: func(args ...Object) Object {

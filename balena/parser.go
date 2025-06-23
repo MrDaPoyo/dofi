@@ -65,6 +65,8 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(STRING, p.parseStringLiteral)
 	p.registerPrefix(LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(LBRACE, p.parseHashLiteral)
+	p.registerPrefix(WHILE, p.parseWhileExpression)
+	p.registerPrefix(FOR, p.parseForExpression)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -82,6 +84,41 @@ func NewParser(l *Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 	return p
+}
+
+func (p *Parser) parseWhileExpression() Expression {
+	expression := &WhileExpression{Token: p.curToken}
+
+	if !p.expectPeek(LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	expression.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+
+	expression.Body = p.parseBlockStatement()
+
+	return expression
+}
+
+func (p *Parser) parseForExpression() Expression {
+	expression := &ForExpression{Token: p.curToken}
+
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+
+	expression.Body = p.parseBlockStatement()
+
+	return expression
 }
 
 func (p *Parser) Errors() []string {

@@ -25,6 +25,7 @@ func Eval(node Node, env *Environment) Object {
 			return val
 		}
 		env.Set(node.Name.Value, val)
+		return nil
 	case *ExpressionStatement:
 		return Eval(node.Expression, env)
 	case *IntegerLiteral:
@@ -474,6 +475,9 @@ func evalIntegerInfixExpression(
 	case "*":
 		return &ObjectInteger{Value: leftVal * rightVal}
 	case "/":
+		if rightVal == 0 {
+			return NewError("division by zero")
+		}
 		return &ObjectInteger{Value: leftVal / rightVal}
 	case "<":
 		return nativeBoolToBooleanObject(leftVal < rightVal)

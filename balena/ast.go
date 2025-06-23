@@ -149,6 +149,11 @@ type BlockStatement struct {
 	Statements []Statement
 }
 
+// expressionNode implements Expression.
+func (bs *BlockStatement) expressionNode() {
+	panic("unimplemented")
+}
+
 func (bs *BlockStatement) statementNode()       {}
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
 func (bs *BlockStatement) String() string {
@@ -346,9 +351,9 @@ func (fl *FloatLiteral) TokenLiteral() string { return fl.Token.Literal }
 func (fl *FloatLiteral) String() string       { return fl.Token.Literal }
 
 type AssignmentStatement struct {
-	Token Token       // the identifier token
-	Name  *Identifier // the variable being assigned to
-	Value Expression  // the value being assigned
+	Token Token
+	Name  *Identifier
+	Value Expression
 }
 
 func (as *AssignmentStatement) statementNode()       {}
@@ -365,10 +370,10 @@ func (as *AssignmentStatement) String() string {
 }
 
 type CompoundAssignmentStatement struct {
-	Token    Token       // the identifier token
-	Name     *Identifier // the variable being assigned to
-	Operator string      // += or -=
-	Value    Expression  // the value being used in the operation
+	Token    Token
+	Name     *Identifier
+	Operator string
+	Value    Expression
 }
 
 func (cas *CompoundAssignmentStatement) statementNode()       {}
@@ -385,7 +390,7 @@ func (cas *CompoundAssignmentStatement) String() string {
 }
 
 type HashLiteral struct {
-	Token Token // the '{' token
+	Token Token
 	Pairs map[Expression]Expression
 }
 
@@ -400,5 +405,45 @@ func (hl *HashLiteral) String() string {
 	out.WriteString("{")
 	out.WriteString(strings.Join(pairs, ", "))
 	out.WriteString("}")
+	return out.String()
+}
+
+type WhileExpression struct {
+	Token     Token // the 'while' token
+	Condition Expression
+	Body      Expression
+}
+
+func (we *WhileExpression) expressionNode()      {}
+func (we *WhileExpression) TokenLiteral() string { return we.Token.Literal }
+func (we *WhileExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("while ")
+	out.WriteString(we.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(we.Body.String())
+	return out.String()
+}
+
+type ForExpression struct {
+	Token    Token       // the 'for' token
+	Variable *Identifier
+	Start    Expression
+	End      Expression
+	Body     Expression
+}
+
+func (fe *ForExpression) expressionNode()      {}
+func (fe *ForExpression) TokenLiteral() string { return fe.Token.Literal }
+func (fe *ForExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("for ")
+	out.WriteString(fe.Variable.String())
+	out.WriteString(" = ")
+	out.WriteString(fe.Start.String())
+	out.WriteString(", ")
+	out.WriteString(fe.End.String())
+	out.WriteString(" ")
+	out.WriteString(fe.Body.String())
 	return out.String()
 }
