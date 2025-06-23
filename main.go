@@ -7,6 +7,7 @@ import (
 	"image/color"
 	_ "image/png"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -602,6 +603,22 @@ func MakeGame() *Game {
 
 func main() {
 	game := MakeGame()
+
+	if os.Args[0] == "run" {
+		if len(os.Args) > 1 {	
+			scriptPath := os.Args[1]
+			scriptContent, err := os.ReadFile(scriptPath)
+			if err != nil {
+				log.Fatalf("Error reading script file: %v", err)
+			}
+			if err := game.RunBalenaScript(game.BalenaEnv, string(scriptContent));
+				err != nil {
+				log.Fatalf("Error running script: %v", err)
+			}
+		} else {
+			log.Fatal("No script file provided. Usage: go run main.go <script.bal>")
+		}
+	}
 
 	ebiten.SetWindowSize(game.Screen.Width*game.Screen.UpscalingFactor, game.Screen.Height*game.Screen.UpscalingFactor)
 	ebiten.SetWindowTitle("Dofi! :3")

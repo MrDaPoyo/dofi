@@ -541,37 +541,69 @@ func evalWhileStatement(stmt *WhileStatement, env *Environment) Object {
 }
 
 func evalForStatement(stmt *ForStatement, env *Environment) Object {
-	start := Eval(stmt.Start, env)
-	if isError(start) {
-		return start
-	}
-
-	end := Eval(stmt.End, env)
-	if isError(end) {
-		return end
-	}
-
-	startInt, ok := start.(*ObjectInteger)
-	if !ok {
-		return NewError("for loop start value must be integer, got %s", start.Type())
-	}
-
-	endInt, ok := end.(*ObjectInteger)
-	if !ok {
-		return NewError("for loop end value must be integer, got %s", end.Type())
-	}
-
 	forEnv := NewEnclosedEnvironment(env)
+	for param := range env.modifiedVars {
+		if _, ok := forEnv.Get(param); ok {
+			return NewError("variable already defined: %s", param)
+		}
+		forEnv.Set(param, EVAL_NULL)
+	}
 
-	for i := startInt.Value; i <= endInt.Value; i++ {
-		forEnv.Set(stmt.Variable.Value, &ObjectInteger{Value: i})
+	startObj := Eval(stmt.Start, forEnv)
+	if isError(startObj) {
+		return startObj
+	}
+	endObj := Eval(stmt.End, forEnv)
+	if isError(endObj) {
+		return endObj
+	}
 
+	startInt, startIsInt := startObj.(*ObjectInteger)
+	endInt, endIsInt := endObj.(*ObjectInteger)
+
+	if startIsInt && endIsInt {
+		step := int64(1)
+		if startInt.Value > endInt.Value {
+			step = -1
+		}
+		for i := startInt.Value; (step > 0 && i <= endInt.Value) || (step < 0 && i >= endInt.Value); i += step {
+			forEnv.Set(stmt.Variable.Value, &ObjectInteger{Value: i})
+			result := Eval(stmt.Body, forEnv)
+			if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
+				return result
+			}
+		}
+		return EVAL_NULL
+	}
+
+	// fallback to float math if either bound is float
+	var startF, endF float64
+	if startIsInt {
+		startF = float64(startInt.Value)
+	} else if s, ok := startObj.(*ObjectFloat); ok {
+		startF = s.Value
+	} else {
+		return NewError("for loop start must be int or float")
+	}
+	if endIsInt {
+		endF = float64(endInt.Value)
+	} else if e, ok := endObj.(*ObjectFloat); ok {
+		endF = e.Value
+	} else {
+		return NewError("for loop end must be int or float")
+	}
+	step := 1.0
+	if startF > endF {
+		step = -1.0
+	}
+	epsilon := 1e-9
+	for i := startF; (step > 0 && i <= endF+epsilon) || (step < 0 && i >= endF-epsilon); i += step {
+		forEnv.Set(stmt.Variable.Value, &ObjectFloat{Value: i})
 		result := Eval(stmt.Body, forEnv)
 		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
 			return result
 		}
 	}
-
 	return EVAL_NULL
 }
 

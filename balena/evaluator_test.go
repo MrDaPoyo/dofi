@@ -582,3 +582,18 @@ func TestHashIndexExpressions(t *testing.T) {
 		}
 	}
 }
+
+func TestForLoops(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"for (let i = 0; i < 5; i = i + 1) { i }", 4},
+		{"let sum = 0; for (let i = 0; i < 5; i = i + 1) { sum = sum + i; } sum", 10},
+		{"let arr = [1, 2, 3]; let result = []; for (let i = 0; i < len(arr); i = i + 1) { result[i] = arr[i]; } result[2]", 3},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testIntegerObject(t, evaluated, tt.expected)
+	}
+}
