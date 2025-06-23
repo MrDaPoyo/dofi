@@ -486,3 +486,15 @@ func TestEnvironmentNewGoObject(t *testing.T) {
 		t.Errorf("unexpected map values: %+v", m)
 	}
 }
+
+func TestFloatMultiplication(t *testing.T) {
+	input := "2.5 * 4.0"
+	evaluated := testEval(input)
+	floatObj, ok := evaluated.(*ObjectFloat)
+	if !ok {
+		t.Fatalf("object is not ObjectFloat. got=%T (%+v)", evaluated, evaluated)
+	}
+	if floatObj.Value != 10.0 {
+		t.Errorf("ObjectFloat has wrong value. got=%f, want=10.0", floatObj.Value)
+	}
+}

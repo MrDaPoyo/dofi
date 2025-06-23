@@ -13,15 +13,10 @@ let A_speed = 0.07;
 let B_speed = 0.03;
 
 let _update = fn() {
-    let time = time + 1;
+    time = 22222;
+    print(232132321)
 }
 
-let _draw = fn() {
-    clear()
-    let A = R1 * sin(A_speed * time);
-    let B = R2 * sin(B_speed * time);
-    let x1 = cx + A;
-    let y1 = cy + B;
-
-    pset(x1, y1, 255, 0, 0);
+let _draw = fn() {    
+    pset(time, time, 255, 0, 0);
 }
