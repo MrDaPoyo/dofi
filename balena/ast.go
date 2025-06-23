@@ -344,3 +344,42 @@ type FloatLiteral struct {
 func (fl *FloatLiteral) expressionNode()      {}
 func (fl *FloatLiteral) TokenLiteral() string { return fl.Token.Literal }
 func (fl *FloatLiteral) String() string       { return fl.Token.Literal }
+
+type AssignmentStatement struct {
+	Token Token       // the identifier token
+	Name  *Identifier // the variable being assigned to
+	Value Expression  // the value being assigned
+}
+
+func (as *AssignmentStatement) statementNode()       {}
+func (as *AssignmentStatement) TokenLiteral() string { return as.Token.Literal }
+func (as *AssignmentStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(as.Name.String())
+	out.WriteString(" = ")
+	if as.Value != nil {
+		out.WriteString(as.Value.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}
+
+type CompoundAssignmentStatement struct {
+	Token    Token       // the identifier token
+	Name     *Identifier // the variable being assigned to
+	Operator string      // += or -=
+	Value    Expression  // the value being used in the operation
+}
+
+func (cas *CompoundAssignmentStatement) statementNode()       {}
+func (cas *CompoundAssignmentStatement) TokenLiteral() string { return cas.Token.Literal }
+func (cas *CompoundAssignmentStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(cas.Name.String())
+	out.WriteString(" " + cas.Operator + " ")
+	if cas.Value != nil {
+		out.WriteString(cas.Value.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}

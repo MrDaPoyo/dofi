@@ -18,4 +18,10 @@ let _update = fn() {
 
 let _draw = fn() {
     clear()
+    let A = R1 * sin(A_speed * time);
+    let B = R2 * sin(B_speed * time);
+    let x1 = cx + A;
+    let y1 = cy + B;
+
+    pset(x1, y1, 255, 0, 0);
 }

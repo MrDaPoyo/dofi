@@ -197,6 +197,13 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseWhileStatement()
 	case FOR:
 		return p.parseForStatement()
+	case IDENT:
+		if p.peekTokenIs(ASSIGN) {
+			return p.parseAssignmentStatement()
+		} else if p.peekTokenIs(PLUS_EQ) || p.peekTokenIs(MINUS_EQ) {
+			return p.parseCompoundAssignmentStatement()
+		}
+		return p.parseExpressionStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -489,6 +496,47 @@ func (p *Parser) parseForStatement() *ForStatement {
 	}
 
 	stmt.Body = p.parseBlockStatement()
+
+	return stmt
+}
+
+func (p *Parser) parseAssignmentStatement() *AssignmentStatement {
+	stmt := &AssignmentStatement{Token: p.curToken}
+
+	stmt.Name = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if !p.expectPeek(ASSIGN) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseCompoundAssignmentStatement() *CompoundAssignmentStatement {
+	stmt := &CompoundAssignmentStatement{Token: p.curToken}
+
+	stmt.Name = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if !p.peekTokenIs(PLUS_EQ) && !p.peekTokenIs(MINUS_EQ) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Operator = p.curToken.Literal
+
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(SEMICOLON) {
+		p.nextToken()
+	}
 
 	return stmt
 }
