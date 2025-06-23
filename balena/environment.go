@@ -23,6 +23,7 @@ func NewEnvironment() *Environment {
 type Environment struct {
 	store map[string]Object
 	outer *Environment
+	modifiedVars map[string]struct{}
 }
 
 func (e *Environment) Get(name string) (Object, bool) {
@@ -54,7 +55,6 @@ func (e *Environment) CallFunction(name string, args ...Object) (Object, error) 
 	if ok {
 		switch fn := obj.(type) {
 		case *Function:
-			// Call user-defined function
 			result := CallFunction(e, name, args...)
 			if errObj, ok := result.(*Error); ok {
 				return nil, fmt.Errorf("%s", errObj.Message)
@@ -67,7 +67,6 @@ func (e *Environment) CallFunction(name string, args ...Object) (Object, error) 
 		}
 	}
 
-	// Check if it exists as a builtin (includes external bindings)
 	builtin, exists := builtins[name]
 	if !exists {
 		return nil, fmt.Errorf("function not found: %s", name)

@@ -7,14 +7,15 @@ const (
 	INT     = "INT"   // 1343456
 	FLOAT   = "FLOAT" // 3.14159
 	// Operators
-	ASSIGN  = "="
-	PLUS    = "+"
-	PLUS_EQ = "+="
-	MINUS_EQ  = "-="
-	EQ      = "=="
-	NOT_EQ  = "!="
+	ASSIGN   = "="
+	PLUS     = "+"
+	PLUS_EQ  = "+="
+	MINUS_EQ = "-="
+	EQ       = "=="
+	NOT_EQ   = "!="
 	// Delimiters
 	COMMA     = ","
+	COLON     = ":"
 	SEMICOLON = ";"
 	LPAREN    = "("
 	RPAREN    = ")"

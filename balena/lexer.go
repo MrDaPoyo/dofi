@@ -71,6 +71,8 @@ func (l *Lexer) NextToken() Token {
 		tok = newToken(LT, l.ch)
 	case '>':
 		tok = newToken(GT, l.ch)
+	case ':':
+		tok = newToken(COLON, l.ch)
 	case ';':
 		tok = newToken(SEMICOLON, l.ch)
 	case '(':
@@ -126,15 +128,15 @@ func newToken(tokenType TokenType, ch byte) Token {
 }
 
 func isIdentChar(ch byte) bool {
-    return isLetter(ch) || isDigit(ch)
+	return isLetter(ch) || isDigit(ch)
 }
 
 func (l *Lexer) readIdentifier() string {
-    position := l.position
-    for isIdentChar(l.ch) {
-        l.readChar()
-    }
-    return l.input[position:l.position]
+	position := l.position
+	for isIdentChar(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
 }
 
 func isLetter(ch byte) bool {

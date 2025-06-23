@@ -167,6 +167,7 @@ func (g *Game) Update() (err error) {
 		}
 		if _, err := g.BalenaEnv.CallFunction("_update"); err != nil {
 			g.AppendLine("Balena error in _update: "+err.Error(), false)
+			log.Println("Balena error in _update: " + err.Error())
 		}
 		return nil
 	}

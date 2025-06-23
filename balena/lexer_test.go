@@ -23,6 +23,7 @@ return false;
 "foobar"
 "foo bar"
 [1, 2];
+{"foo": "bar"}
 `
 
 	tests := []struct {
@@ -110,6 +111,11 @@ return false;
 		{INT, "2"},
 		{RBRACKET, "]"},
 		{SEMICOLON, ";"},
+		{LBRACE, "{"},
+		{STRING, "foo"},
+		{COLON, ":"},
+		{STRING, "bar"},
+		{RBRACE, "}"},
 		{EOF, ""},
 	}
 

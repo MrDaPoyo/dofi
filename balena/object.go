@@ -3,6 +3,7 @@ package balena
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"strings"
 )
 
@@ -20,6 +21,7 @@ const (
 	ARRAY_OBJ        = "ARRAY"
 	GO_OBJ           = "GO_OBJ"
 	FLOAT_OBJ        = "FLOAT"
+	HASH_OBJ         = "HASH"
 )
 
 type Object interface {
@@ -29,6 +31,16 @@ type Object interface {
 
 type ObjectBoolean struct {
 	Value bool
+}
+
+func (b *ObjectBoolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return HashKey{Type: b.Type(), Value: value}
 }
 
 func (b *ObjectBoolean) Type() ObjectType { return BOOLEAN_OBJ }
@@ -129,5 +141,62 @@ type ObjectFloat struct {
 	Value float64
 }
 
-func (f *ObjectFloat) Type() ObjectType { return "FLOAT_OBJ" }
+func (f *ObjectFloat) Type() ObjectType { return "FLOAT" }
 func (f *ObjectFloat) Inspect() string  { return fmt.Sprintf("%f", f.Value) }
+
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return HashKey{Type: b.Type(), Value: value}
+}
+
+func (b *Boolean) Type() ObjectType {
+	return BOOLEAN_OBJ
+}
+
+func (i *ObjectInteger) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() ObjectType { return HASH_OBJ }
+
+func (h *Hash) Inspect() string {
+	var out bytes.Buffer
+	pairs := []string{}
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s",
+			pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+	return out.String()
+}
+
+type Hashable interface {
+	HashKey() HashKey
+}

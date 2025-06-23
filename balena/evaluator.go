@@ -99,6 +99,44 @@ func Eval(node Node, env *Environment) Object {
 		return evalForStatement(node, env)
 	case *GoObjectLiteral:
 		return &GoObject{Value: node.Value}
+	case *HashLiteral:
+		return evalHashLiteral(node, env)
+
+	case *AssignmentStatement:
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+		env.Set(node.Name.Value, val)
+		return val
+	case *CompoundAssignmentStatement:
+		current, ok := env.Get(node.Name.Value)
+		if !ok {
+			return NewError("identifier not found: %s", node.Name.Value)
+		}
+
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+
+		var operator string
+		switch node.Operator {
+		case "+=":
+			operator = "+"
+		case "-=":
+			operator = "-"
+		default:
+			return NewError("unknown compound operator: %s", node.Operator)
+		}
+
+		result := evalInfixExpression(operator, current, val)
+		if isError(result) {
+			return result
+		}
+
+		env.Set(node.Name.Value, result)
+		return result
 	}
 
 	return nil
@@ -208,9 +246,24 @@ func evalIndexExpression(left, index Object) Object {
 	switch {
 	case left.Type() == ARRAY_OBJ && index.Type() == INTEGER_OBJ:
 		return evalArrayIndexExpression(left, index)
+	case left.Type() == HASH_OBJ:
+		return evalHashIndexExpression(left, index)
 	default:
 		return NewError("index operator not supported: %s", left.Type())
 	}
+}
+
+func evalHashIndexExpression(hash, index Object) Object {
+	hashObject := hash.(*Hash)
+	key, ok := index.(Hashable)
+	if !ok {
+		return NewError("unusable as hash key: %s", index.Type())
+	}
+	pair, ok := hashObject.Pairs[key.HashKey()]
+	if !ok {
+		return EVAL_NULL
+	}
+	return pair.Value
 }
 
 func evalArrayIndexExpression(array, index Object) Object {
@@ -255,11 +308,16 @@ func evalPrefixExpression(operator string, right Object) Object {
 }
 
 func evalMinusPrefixOperatorExpression(right Object) Object {
-	if right.Type() != INTEGER_OBJ {
+	switch right.Type() {
+	case INTEGER_OBJ:
+		value := right.(*ObjectInteger).Value
+		return &ObjectInteger{Value: -value}
+	case FLOAT_OBJ:
+		value := right.(*ObjectFloat).Value
+		return &ObjectFloat{Value: -value}
+	default:
 		return NewError("unknown operator: -%s", right.Type())
 	}
-	value := right.(*ObjectInteger).Value
-	return &ObjectInteger{Value: -value}
 }
 
 func evalBangOperatorExpression(right Object) Object {
@@ -282,6 +340,13 @@ func evalInfixExpression(
 	switch {
 	case left.Type() == INTEGER_OBJ && right.Type() == INTEGER_OBJ:
 		return evalIntegerInfixExpression(operator, left, right)
+	case left.Type() == FLOAT_OBJ && right.Type() == FLOAT_OBJ:
+		return evalFloatInfixExpression(operator, left, right)
+	case (left.Type() == INTEGER_OBJ && right.Type() == FLOAT_OBJ) ||
+		(left.Type() == FLOAT_OBJ && right.Type() == INTEGER_OBJ):
+		return evalMixedNumericInfixExpression(operator, left, right)
+	case left.Type() == BOOLEAN_OBJ && right.Type() == BOOLEAN_OBJ:
+		return evalBooleanInfixExpression(operator, left, right)
 	case operator == "==":
 		return nativeBoolToBooleanObject(left == right)
 	case operator == "!=":
@@ -291,10 +356,94 @@ func evalInfixExpression(
 			left.Type(), operator, right.Type())
 	case left.Type() == STRING_OBJ && right.Type() == STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
+	default:
+		return NewError("eval infix unknown operator: %s %s %s",
+			left.Type(), operator, right.Type())
+	}
+}
 
+// Add this function after evalInfixExpression
+func evalBooleanInfixExpression(operator string, left, right Object) Object {
+	leftVal := left.(*ObjectBoolean).Value
+	rightVal := right.(*ObjectBoolean).Value
+	switch operator {
+	case "==":
+		return nativeBoolToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBoolToBooleanObject(leftVal != rightVal)
+	case "&&":
+		return nativeBoolToBooleanObject(leftVal && rightVal)
+	case "||":
+		return nativeBoolToBooleanObject(leftVal || rightVal)
 	default:
 		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
+	}
+}
+
+func evalMixedNumericInfixExpression(operator string, left, right Object) Object {
+	var leftVal, rightVal float64
+
+	if left.Type() == INTEGER_OBJ {
+		leftVal = float64(left.(*ObjectInteger).Value)
+	} else {
+		leftVal = left.(*ObjectFloat).Value
+	}
+
+	if right.Type() == INTEGER_OBJ {
+		rightVal = float64(right.(*ObjectInteger).Value)
+	} else {
+		rightVal = right.(*ObjectFloat).Value
+	}
+
+	switch operator {
+	case "+":
+		return &ObjectFloat{Value: leftVal + rightVal}
+	case "-":
+		return &ObjectFloat{Value: leftVal - rightVal}
+	case "*":
+		return &ObjectFloat{Value: leftVal * rightVal}
+	case "/":
+		return &ObjectFloat{Value: leftVal / rightVal}
+	case "<":
+		return nativeBoolToBooleanObject(leftVal < rightVal)
+	case ">":
+		return nativeBoolToBooleanObject(leftVal > rightVal)
+	case "==":
+		return nativeBoolToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBoolToBooleanObject(leftVal != rightVal)
+	default:
+		return NewError("unknown operator: %s", operator)
+	}
+}
+
+func evalFloatInfixExpression(operator string, left, right Object) Object {
+	leftVal := left.(*ObjectFloat).Value
+	rightVal := right.(*ObjectFloat).Value
+
+	switch operator {
+	case "+":
+		return &ObjectFloat{Value: leftVal + rightVal}
+	case "-":
+		return &ObjectFloat{Value: leftVal - rightVal}
+	case "*":
+		return &ObjectFloat{Value: leftVal * rightVal}
+	case "/":
+		if rightVal == 0 {
+			return NewError("division by zero")
+		}
+		return &ObjectFloat{Value: leftVal / rightVal}
+	case "<":
+		return nativeBoolToBooleanObject(leftVal < rightVal)
+	case ">":
+		return nativeBoolToBooleanObject(leftVal > rightVal)
+	case "==":
+		return nativeBoolToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBoolToBooleanObject(leftVal != rightVal)
+	default:
+		return NewError("unknown operator: %s", operator)
 	}
 }
 
@@ -420,6 +569,30 @@ func evalForStatement(stmt *ForStatement, env *Environment) Object {
 	}
 
 	return EVAL_NULL
+}
+
+func evalHashLiteral(
+	node *HashLiteral,
+	env *Environment,
+) Object {
+	pairs := make(map[HashKey]HashPair)
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+		if isError(key) {
+			return key
+		}
+		hashKey, ok := key.(Hashable)
+		if !ok {
+			return NewError("unusable as hash key: %s", key.Type())
+		}
+		value := Eval(valueNode, env)
+		if isError(value) {
+			return value
+		}
+		hashed := hashKey.HashKey()
+		pairs[hashed] = HashPair{Key: key, Value: value}
+	}
+	return &Hash{Pairs: pairs}
 }
 
 func NewError(format string, a ...any) *Error {
