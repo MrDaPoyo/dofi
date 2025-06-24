@@ -94,12 +94,13 @@ func Eval(node Node, env *Environment) Object {
 			return args[0]
 		}
 		return applyFunction(function, args)
-	case *WhileStatement:
-		return evalWhileStatement(node, env)
-	case *ForStatement:
-		return evalForStatement(node, env)
-	case *CStyleForStatement:
-		return evalCStyleForStatement(node, env)
+	// todo
+	// case *WhileStatement:
+	// 	return evalWhileStatement(node, env)
+	// case *ForStatement:
+	// 	return evalForStatement(node, env)
+	// case *CStyleForStatement:
+	// 	return evalCStyleForStatement(node, env)
 	case *GoObjectLiteral:
 		return &GoObject{Value: node.Value}
 	case *HashLiteral:
@@ -521,129 +522,6 @@ func evalBlockStatement(block *BlockStatement, env *Environment) Object {
 		}
 	}
 	return result
-}
-
-func evalWhileStatement(stmt *WhileStatement, env *Environment) Object {
-	for {
-		condition := Eval(stmt.Condition, env)
-		if isError(condition) {
-			return condition
-		}
-
-		if !isTruthy(condition) {
-			break
-		}
-
-		result := Eval(stmt.Body, env)
-		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
-			return result
-		}
-	}
-	return EVAL_NULL
-}
-
-func evalCStyleForStatement(stmt *CStyleForStatement, env *Environment) Object {
-	forEnv := NewEnclosedEnvironment(env)
-	
-	if stmt.Init != nil {
-		initResult := Eval(stmt.Init, forEnv)
-		if isError(initResult) {
-			return initResult
-		}
-	}
-	
-	for {
-		if stmt.Condition != nil {
-			condition := Eval(stmt.Condition, forEnv)
-			if isError(condition) {
-				return condition
-			}
-			if !isTruthy(condition) {
-				break
-			}
-		}
-		
-		result := Eval(stmt.Body, forEnv)
-		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
-			return result
-		}
-		
-		if stmt.Increment != nil {
-			incResult := Eval(stmt.Increment, forEnv)
-			if isError(incResult) {
-				return incResult
-			}
-		}
-	}
-	
-	return EVAL_NULL
-}
-
-func evalForStatement(stmt *ForStatement, env *Environment) Object {
-	forEnv := NewEnclosedEnvironment(env)
-	for param := range env.modifiedVars {
-		if _, ok := forEnv.Get(param); ok {
-			return NewError("variable already defined: %s", param)
-		}
-		forEnv.Set(param, EVAL_NULL)
-	}
-
-	startObj := Eval(stmt.Start, forEnv)
-	if isError(startObj) {
-		return startObj
-	}
-	endObj := Eval(stmt.End, forEnv)
-	if isError(endObj) {
-		return endObj
-	}
-
-	startInt, startIsInt := startObj.(*ObjectInteger)
-	endInt, endIsInt := endObj.(*ObjectInteger)
-
-	if startIsInt && endIsInt {
-		step := int64(1)
-		if startInt.Value > endInt.Value {
-			step = -1
-		}
-		for i := startInt.Value; (step > 0 && i <= endInt.Value) || (step < 0 && i >= endInt.Value); i += step {
-			forEnv.Set(stmt.Variable.Value, &ObjectInteger{Value: i})
-			result := Eval(stmt.Body, forEnv)
-			if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
-				return result
-			}
-		}
-		return EVAL_NULL
-	}
-
-	// fallback to float math if either bound is float
-	var startF, endF float64
-	if startIsInt {
-		startF = float64(startInt.Value)
-	} else if s, ok := startObj.(*ObjectFloat); ok {
-		startF = s.Value
-	} else {
-		return NewError("for loop start must be int or float")
-	}
-	if endIsInt {
-		endF = float64(endInt.Value)
-	} else if e, ok := endObj.(*ObjectFloat); ok {
-		endF = e.Value
-	} else {
-		return NewError("for loop end must be int or float")
-	}
-	step := 1.0
-	if startF > endF {
-		step = -1.0
-	}
-	epsilon := 1e-9
-	for i := startF; (step > 0 && i <= endF+epsilon) || (step < 0 && i >= endF-epsilon); i += step {
-		forEnv.Set(stmt.Variable.Value, &ObjectFloat{Value: i})
-		result := Eval(stmt.Body, forEnv)
-		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
-			return result
-		}
-	}
-	return EVAL_NULL
 }
 
 func evalHashLiteral(

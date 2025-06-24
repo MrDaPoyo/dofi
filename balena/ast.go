@@ -300,46 +300,6 @@ func (gol *GoObjectLiteral) String() string {
 	return fmt.Sprintf("%#v", gol.Value)
 }
 
-type WhileStatement struct {
-	Token     Token // the 'while' token
-	Condition Expression
-	Body      *BlockStatement
-}
-
-func (ws *WhileStatement) statementNode()       {}
-func (ws *WhileStatement) TokenLiteral() string { return ws.Token.Literal }
-func (ws *WhileStatement) String() string {
-	var out bytes.Buffer
-	out.WriteString("while ")
-	out.WriteString(ws.Condition.String())
-	out.WriteString(" ")
-	out.WriteString(ws.Body.String())
-	return out.String()
-}
-
-type ForStatement struct {
-	Token    Token       // the 'for' token
-	Variable *Identifier // loop variable
-	Start    Expression  // start value
-	End      Expression  // end value
-	Body     *BlockStatement
-}
-
-func (fs *ForStatement) statementNode()       {}
-func (fs *ForStatement) TokenLiteral() string { return fs.Token.Literal }
-func (fs *ForStatement) String() string {
-	var out bytes.Buffer
-	out.WriteString("for ")
-	out.WriteString(fs.Variable.String())
-	out.WriteString(" = ")
-	out.WriteString(fs.Start.String())
-	out.WriteString(", ")
-	out.WriteString(fs.End.String())
-	out.WriteString(" ")
-	out.WriteString(fs.Body.String())
-	return out.String()
-}
-
 type FloatLiteral struct {
 	Token Token
 	Value float64
@@ -448,18 +408,18 @@ func (fe *ForExpression) String() string {
 }
 
 type CStyleForStatement struct {
-    Token     Token // the 'for' token
-    Init      Statement   // let x = 0
-    Condition Expression  // x < screen_width  
-    Increment Statement   // x += 1
-    Body      *BlockStatement
+	Token     Token      // the 'for' token
+	Init      Statement  // let x = 0
+	Condition Expression // x < screen_width
+	Increment Statement  // x += 1
+	Body      *BlockStatement
 }
 
-func (cfs *CStyleForStatement) TokenLiteral() string { 
-    return cfs.Token.Literal 
+func (cfs *CStyleForStatement) TokenLiteral() string {
+	return cfs.Token.Literal
 }
 
-func (cfs *CStyleForStatement) statementNode()       {}
+func (cfs *CStyleForStatement) statementNode() {}
 
 func (cfs *CStyleForStatement) String() string {
 	var out bytes.Buffer

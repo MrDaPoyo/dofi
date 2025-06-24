@@ -69,7 +69,7 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(STRING, p.parseStringLiteral)
 	p.registerPrefix(LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(LBRACE, p.parseHashLiteral)
-	// p.registerPrefix(WHILE, p.parseWhileExpression)
+	p.registerPrefix(WHILE, p.parseWhileExpression)
     p.registerPrefix(FOR, p.parseForExpression)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
@@ -257,13 +257,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseLetStatement()
 	case RETURN:
 		return p.parseReturnStatement()
-	case WHILE:
-		return p.parseWhileStatement()
-	case FOR:
-		if p.peekToken.Type == LPAREN {
-        	return p.parseCStyleForStatement()
-    	}
-    	return p.parseRangeForStatement()
+	// 	case WHILE:
+			// todo
+	//	case FOR:
+			// todo
 	case IDENT:
 		if p.peekTokenIs(ASSIGN) {
 			return p.parseAssignmentStatement()
@@ -274,57 +271,6 @@ func (p *Parser) parseStatement() Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
-}
-
-func (p *Parser) parseCStyleForStatement() *CStyleForStatement {
-	stmt := &CStyleForStatement{Token: p.curToken}
-	if !p.expectPeek(LPAREN) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Init = p.parseExpressionStatement()
-	if !p.expectPeek(SEMICOLON) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Condition = p.parseExpression(LOWEST)
-	if !p.expectPeek(SEMICOLON) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Increment = p.parseExpressionStatement()
-	if !p.expectPeek(RPAREN) {
-		return nil
-	}
-	p.nextToken()
-	if !p.expectPeek(LBRACE) {
-		return nil
-	}
-	stmt.Body = p.parseBlockStatement()
-	return stmt
-}
-
-func (p *Parser) parseRangeForStatement() *ForStatement {
-	stmt := &ForStatement{Token: p.curToken}
-	if !p.expectPeek(IDENT) {
-		return nil
-	}
-	stmt.Variable = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	if !p.expectPeek(IN) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Start = p.parseExpression(LOWEST)
-	if !p.expectPeek(COMMA) {
-		return nil
-	}
-	p.nextToken()
-	stmt.End = p.parseExpression(LOWEST)
-	if !p.expectPeek(LBRACE) {
-		return nil
-	}
-	stmt.Body = p.parseBlockStatement()
-	return stmt
 }
 
 func (p *Parser) parseReturnStatement() *ReturnStatement {
@@ -559,60 +505,6 @@ func (p *Parser) curPrecedence() int {
 		return p
 	}
 	return LOWEST
-}
-
-func (p *Parser) parseWhileStatement() *WhileStatement {
-	stmt := &WhileStatement{Token: p.curToken}
-
-	if !p.expectPeek(LPAREN) {
-		return nil
-	}
-
-	p.nextToken()
-	stmt.Condition = p.parseExpression(LOWEST)
-
-	if !p.expectPeek(RPAREN) {
-		return nil
-	}
-
-	if !p.expectPeek(LBRACE) {
-		return nil
-	}
-
-	stmt.Body = p.parseBlockStatement()
-
-	return stmt
-}
-
-func (p *Parser) parseForStatement() *ForStatement {
-    stmt := &ForStatement{Token: p.curToken}
-
-    if !p.expectPeek(IDENT) {
-        return nil
-    }
-
-    stmt.Variable = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
-
-    if !p.expectPeek(ASSIGN) {
-        return nil
-    }
-
-    p.nextToken()
-    stmt.Start = p.parseExpression(LOWEST)
-
-    if !p.expectPeek(COMMA) {
-        return nil
-    }
-
-    p.nextToken()
-    stmt.End = p.parseExpression(LOWEST)
-
-    if !p.expectPeek(LBRACE) {
-        return nil
-    }
-
-    stmt.Body = p.parseBlockStatement()
-    return stmt
 }
 
 func (p *Parser) parseAssignmentStatement() *AssignmentStatement {
