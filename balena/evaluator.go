@@ -542,12 +542,9 @@ func evalWhileStatement(stmt *WhileStatement, env *Environment) Object {
 	return EVAL_NULL
 }
 
-// New C-style for loop evaluation function
 func evalCStyleForStatement(stmt *CStyleForStatement, env *Environment) Object {
-	// Create a new scope for the for loop
 	forEnv := NewEnclosedEnvironment(env)
 	
-	// Execute initialization (e.g., let x = 0)
 	if stmt.Init != nil {
 		initResult := Eval(stmt.Init, forEnv)
 		if isError(initResult) {
@@ -555,9 +552,7 @@ func evalCStyleForStatement(stmt *CStyleForStatement, env *Environment) Object {
 		}
 	}
 	
-	// Loop while condition is true
 	for {
-		// Check condition (e.g., x < screen_width)
 		if stmt.Condition != nil {
 			condition := Eval(stmt.Condition, forEnv)
 			if isError(condition) {
@@ -568,13 +563,11 @@ func evalCStyleForStatement(stmt *CStyleForStatement, env *Environment) Object {
 			}
 		}
 		
-		// Execute loop body
 		result := Eval(stmt.Body, forEnv)
 		if result != nil && (result.Type() == RETURN_VALUE_OBJ || result.Type() == ERROR_OBJ) {
 			return result
 		}
 		
-		// Execute increment (e.g., x += 1)
 		if stmt.Increment != nil {
 			incResult := Eval(stmt.Increment, forEnv)
 			if isError(incResult) {

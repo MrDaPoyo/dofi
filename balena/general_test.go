@@ -104,6 +104,64 @@ func TestForLoops(t *testing.T) {
 	fmt.Println("\n=== STEP 3: EVALUATION TEST ===")
 	env := NewEnvironment()
 	result := Eval(program, env)
+	if result != nil {
+		fmt.Printf("Result: %+v\n", result)
+	}
+
+	iVal, ok := env.Get("i")
+	log.Print(iVal)
+	if !ok {
+		log.Printf("Modified variables: %v", env.modifiedVars)
+		log.Printf("Environment store: %v", env.store)
+		t.Errorf("Variable 'i' not found in environment")
+	} else if intObj, ok := iVal.(*ObjectInteger); ok {
+		if intObj.Value != 10 {
+			t.Errorf("Expected i to be 10, got %d", intObj.Value)
+		} else {
+			fmt.Println("i is 10 as expected")
+		}
+	} else {
+		t.Errorf("Variable 'i' is not an integer")
+	}
+
+}
+
+func TestWhileLoops(t *testing.T) {
+	input := `
+	let i = 0;
+	while (i < 10) {
+		i += 1;
+	}
+	`
+	lexer := NewLexer(input)
+	fmt.Println("=== LEXER DEBUG ===")
+	for {
+		tok := lexer.NextToken()
+		fmt.Printf("Token: Type=%s, Literal=%s\n", tok.Type, tok.Literal)
+		if tok.Type == EOF {
+			break
+		}
+	}
+	fmt.Println("\n=== STEP 2: PARSER TEST ===")
+	parser := NewParser(lexer)
+	program := parser.ParseProgram()
+	if len(parser.Errors()) > 0 {
+		fmt.Println("Parser errors:")
+		for _, err := range parser.Errors() {
+			fmt.Printf("  %s\n", err)
+		}
+	} else {
+		fmt.Println("Parsed program successfully!")
+		for _, stmt := range program.Statements {
+			fmt.Printf("Statement: %T\n", stmt)
+			if exprStmt, ok := stmt.(*ExpressionStatement); ok {
+				fmt.Printf("  Expression: %T\n", exprStmt.Expression)
+			}
+		}
+	}
+	fmt.Println("\n=== STEP 3: EVALUATION TEST ===")
+	env := NewEnvironment()
+	result := Eval(program, env)
 	log.Print(env.Get("i"))
 	if result != nil {
 		fmt.Printf("Result: %+v\n", result)
