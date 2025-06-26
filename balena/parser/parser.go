@@ -200,14 +200,191 @@ func (p *Parser) error(t token.Token, message string) ParseError {
 	return Error
 }
 
-func (p *Parser) Parse() Expr {
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(ParseError); ok {
-			} else {
-				panic(r)
-			}
-		}
-	}()
-	return p.expression()
+func (p *Parser) Parse() []Stmt {
+	var statements []Stmt
+	for !p.isAtEnd() {
+		statements = append(statements, p.statement())
+	}
+	return statements
+}
+
+type Expr interface {
+	Accept(visitor ExprVisitor) interface{}
+}
+
+type ExprVisitor interface {
+	VisitBinaryExpr(expr *BinaryExpr) interface{}
+	VisitGroupingExpr(expr *GroupingExpr) interface{}
+	VisitLiteralExpr(expr *LiteralExpr) interface{}
+	VisitUnaryExpr(expr *UnaryExpr) interface{}
+	VisitVariableExpr(expr *VariableExpr) interface{}
+	VisitAssignExpr(expr *AssignExpr) interface{}
+	VisitLogicalExpr(expr *LogicalExpr) interface{}
+	VisitCallExpr(expr *CallExpr) interface{}
+}
+
+type BinaryExpr struct {
+	Left     Expr
+	Operator token.Token
+	Right    Expr
+}
+
+func (e *BinaryExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitBinaryExpr(e)
+}
+
+type GroupingExpr struct {
+	Expression Expr
+}
+
+func (e *GroupingExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitGroupingExpr(e)
+}
+
+type LiteralExpr struct {
+	Value interface{}
+}
+
+func (e *LiteralExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitLiteralExpr(e)
+}
+
+type UnaryExpr struct {
+	Operator token.Token
+	Right    Expr
+}
+
+func (e *UnaryExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitUnaryExpr(e)
+}
+
+type VariableExpr struct {
+	Name token.Token
+}
+
+func (e *VariableExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitVariableExpr(e)
+}
+
+type AssignExpr struct {
+	Name  token.Token
+	Value Expr
+}
+
+func (e *AssignExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitAssignExpr(e)
+}
+
+type LogicalExpr struct {
+	Left     Expr
+	Operator token.Token
+	Right    Expr
+}
+
+func (e *LogicalExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitLogicalExpr(e)
+}
+
+type CallExpr struct {
+	Callee    Expr
+	Paren     token.Token
+	Arguments []Expr
+}
+
+func (e *CallExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitCallExpr(e)
+}
+
+// Stmt interface and statement types
+
+type Stmt interface {
+	Accept(visitor StmtVisitor)
+}
+
+type StmtVisitor interface {
+	VisitExpressionStmt(stmt *ExpressionStmt)
+	VisitPrintStmt(stmt *PrintStmt)
+	VisitVarStmt(stmt *VarStmt)
+	VisitBlockStmt(stmt *BlockStmt)
+	VisitIfStmt(stmt *IfStmt)
+	VisitWhileStmt(stmt *WhileStmt)
+	VisitFunctionStmt(stmt *FunctionStmt)
+	VisitReturnStmt(stmt *ReturnStmt)
+}
+
+type ExpressionStmt struct {
+	Expression Expr
+}
+
+func (s *ExpressionStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitExpressionStmt(s)
+}
+
+type PrintStmt struct {
+	Expression Expr
+}
+
+func (s *PrintStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitPrintStmt(s)
+}
+
+type VarStmt struct {
+	Name        token.Token
+	Initializer Expr
+}
+
+func (s *VarStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitVarStmt(s)
+}
+
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+func (s *BlockStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitBlockStmt(s)
+}
+
+type IfStmt struct {
+	Condition  Expr
+	ThenBranch Stmt
+	ElseBranch Stmt
+}
+
+func (s *IfStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitIfStmt(s)
+}
+
+type WhileStmt struct {
+	Condition Expr
+	Body      Stmt
+}
+
+func (s *WhileStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitWhileStmt(s)
+}
+
+type FunctionStmt struct {
+	Name   token.Token
+	Params []token.Token
+	Body   []Stmt
+}
+
+func (s *FunctionStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitFunctionStmt(s)
+}
+
+type ReturnStmt struct {
+	Keyword token.Token
+	Value   Expr
+}
+
+func (s *ReturnStmt) Accept(visitor StmtVisitor) {
+	visitor.VisitReturnStmt(s)
+}
+
+// Parser stubs for statements (to be implemented)
+func (p *Parser) statement() Stmt {
+	// TODO: Implement statement parsing (print, if, while, block, etc.)
+	return &ExpressionStmt{Expression: p.expression()}
 }

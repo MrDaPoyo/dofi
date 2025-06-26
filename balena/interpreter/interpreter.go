@@ -3,17 +3,31 @@ package balena
 import (
 	"fmt"
 
+	parser "github.com/mrdapoyo/dofi/balena/parser"
 	"github.com/mrdapoyo/dofi/balena/token"
 )
-
 type ExprVisitor interface {
-	Visit(expr Expr) interface{}
-	VisitLiteralExpr(expr *Literal) interface{}
-	VisitGroupingExpr(expr *Grouping) interface{}
-	VisitUnaryExpr(expr *Unary) interface{}
+	VisitLiteralExpr(expr *parser.LiteralExpr) interface{}
+	VisitGroupingExpr(expr *parser.GroupingExpr) interface{}
+	VisitUnaryExpr(expr *parser.UnaryExpr) interface{}
+	VisitBinaryExpr(expr *parser.BinaryExpr) interface{}
+	VisitVariableExpr(expr *parser.VariableExpr) interface{}
+	VisitAssignExpr(expr *parser.AssignExpr) interface{}
+	VisitLogicalExpr(expr *parser.LogicalExpr) interface{}
+	VisitCallExpr(expr *parser.CallExpr) interface{}
 }
 
-func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
+type Interpreter struct{}
+
+func (i *Interpreter) VisitLiteralExpr(expr *parser.LiteralExpr) interface{} {
+	return expr.Value
+}
+
+func (i *Interpreter) VisitGroupingExpr(expr *parser.GroupingExpr) interface{} {
+	return i.evaluate(expr.Expression)
+}
+
+func (i *Interpreter) VisitUnaryExpr(expr *parser.UnaryExpr) interface{} {
 	right := i.evaluate(expr.Right)
 
 	switch expr.Operator.Type {
@@ -32,11 +46,7 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 	return nil
 }
 
-func (i *Interpreter) evaluate(expr Expr) interface{} {
-	return expr.Accept(i)
-}
-
-func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
+func (i *Interpreter) VisitBinaryExpr(expr *parser.BinaryExpr) interface{} {
 	left := i.evaluate(expr.Left)
 	right := i.evaluate(expr.Right)
 
@@ -51,17 +61,16 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 		checkNumberOperands(expr.Operator, left, right)
 		return left.(float64) * right.(float64)
 	case token.PLUS:
-		if leftVal, ok := left.(float64); ok {
-			if rightVal, ok := right.(float64); ok {
-				return leftVal + rightVal
-			}
-			if leftStr, ok := left.(string); ok {
-				if rightStr, ok := right.(string); ok {
-					return leftStr + rightStr
-				}
+		if l, ok := left.(float64); ok {
+			if r, ok := right.(float64); ok {
+				return l + r
 			}
 		}
-		break
+		if l, ok := left.(string); ok {
+			if r, ok := right.(string); ok {
+				return l + r
+			}
+		}
 	case token.GREATER:
 		checkNumberOperands(expr.Operator, left, right)
 		return left.(float64) > right.(float64)
@@ -80,8 +89,63 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 		return isEqual(left, right)
 	}
 
-	// unreachable
 	return nil
+}
+
+func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
+	// TODO: Implement variable lookup
+	return nil
+}
+
+func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) interface{} {
+	// TODO: Implement assignment
+	return nil
+}
+
+func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) interface{} {
+	// TODO: Implement logical expressions
+	return nil
+}
+
+func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) interface{} {
+	// TODO: Implement function calls
+	return nil
+}
+
+func (i *Interpreter) evaluate(expr parser.Expr) interface{} {
+	return expr.Accept(i)
+}
+
+func (i *Interpreter) Interpret(expression parser.Expr) {
+	defer func() {
+		if r := recover(); r != nil {
+			if runtimeErr, ok := r.(*RuntimeError); ok {
+				LoxRuntimeError(runtimeErr)
+			} else {
+				panic(r)
+			}
+		}
+	}()
+	value := i.evaluate(expression)
+	println(stringify(value))
+}
+
+func stringify(object interface{}) string {
+	if object == nil {
+		return "nil"
+	}
+
+	switch v := object.(type) {
+	case float64:
+		s := fmt.Sprintf("%g", v)
+		return s
+	default:
+		return fmt.Sprintf("%v", object)
+	}
+}
+
+func LoxRuntimeError(err *RuntimeError) {
+	println(err.Error())
 }
 
 func checkNumberOperands(operator token.Token, left, right interface{}) {
@@ -118,42 +182,4 @@ func isEqual(a, b interface{}) bool {
 
 type Expr interface {
 	Accept(visitor ExprVisitor) interface{}
-}
-
-type Interpreter struct{}
-
-func (i *Interpreter) Visit(expr Expr) interface{} {
-	return nil
-}
-
-func (i *Interpreter) Interpret(expression Expr) {
-	defer func() {
-		if r := recover(); r != nil {
-			if runtimeErr, ok := r.(*RuntimeError); ok {
-				LoxRuntimeError(runtimeErr)
-			} else {
-				panic(r)
-			}
-		}
-	}()
-	value := i.evaluate(expression)
-	println(stringify(value))
-}
-
-func stringify(object interface{}) string {
-	if object == nil {
-		return "nil"
-	}
-
-	switch v := object.(type) {
-	case float64:
-		s := fmt.Sprintf("%g", v)
-		return s
-	default:
-		return fmt.Sprintf("%v", object)
-	}
-}
-
-func LoxRuntimeError(err *RuntimeError) {
-	println(err.Error())
 }
