@@ -1,25 +1,25 @@
 package main
 
 import (
-    "fmt"
-    "os"
-	scanner "github.com/mrdapoyo/dofi/balena/scanner"
+	"fmt"
+	"os"
+
 	parser "github.com/mrdapoyo/dofi/balena/parser"
+	scanner "github.com/mrdapoyo/dofi/balena/scanner"
 	"github.com/mrdapoyo/dofi/balena/token"
 	ast "github.com/mrdapoyo/dofi/balena/tool"
-	interpreter "github.com/mrdapoyo/dofi/balena/interpreter"
 )
 
 func main() {
-    args := os.Args[1:]
-    if len(args) > 1 {
-        fmt.Println("Usage: go run . [script]")
-        os.Exit(64)
-    } else if len(args) == 1 {
-        runFile(args[0])
-    } else {
-        runPrompt()
-    }
+	args := os.Args[1:]
+	if len(args) > 1 {
+		fmt.Println("Usage: go run . [script]")
+		os.Exit(64)
+	} else if len(args) == 1 {
+		runFile(args[0])
+	} else {
+		runPrompt()
+	}
 }
 
 func runFile(path string) {
@@ -55,20 +55,25 @@ func runPrompt() {
 func run(script string) {
 	scanner := scanner.NewScanner(script)
 	tokens := scanner.ScanTokens()
-
+	
 	parser := parser.NewParser(tokens)
-	expression := parser.Parse()
-
+	statements := parser.Parse()
 	if hadError {
 		return
 	}
 
-	fmt.Println(ast.AstPrinter(expression))
-	interpreter.Interpret(expression)
+	var astPrinter = ast.AstPrinter{}
+
+	for _, stmt := range statements {
+		if stmt == nil {
+			continue
+		}
+		fmt.Println(astPrinter.PrintStmt(stmt))
+	}
 }
 
 var hadError = false
-var hadRuntimeError = false;
+var hadRuntimeError = false
 
 func ErrorToken(badToken token.Token, message string) {
 	if badToken.Type == token.EOF {
