@@ -1,14 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
+	"runtime/debug"
+
+	interpreter "github.com/mrdapoyo/dofi/balena/interpreter"
 	parser "github.com/mrdapoyo/dofi/balena/parser"
 	scanner "github.com/mrdapoyo/dofi/balena/scanner"
 	"github.com/mrdapoyo/dofi/balena/token"
-	ast "github.com/mrdapoyo/dofi/balena/tool"
-	interpreter "github.com/mrdapoyo/dofi/balena/interpreter"
 )
 
 func main() {
@@ -29,56 +31,109 @@ func runFile(path string) {
 		fmt.Fprintf(os.Stderr, "Failed to read file: %v\n", err)
 		os.Exit(65)
 	}
+	run(string(bytes))
 	if hadRuntimeError {
 		fmt.Fprintln(os.Stderr, "Runtime error occurred. Exiting.")
 		os.Exit(70)
 	}
-	run(string(bytes))
 }
 
 func runPrompt() {
-	reader := os.Stdin
-	buf := make([]byte, 1024)
+	reader := bufio.NewScanner(os.Stdin)
+	interp := interpreter.NewInterpreter()
 	for {
 		fmt.Print("> ")
-		n, err := reader.Read(buf)
-		if err != nil {
+		if !reader.Scan() {
 			break
 		}
-		line := string(buf[:n])
-		if len(line) == 0 {
-			break
+		line := reader.Text()
+		if line == "" {
+			continue
 		}
-		run(line)
+		runWithInterpreter(interp, line)
+		hadError = false
+		hadRuntimeError = false
 	}
 }
 
 func run(script string) {
-	scanner := scanner.NewScanner(script)
-	tokens := scanner.ScanTokens()
+	s := scanner.NewScanner(script)
+	tokens := s.ScanTokens()
 
-	parser := parser.NewParser(tokens)
-	statements := parser.Parse()
+	p := parser.NewParser(tokens)
+	statements := p.Parse()
 	if hadError {
 		return
 	}
 
 	interpreterInstance := interpreter.NewInterpreter()
+	fmt.Println("Created interpreter")
+	resolver := interpreter.NewResolver(interpreterInstance)
+	fmt.Println("Created resolver")
+	resolver.Resolve(statements)
+	fmt.Println("Resolved statements")
+
+	if hadError {
+		return
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			if runtimeErr, ok := r.(*interpreter.RuntimeError); ok {
+				fmt.Fprintln(os.Stderr, runtimeErr.Error())
+				hadRuntimeError = true
+			} else if returnErr, ok := r.(interpreter.Return); ok {
+				if returnErr.Value != nil {
+					fmt.Println(returnErr.Value)
+				}
+				fmt.Fprintln(os.Stderr, "Unexpected return statement at top level.")
+				hadRuntimeError = true
+			} else {
+				fmt.Fprintf(os.Stderr, "Unexpected panic: %v\n", r)
+				debug.PrintStack()
+				hadRuntimeError = true
+			}
+		}
+	}()
+
+	interpreterInstance.Execute(statements)
+}
+
+func runWithInterpreter(interpreterInstance *interpreter.Interpreter, script string) {
+	s := scanner.NewScanner(script)
+	tokens := s.ScanTokens()
+
+	p := parser.NewParser(tokens)
+	statements := p.Parse()
+	if hadError {
+		return
+	}
+
 	resolver := interpreter.NewResolver(interpreterInstance)
 	resolver.Resolve(statements)
 
 	if hadError {
 		return
 	}
-	
-	var astPrinter = ast.AstPrinter{}
 
-	for _, stmt := range statements {
-		if stmt == nil {
-			continue
+	defer func() {
+		if r := recover(); r != nil {
+			if runtimeErr, ok := r.(*interpreter.RuntimeError); ok {
+				fmt.Fprintln(os.Stderr, runtimeErr.Error())
+				hadRuntimeError = true
+			} else if returnErr, ok := r.(interpreter.Return); ok {
+				if returnErr.Value != nil {
+					fmt.Println(returnErr.Value)
+				}
+				hadRuntimeError = false
+			} else {
+				fmt.Fprintf(os.Stderr, "Unexpected panic: %v\n", r)
+				hadRuntimeError = true
+			}
 		}
-		fmt.Println(astPrinter.PrintStmt(stmt))
-	}
+	}()
+
+	interpreterInstance.Execute(statements)
 }
 
 var hadError = false

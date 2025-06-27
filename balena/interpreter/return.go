@@ -1,13 +1,13 @@
 package balena
 
 type Return struct {
-	value interface{}
+	Value interface{}
 }
 
-func NewReturn(value interface{}) *Return {
-	return &Return{value: value}
+func NewReturn(value interface{}) Return {
+	return Return{Value: value}
 }
 
-func (r *Return) Value() interface{} {
-	return r.value
+func (r Return) GetValue() interface{} {
+	return r.Value
 }

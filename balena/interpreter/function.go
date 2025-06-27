@@ -1,8 +1,8 @@
 package balena
 
 import (
-	parser "github.com/mrdapoyo/dofi/balena/parser"
 	env "github.com/mrdapoyo/dofi/balena/env"
+	parser "github.com/mrdapoyo/dofi/balena/parser"
 )
 
 type BalenaFunction struct {
@@ -14,22 +14,24 @@ func NewBalenaFunction(declaration *parser.FunctionStmt, closure *env.Environmen
 	return &BalenaFunction{declaration: declaration, closure: closure}
 }
 
-func (lf *BalenaFunction) Call(interpreter *Interpreter, arguments []interface{}) interface{} {
-	environment := env.NewEnvironment(interpreter.Globals)
+func (lf *BalenaFunction) Call(interpreter *Interpreter, arguments []interface{}) (result interface{}) {
+	environment := env.NewEnclosedEnvironment(lf.closure)
 	for i, param := range lf.declaration.Params {
-		environment.Set(param.Lexeme, arguments[i])
+		environment.Define(param.Lexeme, arguments[i])
 	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			if returnValue, ok := r.(Return); ok {
-				panic(returnValue)
+				result = returnValue.Value
 			} else {
 				panic(r)
 			}
 		}
 	}()
+
 	interpreter.executeBlock(lf.declaration.Body, environment)
-	return nil
+	return
 }
 
 func (lf *BalenaFunction) Arity() int {
@@ -39,4 +41,3 @@ func (lf *BalenaFunction) Arity() int {
 func (lf *BalenaFunction) String() string {
 	return "<fn " + lf.declaration.Name.Lexeme + ">"
 }
-

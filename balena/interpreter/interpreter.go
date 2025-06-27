@@ -31,9 +31,15 @@ func NewInterpreter() *Interpreter {
 		Globals:     environment.NewEnvironment(),
 		Environment: environment.NewEnvironment(),
 	}
-	interpreter.Globals.Set("clock", &Clock{})
+	interpreter.Globals.Define("clock", &Clock{})
 	interpreter.Environment = interpreter.Globals
 	return interpreter
+}
+
+func (i *Interpreter) Execute(statements []parser.Stmt) {
+	for _, stmt := range statements {
+		stmt.Accept(i)
+	}
 }
 
 func (i *Interpreter) error(token token.Token, message string) {
@@ -54,12 +60,17 @@ func (in *Interpreter) isTruthy(val interface{}) bool {
 }
 
 func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) {
-	panic("unimplemented")
+	i.evaluate(stmt.Expression)
+}
+
+func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) {
+	value := i.evaluate(stmt.Expression)
+	fmt.Println(stringify(value))
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) {
 	function := NewBalenaFunction(stmt, i.Environment)
-	i.Environment.Set(stmt.Name.Lexeme, function)
+	i.Environment.Define(stmt.Name.Lexeme, function)
 }
 
 func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) {
@@ -70,16 +81,13 @@ func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) {
 	}
 }
 
-func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) {
-	panic("unimplemented")
-}
-
 func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) {
 	var value interface{}
 	if stmt.Initializer != nil {
 		value = i.evaluate(stmt.Initializer)
 	}
-	i.Environment.Set(stmt.Name.Lexeme, value)
+
+	i.Environment.Define(stmt.Name.Lexeme, value)
 }
 
 func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
@@ -140,7 +148,13 @@ func (i *Interpreter) VisitUnaryExpr(expr *parser.UnaryExpr) interface{} {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
-	variable, _ := i.Environment.Get(expr.Name.Lexeme)
+	variable, exists := i.Environment.Get(expr.Name)
+	if !exists {
+		panic(&RuntimeError{
+			Token:   expr.Name,
+			Message: "Undefined variable '" + expr.Name.Lexeme + "'.",
+		})
+	}
 	return variable
 }
 
@@ -198,8 +212,18 @@ func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) interface{} {
 			return value
 		}
 	}
-	i.Globals.Assign(expr.Name, value)
-	i.Environment.Assign(expr.Name, value)
+
+	if _, exists := i.Environment.Values[expr.Name.Lexeme]; exists {
+		i.Environment.Values[expr.Name.Lexeme] = value
+		return value
+	}
+
+	if _, exists := i.Globals.Values[expr.Name.Lexeme]; exists {
+		i.Globals.Values[expr.Name.Lexeme] = value
+		return value
+	}
+
+	i.Environment.Define(expr.Name.Lexeme, value)
 	return value
 }
 
@@ -247,7 +271,7 @@ func (i *Interpreter) Interpret(expression parser.Expr) {
 	defer func() {
 		if r := recover(); r != nil {
 			if runtimeErr, ok := r.(*RuntimeError); ok {
-				LoxRuntimeError(runtimeErr)
+				BalenaRuntimeError(runtimeErr)
 			} else {
 				panic(r)
 			}
@@ -259,7 +283,7 @@ func (i *Interpreter) Interpret(expression parser.Expr) {
 
 func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) {
 	previous := i.Environment
-	i.Environment = environment.NewEnvironment(previous)
+	i.Environment = environment.NewEnclosedEnvironment(previous)
 	defer func() { i.Environment = previous }()
 	i.execute(stmt.Statements)
 }
@@ -285,7 +309,7 @@ func stringify(object interface{}) string {
 	}
 }
 
-func LoxRuntimeError(err *RuntimeError) {
+func BalenaRuntimeError(err *RuntimeError) {
 	println(err.Error())
 }
 

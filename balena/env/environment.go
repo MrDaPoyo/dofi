@@ -4,6 +4,7 @@ import (
 	"fmt"
 	token "github.com/mrdapoyo/dofi/balena/token"
 )
+
 // import "fmt"
 //
 // func NewEnclosedEnvironment(outer *Environment) *Environment {
@@ -95,76 +96,61 @@ type Environment struct {
 	Values    map[string]interface{}
 }
 
-func NewEnclosedEnvironment(Enclosing *Environment) *Environment {
+func NewEnclosedEnvironment(enclosing *Environment) *Environment {
 	return &Environment{
-		Enclosing: Enclosing,
+		Enclosing: enclosing,
 		Values:    make(map[string]interface{}),
 	}
 }
 
-func NewEnvironment(previous ...*Environment) *Environment {
-	env := &Environment{
+func NewEnvironment() *Environment {
+	return &Environment{
 		Values: make(map[string]interface{}),
 	}
-	if len(previous) > 0 {
-		env.Enclosing = previous[0]
-	}
-	return env
 }
 
-func (env *Environment) Set(key string, value interface{}) {
+func (env *Environment) Define(name string, value interface{}) {
+	env.Values[name] = value
+}
+
+func (env *Environment) Get(name token.Token) (interface{}, bool) {
+	if value, exists := env.Values[name.Lexeme]; exists {
+		return value, true
+	}
+	
 	if env.Enclosing != nil {
-		env.Enclosing.Set(key, value)
+		return env.Enclosing.Get(name)
+	}
+	
+	return nil, false
+}
+
+func (env *Environment) Assign(name token.Token, value interface{}) {
+	if _, exists := env.Values[name.Lexeme]; exists {
+		env.Values[name.Lexeme] = value
 		return
 	}
-	env.Values[key] = value
+	
+	if env.Enclosing != nil {
+		env.Enclosing.Assign(name, value)
+		return
+	}
+	
+	panic(fmt.Sprintf("Undefined variable '%s'", name.Lexeme))
 }
 
 func (env *Environment) GetAt(distance int, name string) (interface{}, bool) {
-	ancestor := env.Ancestor(distance)
-	if ancestor == nil {
-		return nil, false
-	}
-	value, exists := ancestor.Values[name]
-	return value, exists
-}
-
-func (env *Environment) Ancestor(distance int) *Environment {
-	environment := env
-	for i := 0; i < distance; i++ {
-		if environment.Enclosing == nil {
-			return nil
-		}
-		environment = environment.Enclosing
-	}
-	return environment
+	return env.ancestor(distance).Values[name], true
 }
 
 func (env *Environment) AssignAt(distance int, name token.Token, value interface{}) {
-	ancestor := env.Ancestor(distance)
-	if ancestor != nil {
-		ancestor.Values[name.Lexeme] = value
-	}
+	env.ancestor(distance).Values[name.Lexeme] = value
 }
 
-func (env *Environment) Get(key string) (interface{}, bool) {
-	if value, exists := env.Values[key]; exists {
-		return value, true
+func (env *Environment) ancestor(distance int) *Environment {
+	envPtr := env
+	for i := 0; i < distance; i++ {
+		envPtr = envPtr.Enclosing
 	}
-	if env.Enclosing != nil {
-		return env.Enclosing.Get(key)
-	}
-	value, exists := env.Values[key]
-	if !exists && env.Values != nil {
-		panic("key not found: " + key)
-	}
-
-	return value, exists
-}
-func (env *Environment) Assign(name token.Token, value interface{}) error {
-	if _, exists := env.Values[name.Lexeme]; exists {
-		env.Values[name.Lexeme] = value
-		return nil
-	}
-	return fmt.Errorf("undefined variable '%s'.", name.Lexeme)
+	return envPtr
 }

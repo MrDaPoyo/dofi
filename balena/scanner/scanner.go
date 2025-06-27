@@ -1,6 +1,8 @@
 package balena
 
 import (
+	"strconv"
+
 	"github.com/mrdapoyo/dofi/balena/token"
 )
 
@@ -80,9 +82,29 @@ func (s *Scanner) scanToken() {
 	case '\n':
 		s.line++
 		break
-	case '(', ')', '{', '}', ',', '.', '-', '+', ';', '*', '%':
-		s.addToken(token.TokenType(r), string(r), nil)
-		break
+	case '(':
+		s.addToken(token.LEFT_PAREN, "", nil)
+	case ')':
+		s.addToken(token.RIGHT_PAREN, "", nil)
+	case '{':
+		s.addToken(token.LEFT_BRACE, "", nil)
+	case '}':
+		s.addToken(token.RIGHT_BRACE, "", nil)
+	case ',':
+		s.addToken(token.COMMA, "", nil)
+	case '.':
+		s.addToken(token.DOT, "", nil)
+	case '-':
+		s.addToken(token.MINUS, "", nil)
+	case '+':
+		s.addToken(token.PLUS, "", nil)
+	case ';':
+		s.addToken(token.SEMICOLON, "", nil)
+	case '*':
+		s.addToken(token.STAR, "", nil)
+	case '%':
+		// not defined maybe treat as STAR? for now ignore or add? we'll ignore break.
+		s.addToken(token.STAR, "", nil)
 	case '!':
 		if s.match('=') {
 			s.addToken(token.BANG_EQUAL, "", nil)
@@ -119,12 +141,12 @@ func (s *Scanner) scanToken() {
 		s.newString()
 	default:
 		if s.isDigit(r) {
-          s.newNumber();
-        } else if s.isAlpha(r) {
-		  s.newIdentifier()
+			s.newNumber()
+		} else if s.isAlpha(r) {
+			s.newIdentifier()
 		} else {
-          // balena.Error(s.line, "Unexpected character: "+string(r))
-        }
+			// balena.Error(s.line, "Unexpected character: "+string(r))
+		}
 	}
 }
 
@@ -159,7 +181,7 @@ func (s *Scanner) newString() {
 		// balena.Error(s.line, "Unterminated string.")
 		return
 	}
-	
+
 	// the closing "
 	s.advance()
 
@@ -176,8 +198,15 @@ func (s *Scanner) newNumber() {
 	for s.isDigit(s.peek()) {
 		s.advance()
 	}
-	literal := s.source[s.start:s.current]
-	s.addToken(token.NUMBER, literal, literal)
+	// fractional part? maybe later
+	literalStr := s.source[s.start:s.current]
+	var numVal float64
+	if parsed, err := strconv.ParseFloat(literalStr, 64); err == nil {
+		numVal = parsed
+	} else {
+		numVal = 0
+	}
+	s.addToken(token.NUMBER, literalStr, numVal)
 }
 
 var keywords = map[string]token.TokenType{
@@ -185,8 +214,8 @@ var keywords = map[string]token.TokenType{
 	"class":  token.CLASS,
 	"else":   token.ELSE,
 	"false":  token.FALSE,
+	"fn":     token.FUN,
 	"for":    token.FOR,
-	"fun":    token.FUN,
 	"if":     token.IF,
 	"nil":    token.NIL,
 	"or":     token.OR,

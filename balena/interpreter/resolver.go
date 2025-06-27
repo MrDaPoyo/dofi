@@ -6,8 +6,8 @@ import (
 )
 
 type Resolver struct {
-	interpreter *Interpreter
-	scopes      []map[string]bool
+	interpreter     *Interpreter
+	scopes          []map[string]bool
 	currentFunction FunctionType
 }
 
@@ -21,6 +21,7 @@ const (
 func NewResolver(interpreter *Interpreter) *Resolver {
 	return &Resolver{
 		interpreter: interpreter,
+		scopes:      make([]map[string]bool, 0),
 	}
 }
 
@@ -37,11 +38,17 @@ func (r *Resolver) Resolve(statements []parser.Stmt) {
 }
 
 func (r *Resolver) ResolveStmt(stmt parser.Stmt) {
+	if stmt == nil {
+		return
+	}
 	stmt.Accept(r)
 }
 
 func (r *Resolver) ResolveExpr(expr parser.Expr) {
-	expr.Accept(r)
+	if expr == nil {
+		return
+	}
+	_ = expr.Accept(r)
 }
 
 func (r *Resolver) BeginScope() {
@@ -75,10 +82,10 @@ func (r *Resolver) Declare(name token.Token) {
 	if len(r.scopes) == 0 {
 		return
 	}
+	
 	scope := r.scopes[len(r.scopes)-1]
-	if _, exists := scope[name.Lexeme]; exists {
-		r.interpreter.error(name, "Already a variable with this name in this scope.")
-		return
+	if _, ok := scope[name.Lexeme]; ok {
+		r.interpreter.error(name, "Variable with this name already declared in this scope")
 	}
 	scope[name.Lexeme] = false
 }
@@ -87,8 +94,7 @@ func (r *Resolver) Define(name token.Token) {
 	if len(r.scopes) == 0 {
 		return
 	}
-	scope := r.scopes[len(r.scopes)-1]
-	scope[name.Lexeme] = true
+	r.scopes[len(r.scopes)-1][name.Lexeme] = true
 }
 
 func (r *Resolver) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
