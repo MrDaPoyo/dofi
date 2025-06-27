@@ -23,6 +23,16 @@ type Interpreter struct {
 	environment *environment.Environment
 }
 
+func (in *Interpreter) isTruthy(val interface{}) bool {
+	if val == nil {
+		return false
+	}
+	if v, ok := val.(bool); ok {
+		return v
+	}
+	return true
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) {
 	panic("unimplemented")
 }
@@ -32,7 +42,11 @@ func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) {
 }
 
 func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) {
-	panic("unimplemented")
+	if i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute([]parser.Stmt{stmt.ThenBranch})
+	} else if stmt.ElseBranch != nil {
+		i.execute([]parser.Stmt{stmt.ElseBranch})
+	}
 }
 
 func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) {
@@ -52,11 +66,29 @@ func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
 }
 
 func (i *Interpreter) VisitWhileStmt(stmt *parser.WhileStmt) {
-	panic("unimplemented")
+	for i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute([]parser.Stmt{stmt.Body})
+	}
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr *parser.LiteralExpr) interface{} {
 	return expr.Value
+}
+
+func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) interface{} {
+	left := i.evaluate(expr.Left)
+
+	if expr.Operator.Type == token.OR {
+		if i.isTruthy(left) {
+			return left
+		}
+	} else {
+		if !i.isTruthy(left) {
+			return left
+		}
+	}
+
+	return i.evaluate(expr.Right)
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *parser.GroupingExpr) interface{} {
@@ -137,11 +169,6 @@ func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) interface{} {
 	value := i.evaluate(expr.Value)
 	i.environment.Assign(expr.Name, value)
 	return value
-}
-
-func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) interface{} {
-	// TODO: Implement logical expressions
-	return nil
 }
 
 func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) interface{} {

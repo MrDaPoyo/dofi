@@ -19,6 +19,7 @@ func (ast *Ast) Run(args []string) (string, error) {
 		"Binary   : Expr left, Token operator, Expr right",
 		"Grouping : Expr expression",
 		"Literal  : Object value",
+		"Logical  : Expr left, Token operator, Expr right",
 		"Unary    : Token operator, Expr right",
 		"Variable : Token name",
 	})
@@ -26,10 +27,12 @@ func (ast *Ast) Run(args []string) (string, error) {
 	err = ast.defineAst(outputDir, "Stmt", []string{
 		"Block      : List<Stmt> statements",
 		"Expression : Expr expression",
+		"If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
 		"Print      : Expr expression",
-      	"Var        : Token name, Expr initializer",
+		"Var        : Token name, Expr initializer",
+		"While      : Expr condition, Stmt body",
 	})
-	
+
 	if err != nil {
 		return "", err
 	}

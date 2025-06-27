@@ -48,7 +48,7 @@ func (p *Parser) expression() Expr {
 }
 
 func (p *Parser) assignment() Expr {
-	expr := p.equality()
+	expr := p.or()
 
 	if p.match(token.EQUAL) {
 		equals := p.previous()
@@ -68,6 +68,35 @@ func (p *Parser) assignment() Expr {
 	return expr
 }
 
+func (p *Parser) or() Expr {
+	expr := p.and()
+
+	for p.match(token.OR) {
+		operator := p.previous()
+		right := p.and()
+		expr = &LogicalExpr{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) and() Expr {
+	expr := p.equality()
+	for p.match(token.AND) {
+		operator := p.previous()
+		right := p.equality()
+		expr = &LogicalExpr{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+	return expr
+}
 
 func (p *Parser) declaration() Stmt {
 	defer func() {
@@ -479,13 +508,16 @@ func (p *Parser) blockStatement() Stmt {
 }
 
 func (p *Parser) ifStatement() Stmt {
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'if'.")
 	condition := p.expression()
-	p.consume(token.THEN, "Expect 'then' after if condition.")
+	p.consume(token.RIGHT_PAREN, "Expect ')' after if condition.")
+
 	thenBranch := p.statement()
 	var elseBranch Stmt
 	if p.match(token.ELSE) {
 		elseBranch = p.statement()
 	}
+
 	return &IfStmt{
 		Condition:  condition,
 		ThenBranch: thenBranch,
