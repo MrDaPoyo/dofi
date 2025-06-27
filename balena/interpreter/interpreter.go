@@ -36,6 +36,13 @@ func NewInterpreter() *Interpreter {
 	return interpreter
 }
 
+func (i *Interpreter) error(token token.Token, message string) {
+	panic(&RuntimeError{
+		Token:   token,
+		Message: message,
+	})
+}
+
 func (in *Interpreter) isTruthy(val interface{}) bool {
 	if val == nil {
 		return false

@@ -8,7 +8,15 @@ import (
 type Resolver struct {
 	interpreter *Interpreter
 	scopes      []map[string]bool
+	currentFunction FunctionType
 }
+
+type FunctionType int
+
+const (
+	FunctionTypeNone FunctionType = iota
+	FunctionTypeFunction
+)
 
 func NewResolver(interpreter *Interpreter) *Resolver {
 	return &Resolver{
@@ -68,6 +76,10 @@ func (r *Resolver) Declare(name token.Token) {
 		return
 	}
 	scope := r.scopes[len(r.scopes)-1]
+	if _, exists := scope[name.Lexeme]; exists {
+		r.interpreter.error(name, "Already a variable with this name in this scope.")
+		return
+	}
 	scope[name.Lexeme] = false
 }
 
@@ -107,7 +119,7 @@ func (r *Resolver) VisitFunctionStmt(stmt *parser.FunctionStmt) {
 	r.Declare(stmt.Name)
 	r.Define(stmt.Name)
 
-	r.resolveFunction(stmt)
+	r.resolveFunction(stmt, FunctionTypeFunction)
 }
 
 func (r *Resolver) VisitIfStmt(stmt *parser.IfStmt) {
@@ -118,7 +130,10 @@ func (r *Resolver) VisitIfStmt(stmt *parser.IfStmt) {
 	}
 }
 
-func (r *Resolver) resolveFunction(stmt *parser.FunctionStmt) {
+func (r *Resolver) resolveFunction(stmt *parser.FunctionStmt, functionType FunctionType) {
+	enclosingFunction := r.currentFunction
+	r.currentFunction = functionType
+
 	r.BeginScope()
 	for _, param := range stmt.Params {
 		r.Declare(param)
@@ -126,6 +141,8 @@ func (r *Resolver) resolveFunction(stmt *parser.FunctionStmt) {
 	}
 	r.Resolve(stmt.Body)
 	r.EndScope()
+
+	r.currentFunction = enclosingFunction
 }
 
 func (r *Resolver) VisitPrintStmt(stmt *parser.PrintStmt) {
@@ -169,6 +186,10 @@ func (r *Resolver) VisitBinaryExpr(expr *parser.BinaryExpr) interface{} {
 func (r *Resolver) VisitReturnStmt(stmt *parser.ReturnStmt) {
 	if stmt.Value != nil {
 		r.ResolveExpr(stmt.Value)
+	}
+	if r.currentFunction == FunctionTypeNone {
+		r.interpreter.error(stmt.Keyword, "Cannot return from top-level code.")
+		return
 	}
 }
 

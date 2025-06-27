@@ -67,6 +67,10 @@ func run(script string) {
 	resolver := interpreter.NewResolver(interpreterInstance)
 	resolver.Resolve(statements)
 
+	if hadError {
+		return
+	}
+	
 	var astPrinter = ast.AstPrinter{}
 
 	for _, stmt := range statements {
