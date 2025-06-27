@@ -23,10 +23,6 @@ type Interpreter struct {
 	environment *environment.Environment
 }
 
-func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) {
-	panic("unimplemented")
-}
-
 func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) {
 	panic("unimplemented")
 }
@@ -177,6 +173,20 @@ func (i *Interpreter) Interpret(expression parser.Expr) {
 	println(stringify(value))
 }
 
+func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) {
+	previous := i.environment
+	i.environment = environment.NewEnvironment(previous)
+	defer func() { i.environment = previous }()
+	i.execute(stmt.Statements)
+}
+
+func (i *Interpreter) executeBlock(statements []parser.Stmt, env *environment.Environment) {
+	previous := i.environment
+	i.environment = env
+	defer func() { i.environment = previous }()
+	i.execute(statements)
+}
+
 func stringify(object interface{}) string {
 	if object == nil {
 		return "nil"
@@ -224,7 +234,7 @@ func isEqual(a, b interface{}) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	return a == b || (a != nil && b != nil && a == b)
+	return a == b
 }
 
 type Expr interface {

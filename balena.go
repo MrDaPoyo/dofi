@@ -6,24 +6,24 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	balena "github.com/mrdapoyo/dofi/balena"
+	env "github.com/mrdapoyo/dofi/balena/env"
+	parser "github.com/mrdapoyo/dofi/balena/parser"
 )
 
-func (g *Game) SetupBalenaAPI() *balena.Environment {
-	var env = balena.NewEnvironment()
+func (g *Game) SetupBalenaAPI() *env.Environment {
+	var env = env.NewEnvironment()
 
 	env.SetUserData("game", env.NewGoObject(g))
 
-	balena.RegisterExternalBinding("clear", g.bindingClearLines)
-	balena.RegisterExternalBinding("pset", g.bindingDrawPixel)
-	balena.RegisterExternalBinding("txt", g.bindingDrawText)
+	env.RegisterExternalBinding("clear", g.bindingClearLines)
+	env.RegisterExternalBinding("pset", g.bindingDrawPixel)
+	env.RegisterExternalBinding("txt", g.bindingDrawText)
 
 	return env
 }
 
-func (g *Game) RunBalenaScript(env *balena.Environment, code string) []string {
-	l := balena.NewLexer(code)
-	p := balena.NewParser(l)
+func (g *Game) RunBalenaScript(env *env.Environment, code string) []string {
+	p := parser.NewParser(code)
 	program := p.ParseProgram()
 	if len(p.Errors()) != 0 {
 		errors := []string{}

@@ -24,6 +24,7 @@ func (ast *Ast) Run(args []string) (string, error) {
 	})
 
 	err = ast.defineAst(outputDir, "Stmt", []string{
+		"Block      : List<Stmt> statements",
 		"Expression : Expr expression",
 		"Print      : Expr expression",
       	"Var        : Token name, Expr initializer",

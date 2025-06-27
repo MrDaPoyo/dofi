@@ -39,6 +39,7 @@ const (
 	FUN
 	FOR
 	IF
+	THEN
 	NIL
 	OR
 	PRINT

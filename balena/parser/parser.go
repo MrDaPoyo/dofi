@@ -355,8 +355,6 @@ func (e *CallExpr) Accept(visitor ExprVisitor) interface{} {
 	return visitor.VisitCallExpr(e)
 }
 
-// Stmt interface and statement types
-
 type Stmt interface {
 	Accept(visitor StmtVisitor)
 }
@@ -444,6 +442,144 @@ func (s *ReturnStmt) Accept(visitor StmtVisitor) {
 }
 
 func (p *Parser) statement() Stmt {
-	// TODO: Implement statement parsing (print, if, while, block, etc.)
-	return &ExpressionStmt{Expression: p.expression()}
+	if p.match(token.PRINT) {
+		return p.printStatement()
+	}
+	if p.match(token.LEFT_BRACE) {
+		return p.blockStatement()
+	}
+	if p.match(token.IF) {
+		return p.ifStatement()
+	}
+	if p.match(token.WHILE) {
+		return p.whileStatement()
+	}
+	if p.match(token.FOR) {
+		return p.forStatement()
+	}
+	if p.match(token.RETURN) {
+		return p.returnStatement()
+	}
+	return p.expressionStatement()
 }
+
+func (p *Parser) printStatement() Stmt {
+	value := p.expression()
+	p.consume(token.SEMICOLON, "Expect ';' after value.")
+	return &PrintStmt{Expression: value}
+}
+
+func (p *Parser) blockStatement() Stmt {
+	statements := []Stmt{}
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+	p.consume(token.RIGHT_BRACE, "Expect '}' after block.")
+	return &BlockStmt{Statements: statements}
+}
+
+func (p *Parser) ifStatement() Stmt {
+	condition := p.expression()
+	p.consume(token.THEN, "Expect 'then' after if condition.")
+	thenBranch := p.statement()
+	var elseBranch Stmt
+	if p.match(token.ELSE) {
+		elseBranch = p.statement()
+	}
+	return &IfStmt{
+		Condition:  condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}
+}
+
+func (p *Parser) whileStatement() Stmt {
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'while'.")
+	condition := p.expression()
+	p.consume(token.RIGHT_PAREN, "Expect ')' after condition.")
+	body := p.statement()
+	return &WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}
+}
+
+func (p *Parser) forStatement() Stmt {
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'for'.")
+	var initializer Stmt
+	if p.match(token.SEMICOLON) {
+		initializer = nil
+	} else if p.match(token.VAR) {
+		initializer = p.varDeclaration()
+	} else {
+		initializer = p.expressionStatement()
+	}
+
+	var condition Expr
+	if !p.check(token.SEMICOLON) {
+		condition = p.expression()
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after loop condition.")
+
+	var increment Expr
+	if !p.check(token.RIGHT_PAREN) {
+		increment = p.expression()
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+	body := p.statement()
+
+	if increment != nil {
+		body = &BlockStmt{
+			Statements: []Stmt{
+				body,
+				&ExpressionStmt{Expression: increment},
+			},
+		}
+	}
+
+	if condition == nil {
+		condition = &LiteralExpr{Value: true}
+	}
+	body = &WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}
+
+	if initializer != nil {
+		body = &BlockStmt{
+			Statements: []Stmt{
+				initializer,
+				body,
+			},
+		}
+	}
+
+	return body
+}
+
+func (p *Parser) returnStatement() Stmt {
+	keyword := p.previous()
+	var value Expr
+	if !p.check(token.SEMICOLON) {
+		value = p.expression()
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after return value.")
+	return &ReturnStmt{
+		Keyword: keyword,
+		Value:   value,
+	}
+}
+
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.expression()
+	p.consume(token.SEMICOLON, "Expect ';' after expression.")
+	return &ExpressionStmt{Expression: expr}
+}
+
+// Optionally define BreakStmt and ContinueStmt types if not already present:
+type BreakStmt struct{}
+func (s *BreakStmt) Accept(visitor StmtVisitor) { /* implement if needed */ }
+
+type ContinueStmt struct{}
+func (s *ContinueStmt) Accept(visitor StmtVisitor) { /* implement if needed */ }

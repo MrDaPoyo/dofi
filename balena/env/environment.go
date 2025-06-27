@@ -91,20 +91,42 @@ import (
 // }
 
 type Environment struct {
-	values map[string]interface{}
+	enclosing *Environment
+	values    map[string]interface{}
 }
 
-func NewEnvironment() *Environment {
+func NewEnclosedEnvironment(enclosing *Environment) *Environment {
 	return &Environment{
-		values: make(map[string]interface{}),
+		enclosing: enclosing,
+		values:    make(map[string]interface{}),
 	}
 }
 
+func NewEnvironment(previous ...*Environment) *Environment {
+	env := &Environment{
+		values: make(map[string]interface{}),
+	}
+	if len(previous) > 0 {
+		env.enclosing = previous[0]
+	}
+	return env
+}
+
 func (env *Environment) Set(key string, value interface{}) {
+	if env.enclosing != nil {
+		env.enclosing.Set(key, value)
+		return
+	}
 	env.values[key] = value
 }
 
 func (env *Environment) Get(key string) (interface{}, bool) {
+	if value, exists := env.values[key]; exists {
+		return value, true
+	}
+	if env.enclosing != nil {
+		return env.enclosing.Get(key)
+	}
 	value, exists := env.values[key]
 	if !exists && env.values != nil {
 		panic("key not found: " + key)
