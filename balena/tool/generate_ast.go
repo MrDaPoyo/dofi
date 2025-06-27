@@ -19,11 +19,13 @@ func (ast *Ast) Run(args []string) (string, error) {
 		"Grouping : Expr expression",
 		"Literal  : Object value",
 		"Unary    : Token operator, Expr right",
+		"Variable : Token name",
 	})
 
 	err = ast.defineAst(outputDir, "Stmt", []string{
 		"Expression : Expr expression",
 		"Print      : Expr expression",
+      	"Var        : Token name, Expr initializer",
 	})
 	
 	if err != nil {

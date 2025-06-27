@@ -46,6 +46,40 @@ func NewParser(tokens []token.Token) *Parser {
 func (p *Parser) expression() Expr {
 	return p.equality()
 }
+
+func (p *Parser) declaration() Stmt {
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(ParseError); ok {
+				p.synchronize()
+			} else {
+				panic(r)
+			}
+		}
+	}()
+
+	if p.match(token.VAR) {
+		return p.varDeclaration()
+	}
+
+	return p.statement()
+}
+
+func (p *Parser) varDeclaration() Stmt {
+	name := p.consume(token.IDENTIFIER, "Expect variable name.")
+
+	var initializer Expr
+	if p.match(token.EQUAL) {
+		initializer = p.expression()
+	}
+
+	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
+	return &VarStmt{
+		Name:        name,
+		Initializer: initializer,
+	}
+}
+
 func (p *Parser) equality() Expr {
 	expr := p.comparison()
 
@@ -170,6 +204,10 @@ func (p *Parser) primary() Expr {
 		return &LiteralExpr{Value: nil}
 	}
 
+	if p.match(token.IDENTIFIER) {
+		return &VariableExpr{Name: p.previous()}
+	}
+
 	if p.match(token.NUMBER, token.STRING) {
 		return &LiteralExpr{Value: p.previous().Literal}
 	}
@@ -203,7 +241,7 @@ func (p *Parser) error(t token.Token, message string) ParseError {
 func (p *Parser) Parse() []Stmt {
 	var statements []Stmt
 	for !p.isAtEnd() {
-		statements = append(statements, p.statement())
+		statements = append(statements, p.declaration())
 	}
 	return statements
 }
@@ -383,7 +421,6 @@ func (s *ReturnStmt) Accept(visitor StmtVisitor) {
 	visitor.VisitReturnStmt(s)
 }
 
-// Parser stubs for statements (to be implemented)
 func (p *Parser) statement() Stmt {
 	// TODO: Implement statement parsing (print, if, while, block, etc.)
 	return &ExpressionStmt{Expression: p.expression()}

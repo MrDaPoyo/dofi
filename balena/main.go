@@ -7,6 +7,7 @@ import (
 	parser "github.com/mrdapoyo/dofi/balena/parser"
 	"github.com/mrdapoyo/dofi/balena/token"
 	ast "github.com/mrdapoyo/dofi/balena/tool"
+	interpreter "github.com/mrdapoyo/dofi/balena/interpreter"
 )
 
 func main() {
@@ -63,6 +64,7 @@ func run(script string) {
 	}
 
 	fmt.Println(ast.AstPrinter(expression))
+	interpreter.Interpret(expression)
 }
 
 var hadError = false

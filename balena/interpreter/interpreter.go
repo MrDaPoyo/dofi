@@ -6,6 +6,7 @@ import (
 	parser "github.com/mrdapoyo/dofi/balena/parser"
 	"github.com/mrdapoyo/dofi/balena/token"
 )
+
 type ExprVisitor interface {
 	VisitLiteralExpr(expr *parser.LiteralExpr) interface{}
 	VisitGroupingExpr(expr *parser.GroupingExpr) interface{}
@@ -18,6 +19,38 @@ type ExprVisitor interface {
 }
 
 type Interpreter struct{}
+
+func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) {
+	panic("unimplemented")
+}
+
+func (i *Interpreter) VisitWhileStmt(stmt *parser.WhileStmt) {
+	panic("unimplemented")
+}
 
 func (i *Interpreter) VisitLiteralExpr(expr *parser.LiteralExpr) interface{} {
 	return expr.Value
@@ -114,6 +147,12 @@ func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) interface{} {
 
 func (i *Interpreter) evaluate(expr parser.Expr) interface{} {
 	return expr.Accept(i)
+}
+
+func (i *Interpreter) execute(statements []parser.Stmt) {
+	for _, statement := range statements {
+		statement.Accept(i)
+	}
 }
 
 func (i *Interpreter) Interpret(expression parser.Expr) {
