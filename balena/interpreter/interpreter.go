@@ -3,6 +3,7 @@ package balena
 import (
 	"fmt"
 
+	environment "github.com/mrdapoyo/dofi/balena/env"
 	parser "github.com/mrdapoyo/dofi/balena/parser"
 	"github.com/mrdapoyo/dofi/balena/token"
 )
@@ -18,7 +19,9 @@ type ExprVisitor interface {
 	VisitCallExpr(expr *parser.CallExpr) interface{}
 }
 
-type Interpreter struct{}
+type Interpreter struct {
+	environment *environment.Environment
+}
 
 func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) {
 	panic("unimplemented")
@@ -40,11 +43,15 @@ func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) {
 	panic("unimplemented")
 }
 
-func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
-	panic("unimplemented")
+func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) {
+	var value interface{}
+	if stmt.Initializer != nil {
+		value = i.evaluate(stmt.Initializer)
+	}
+	i.environment.Set(stmt.Name.Lexeme, value)
 }
 
-func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) {
+func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
 	panic("unimplemented")
 }
 
@@ -77,6 +84,11 @@ func (i *Interpreter) VisitUnaryExpr(expr *parser.UnaryExpr) interface{} {
 	}
 
 	return nil
+}
+
+func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
+	variable, _ := i.environment.Get(expr.Name.Lexeme)
+	return variable
 }
 
 func (i *Interpreter) VisitBinaryExpr(expr *parser.BinaryExpr) interface{} {
@@ -125,14 +137,10 @@ func (i *Interpreter) VisitBinaryExpr(expr *parser.BinaryExpr) interface{} {
 	return nil
 }
 
-func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
-	// TODO: Implement variable lookup
-	return nil
-}
-
 func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) interface{} {
-	// TODO: Implement assignment
-	return nil
+	value := i.evaluate(expr.Value)
+	i.environment.Assign(expr.Name, value)
+	return value
 }
 
 func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) interface{} {

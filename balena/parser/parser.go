@@ -44,8 +44,30 @@ func NewParser(tokens []token.Token) *Parser {
 }
 
 func (p *Parser) expression() Expr {
-	return p.equality()
+	return p.assignment()
 }
+
+func (p *Parser) assignment() Expr {
+	expr := p.equality()
+
+	if p.match(token.EQUAL) {
+		equals := p.previous()
+		value := p.assignment()
+
+		if variable, ok := expr.(*VariableExpr); ok {
+			name := variable.Name
+			return &AssignExpr{
+				Name:  name,
+				Value: value,
+			}
+		}
+
+		panic(p.error(equals, "Invalid assignment target."))
+	}
+
+	return expr
+}
+
 
 func (p *Parser) declaration() Stmt {
 	defer func() {

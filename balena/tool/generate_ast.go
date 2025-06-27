@@ -15,6 +15,7 @@ func (ast *Ast) Run(args []string) (string, error) {
 	}
 	outputDir := args[1]
 	err := ast.defineAst(outputDir, "Expr", []string{
+		"Assign   : Token name, Expr value",
 		"Binary   : Expr left, Token operator, Expr right",
 		"Grouping : Expr expression",
 		"Literal  : Object value",
