@@ -8,6 +8,7 @@ import (
 	scanner "github.com/mrdapoyo/dofi/balena/scanner"
 	"github.com/mrdapoyo/dofi/balena/token"
 	ast "github.com/mrdapoyo/dofi/balena/tool"
+	interpreter "github.com/mrdapoyo/dofi/balena/interpreter"
 )
 
 func main() {
@@ -55,12 +56,16 @@ func runPrompt() {
 func run(script string) {
 	scanner := scanner.NewScanner(script)
 	tokens := scanner.ScanTokens()
-	
+
 	parser := parser.NewParser(tokens)
 	statements := parser.Parse()
 	if hadError {
 		return
 	}
+
+	interpreterInstance := interpreter.NewInterpreter()
+	resolver := interpreter.NewResolver(interpreterInstance)
+	resolver.Resolve(statements)
 
 	var astPrinter = ast.AstPrinter{}
 

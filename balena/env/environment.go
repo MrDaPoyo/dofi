@@ -120,6 +120,33 @@ func (env *Environment) Set(key string, value interface{}) {
 	env.Values[key] = value
 }
 
+func (env *Environment) GetAt(distance int, name string) (interface{}, bool) {
+	ancestor := env.Ancestor(distance)
+	if ancestor == nil {
+		return nil, false
+	}
+	value, exists := ancestor.Values[name]
+	return value, exists
+}
+
+func (env *Environment) Ancestor(distance int) *Environment {
+	environment := env
+	for i := 0; i < distance; i++ {
+		if environment.Enclosing == nil {
+			return nil
+		}
+		environment = environment.Enclosing
+	}
+	return environment
+}
+
+func (env *Environment) AssignAt(distance int, name token.Token, value interface{}) {
+	ancestor := env.Ancestor(distance)
+	if ancestor != nil {
+		ancestor.Values[name.Lexeme] = value
+	}
+}
+
 func (env *Environment) Get(key string) (interface{}, bool) {
 	if value, exists := env.Values[key]; exists {
 		return value, true

@@ -23,6 +23,7 @@ type ExprVisitor interface {
 type Interpreter struct {
 	Globals     *environment.Environment
 	Environment *environment.Environment
+	locals      map[parser.Expr]int
 }
 
 func NewInterpreter() *Interpreter {
@@ -184,6 +185,13 @@ func (i *Interpreter) VisitBinaryExpr(expr *parser.BinaryExpr) interface{} {
 
 func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) interface{} {
 	value := i.evaluate(expr.Value)
+	if i.locals != nil {
+		if distance, ok := i.locals[expr]; ok {
+			i.Environment.AssignAt(distance, expr.Name, value)
+			return value
+		}
+	}
+	i.Globals.Assign(expr.Name, value)
 	i.Environment.Assign(expr.Name, value)
 	return value
 }
@@ -219,6 +227,13 @@ func (i *Interpreter) execute(statements []parser.Stmt) {
 	for _, statement := range statements {
 		statement.Accept(i)
 	}
+}
+
+func (i *Interpreter) Resolve(expr parser.Expr, depth int) {
+	if i.locals == nil {
+		i.locals = make(map[parser.Expr]int)
+	}
+	i.locals[expr] = depth
 }
 
 func (i *Interpreter) Interpret(expression parser.Expr) {
