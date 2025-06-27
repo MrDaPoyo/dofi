@@ -113,7 +113,37 @@ func (p *Parser) declaration() Stmt {
 		return p.varDeclaration()
 	}
 
+	if p.match(token.FUN) {
+		return p.function()
+	}
+
 	return p.statement()
+}
+
+func (p *Parser) function() Stmt {
+	name := p.consume(token.IDENTIFIER, "Expect function name.")
+	p.consume(token.LEFT_PAREN, "Expect '(' after function name.")
+	params := []token.Token{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(params) >= 255 {
+				panic(p.error(p.peek(), "Can't have more than 255 parameters."))
+			}
+			params = append(params, p.consume(token.IDENTIFIER, "Expect parameter name."))
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after parameters.")
+
+	p.consume(token.LEFT_BRACE, "Expect '{' before function body.")
+	body := p.blockStatement()
+	block, ok := body.(*BlockStmt)
+	if !ok {
+		panic("Expected block statement for function body")
+	}
+	return &FunctionStmt{Name: name, Params: params, Body: block.Statements}
 }
 
 func (p *Parser) varDeclaration() Stmt {
@@ -241,7 +271,42 @@ func (p *Parser) unary() Expr {
 		}
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() Expr {
+	expr := p.primary()
+
+	for {
+		if p.match(token.LEFT_PAREN) {
+			expr = p.finishCall(expr)
+		} else {
+			break
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) finishCall(callee Expr) Expr {
+	arguments := []Expr{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(arguments) >= 255 {
+				panic(p.error(p.peek(), "Can't have more than 255 arguments."))
+			}
+			arguments = append(arguments, p.expression())
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+	paren := p.consume(token.RIGHT_PAREN, "Expect ')' after arguments.")
+	return &CallExpr{
+		Callee:    callee,
+		Paren:     paren,
+		Arguments: arguments,
+	}
 }
 
 func (p *Parser) primary() Expr {
@@ -461,6 +526,10 @@ func (s *FunctionStmt) Accept(visitor StmtVisitor) {
 	visitor.VisitFunctionStmt(s)
 }
 
+func (s *FunctionStmt) Statements() []Stmt {
+	return s.Body
+}
+
 type ReturnStmt struct {
 	Keyword token.Token
 	Value   Expr
@@ -611,7 +680,9 @@ func (p *Parser) expressionStatement() Stmt {
 
 // Optionally define BreakStmt and ContinueStmt types if not already present:
 type BreakStmt struct{}
+
 func (s *BreakStmt) Accept(visitor StmtVisitor) { /* implement if needed */ }
 
 type ContinueStmt struct{}
+
 func (s *ContinueStmt) Accept(visitor StmtVisitor) { /* implement if needed */ }

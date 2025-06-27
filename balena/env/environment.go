@@ -91,52 +91,52 @@ import (
 // }
 
 type Environment struct {
-	enclosing *Environment
-	values    map[string]interface{}
+	Enclosing *Environment
+	Values    map[string]interface{}
 }
 
-func NewEnclosedEnvironment(enclosing *Environment) *Environment {
+func NewEnclosedEnvironment(Enclosing *Environment) *Environment {
 	return &Environment{
-		enclosing: enclosing,
-		values:    make(map[string]interface{}),
+		Enclosing: Enclosing,
+		Values:    make(map[string]interface{}),
 	}
 }
 
 func NewEnvironment(previous ...*Environment) *Environment {
 	env := &Environment{
-		values: make(map[string]interface{}),
+		Values: make(map[string]interface{}),
 	}
 	if len(previous) > 0 {
-		env.enclosing = previous[0]
+		env.Enclosing = previous[0]
 	}
 	return env
 }
 
 func (env *Environment) Set(key string, value interface{}) {
-	if env.enclosing != nil {
-		env.enclosing.Set(key, value)
+	if env.Enclosing != nil {
+		env.Enclosing.Set(key, value)
 		return
 	}
-	env.values[key] = value
+	env.Values[key] = value
 }
 
 func (env *Environment) Get(key string) (interface{}, bool) {
-	if value, exists := env.values[key]; exists {
+	if value, exists := env.Values[key]; exists {
 		return value, true
 	}
-	if env.enclosing != nil {
-		return env.enclosing.Get(key)
+	if env.Enclosing != nil {
+		return env.Enclosing.Get(key)
 	}
-	value, exists := env.values[key]
-	if !exists && env.values != nil {
+	value, exists := env.Values[key]
+	if !exists && env.Values != nil {
 		panic("key not found: " + key)
 	}
 
 	return value, exists
 }
 func (env *Environment) Assign(name token.Token, value interface{}) error {
-	if _, exists := env.values[name.Lexeme]; exists {
-		env.values[name.Lexeme] = value
+	if _, exists := env.Values[name.Lexeme]; exists {
+		env.Values[name.Lexeme] = value
 		return nil
 	}
 	return fmt.Errorf("undefined variable '%s'.", name.Lexeme)

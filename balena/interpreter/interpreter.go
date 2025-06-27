@@ -2,6 +2,7 @@ package balena
 
 import (
 	"fmt"
+	"time"
 
 	environment "github.com/mrdapoyo/dofi/balena/env"
 	parser "github.com/mrdapoyo/dofi/balena/parser"
@@ -20,7 +21,18 @@ type ExprVisitor interface {
 }
 
 type Interpreter struct {
-	environment *environment.Environment
+	Globals     *environment.Environment
+	Environment *environment.Environment
+}
+
+func NewInterpreter() *Interpreter {
+	interpreter := &Interpreter{
+		Globals:     environment.NewEnvironment(),
+		Environment: environment.NewEnvironment(),
+	}
+	interpreter.Globals.Set("clock", &Clock{})
+	interpreter.Environment = interpreter.Globals
+	return interpreter
 }
 
 func (in *Interpreter) isTruthy(val interface{}) bool {
@@ -38,7 +50,8 @@ func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) {
-	panic("unimplemented")
+	function := NewBalenaFunction(stmt, i.Environment)
+	i.Environment.Set(stmt.Name.Lexeme, function)
 }
 
 func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) {
@@ -58,11 +71,15 @@ func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) {
 	if stmt.Initializer != nil {
 		value = i.evaluate(stmt.Initializer)
 	}
-	i.environment.Set(stmt.Name.Lexeme, value)
+	i.Environment.Set(stmt.Name.Lexeme, value)
 }
 
 func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
-	panic("unimplemented")
+	var value interface{}
+	if stmt.Value != nil {
+		value = i.evaluate(stmt.Value)
+	}
+	panic(NewReturn(value))
 }
 
 func (i *Interpreter) VisitWhileStmt(stmt *parser.WhileStmt) {
@@ -115,7 +132,7 @@ func (i *Interpreter) VisitUnaryExpr(expr *parser.UnaryExpr) interface{} {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
-	variable, _ := i.environment.Get(expr.Name.Lexeme)
+	variable, _ := i.Environment.Get(expr.Name.Lexeme)
 	return variable
 }
 
@@ -167,13 +184,31 @@ func (i *Interpreter) VisitBinaryExpr(expr *parser.BinaryExpr) interface{} {
 
 func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) interface{} {
 	value := i.evaluate(expr.Value)
-	i.environment.Assign(expr.Name, value)
+	i.Environment.Assign(expr.Name, value)
 	return value
 }
 
 func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) interface{} {
-	// TODO: Implement function calls
-	return nil
+	callee := i.evaluate(expr.Callee)
+	var arguments []interface{}
+	for _, argument := range expr.Arguments {
+		arguments = append(arguments, i.evaluate(argument))
+	}
+
+	function, ok := callee.(BalenaCallable)
+	if !ok {
+		panic(&RuntimeError{
+			Token:   expr.Paren,
+			Message: "Can only call functions and classes.",
+		})
+	}
+	if len(expr.Arguments) != function.Arity() {
+		panic(&RuntimeError{
+			Token:   expr.Paren,
+			Message: fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(expr.Arguments)),
+		})
+	}
+	return function.Call(i, arguments)
 }
 
 func (i *Interpreter) evaluate(expr parser.Expr) interface{} {
@@ -201,16 +236,16 @@ func (i *Interpreter) Interpret(expression parser.Expr) {
 }
 
 func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) {
-	previous := i.environment
-	i.environment = environment.NewEnvironment(previous)
-	defer func() { i.environment = previous }()
+	previous := i.Environment
+	i.Environment = environment.NewEnvironment(previous)
+	defer func() { i.Environment = previous }()
 	i.execute(stmt.Statements)
 }
 
 func (i *Interpreter) executeBlock(statements []parser.Stmt, env *environment.Environment) {
-	previous := i.environment
-	i.environment = env
-	defer func() { i.environment = previous }()
+	previous := i.Environment
+	i.Environment = env
+	defer func() { i.Environment = previous }()
 	i.execute(statements)
 }
 
@@ -266,4 +301,18 @@ func isEqual(a, b interface{}) bool {
 
 type Expr interface {
 	Accept(visitor ExprVisitor) interface{}
+}
+
+type Clock struct{}
+
+func (c *Clock) Arity() int {
+	return 0
+}
+
+func (c *Clock) Call(interpreter *Interpreter, arguments []interface{}) interface{} {
+	return float64(time.Now().UnixNano()) / 1e9
+}
+
+func (c *Clock) String() string {
+	return "<native fn>"
 }
