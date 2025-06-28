@@ -90,3 +90,29 @@ func TestBuiltinAdd(t *testing.T) {
 		t.Fatalf("expected 3, got %q", out)
 	}
 }
+
+func TestWhileLoop(t *testing.T) {
+	script := `var i = 0;
+while (i < 3) {
+  print i;
+  i = i + 1;
+}`
+
+	interp := NewInterpreter()
+	out := runScript(t, interp, script)
+	if out != "0\n1\n2" && out != "0\n1\n2\n" {
+		t.Fatalf("unexpected output: %q", out)
+	}
+}
+
+func TestForLoop(t *testing.T) {
+	script := `for (var i = 0; i < 3; i = i + 1) {
+  print i;
+}`
+
+	interp := NewInterpreter()
+	out := runScript(t, interp, script)
+	if out != "0\n1\n2" && out != "0\n1\n2\n" {
+		t.Fatalf("unexpected output: %q", out)
+	}
+}
