@@ -327,6 +327,49 @@ func (g *Game) Update() (err error) {
 		}
 	}
 
+	// Execute code from text editor when Ctrl+R is pressed
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) && ebiten.IsKeyPressed(ebiten.KeyControl) {
+		if !g.Navbar.CliEnabled {
+			if editor, exists := CodeEditors[CodeEditorIndex]; exists {
+				// Join all lines of the editor content
+				code := strings.Join(editor.Content, "\n")
+				if strings.TrimSpace(code) != "" {
+					// Switch to CLI mode to show output
+					g.Navbar.CliEnabled = true
+					g.AppendLine("Executing code from editor:", false)
+
+					// Execute the code with error handling
+					defer func() {
+						if r := recover(); r != nil {
+							if runtimeErr, ok := r.(*balena.RuntimeError); ok {
+								g.AppendLine("Error: "+runtimeErr.Error(), false)
+							} else {
+								g.AppendLine("Error: "+fmt.Sprintf("%v", r), false)
+							}
+							g.ScriptRunning = false
+						}
+					}()
+
+					g.RunBalenaScript(code)
+
+					// Check if the script has game loop functions
+					_, hasUpdate := g.BalenaEnv.Globals.Values["_update"]
+					_, hasDraw := g.BalenaEnv.Globals.Values["_draw"]
+
+					if hasUpdate || hasDraw {
+						g.ScriptRunning = true
+						g.AppendLine("Script started from editor (press ESC to stop)", false)
+					} else {
+						g.ScriptRunning = false
+						g.AppendLine("Code executed successfully", false)
+					}
+
+					g.AppendLine("", true)
+				}
+			}
+		}
+	}
+
 	CursorBlinkFrames++
 	if CursorBlinkFrames > 60 {
 		CursorBlinkFrames = 0
