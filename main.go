@@ -234,6 +234,10 @@ func (g *Game) Update() (err error) {
 				g.Input.CurrentInputString = ""
 			}
 		default:
+			if r == 'r' && ebiten.IsKeyPressed(ebiten.KeyControl) {
+				continue
+			}
+
 			if g.Navbar.CliEnabled {
 				g.Input.CurrentInputString += string(r)
 			} else {
@@ -693,6 +697,8 @@ func MakeGame() *Game {
 
 	game.Input.Mouse = mouse
 	game.Input.MouseShadow = mouseShadow
+	game.AppendLine("Welcome to Dofi CLI!", false)
+	game.AppendLine("Type 'help' for available commands.", false)
 	game.AppendLine("", true)
 
 	TextFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(fontBytes))

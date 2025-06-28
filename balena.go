@@ -1,15 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
+	balena "github.com/mrdapoyo/dofi/balena/interpreter"
 	parser "github.com/mrdapoyo/dofi/balena/parser"
 	scanner "github.com/mrdapoyo/dofi/balena/scanner"
 )
+
+// Global error state variables
+var hadError = false
+var hadRuntimeError = false
 
 func (g *Game) setupBalenaAPI() {
 	g.BalenaEnv.Globals.Define("clear", func(_ ...interface{}) interface{} {
@@ -89,8 +95,28 @@ func (g *Game) setupBalenaAPI() {
 func (g *Game) RunBalenaScript(code string) {
 	g.ClearScreenBuffer()
 
+	// Reset error state
+	hadError = false
+	hadRuntimeError = false
+
+	// Scan tokens
 	tokens := scanner.NewScanner(code).ScanTokens()
+
+	// Parse statements with error handling
+	defer func() {
+		if r := recover(); r != nil {
+			if parseErr, ok := r.(parser.ParseError); ok {
+				g.AppendLine(fmt.Sprintf("Parse error at line %d: %s", parseErr.Line, parseErr.Message), false)
+			} else {
+				g.AppendLine(fmt.Sprintf("Unexpected error: %v", r), false)
+			}
+		}
+	}()
+
 	raw := parser.NewParser(tokens).Parse()
+	if hadError {
+		return
+	}
 
 	stmts := make([]parser.Stmt, 0, len(raw))
 	for _, s := range raw {
@@ -101,6 +127,39 @@ func (g *Game) RunBalenaScript(code string) {
 	if len(stmts) == 0 {
 		return
 	}
+
+	// Resolve statements with error handling
+	resolver := balena.NewResolver(g.BalenaEnv)
+	defer func() {
+		if r := recover(); r != nil {
+			if runtimeErr, ok := r.(*balena.RuntimeError); ok {
+				g.AppendLine(fmt.Sprintf("Resolution error: %s", runtimeErr.Error()), false)
+			} else {
+				g.AppendLine(fmt.Sprintf("Unexpected resolution error: %v", r), false)
+			}
+		}
+	}()
+
+	resolver.Resolve(stmts)
+	if hadError {
+		return
+	}
+
+	// Execute statements with error handling
+	defer func() {
+		if r := recover(); r != nil {
+			if runtimeErr, ok := r.(*balena.RuntimeError); ok {
+				g.AppendLine(fmt.Sprintf("Runtime error: %s", runtimeErr.Error()), false)
+			} else if returnErr, ok := r.(balena.Return); ok {
+				if returnErr.Value != nil {
+					g.AppendLine(fmt.Sprintf("Return value: %v", returnErr.Value), false)
+				}
+				g.AppendLine("Unexpected return statement at top level.", false)
+			} else {
+				g.AppendLine(fmt.Sprintf("Unexpected execution error: %v", r), false)
+			}
+		}
+	}()
 
 	g.BalenaEnv.Execute(stmts)
 }
