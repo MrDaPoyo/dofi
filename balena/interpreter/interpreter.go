@@ -25,19 +25,27 @@ type Interpreter struct {
 	Globals     *environment.Environment
 	Environment *environment.Environment
 	locals      map[parser.Expr]int
+	OutputFunc  func(string)
 }
 
 func NewInterpreter() *Interpreter {
 	interpreter := &Interpreter{
 		Globals:     environment.NewEnvironment(),
 		Environment: environment.NewEnvironment(),
+		OutputFunc:  nil,
 	}
 	interpreter.Globals.Define("clock", &Clock{})
 	interpreter.Globals.Define("print", func(args ...interface{}) interface{} {
+		var output string
 		for _, arg := range args {
-			fmt.Print(stringify(arg))
+			output += stringify(arg)
 		}
-		fmt.Println()
+		if interpreter.OutputFunc != nil {
+			interpreter.OutputFunc(output)
+		} else {
+			fmt.Print(output)
+			fmt.Println()
+		}
 		return nil
 	})
 	loadBuiltins(interpreter)
@@ -77,7 +85,12 @@ func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) {
 
 func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) {
 	value := i.evaluate(stmt.Expression)
-	fmt.Println(stringify(value))
+	output := stringify(value)
+	if i.OutputFunc != nil {
+		i.OutputFunc(output)
+	} else {
+		fmt.Println(output)
+	}
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) {

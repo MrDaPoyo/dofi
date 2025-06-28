@@ -41,13 +41,11 @@ fn _draw() {
   var theta_spacing = 0.07;
   var phi_spacing = 0.02;
 
-  var theta = 0.0;
-  while (theta < 6.28) {
+     theta = 0.0;
     var costheta = cos(theta);
     var sintheta = sin(theta);
 
     var phi = 0.0;
-    while (phi < 6.28) {
       var cosphi = cos(phi);
       var sinphi = sin(phi);
       var circlex = R2 + R1 * costheta;
@@ -66,14 +64,4 @@ fn _draw() {
         var b = floor(255 * clamped_L * 0.6);
         pset(xp, yp, r, g, b);
       }
-      phi = phi + phi_spacing;
     }
-    theta = theta + theta_spacing;
-  }
-}
-
-fn _init() {
-  print("3D Spinning Donut initialized!");
-}
-
-_init();

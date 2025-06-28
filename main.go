@@ -135,7 +135,13 @@ func (g *Game) HandleCommand(command string) {
 		g.AppendLine("help - Show this help message", false)
 		g.AppendLine("cls - Clear the screen", false)
 		g.AppendLine("dofi.pset(x,y,r,g,b) - Set pixel at (x, y) to color (r, g, b)", false)
-		g.AppendLine(command, true)
+		g.AppendLine("example <name> - Run an example (donut, print)", false)
+		return
+	}
+
+	if command == "cls" {
+		g.LinearBuffer = []LinearBuffer{}
+		g.AppendLine("", true) // Add empty input line
 		return
 	}
 
@@ -143,14 +149,49 @@ func (g *Game) HandleCommand(command string) {
 		exampleName := strings.TrimPrefix(command, "example ")
 		if exampleBalena, exists := LuaExamples[exampleName]; exists {
 			g.RunBalenaScript(exampleBalena)
-			g.ScriptRunning = true
-			g.AppendLine("Running example: "+exampleName, false)
+
+			_, hasUpdate := g.BalenaEnv.Globals.Values["_update"]
+			_, hasDraw := g.BalenaEnv.Globals.Values["_draw"]
+
+			if hasUpdate || hasDraw {
+				g.ScriptRunning = true
+				g.AppendLine("Running example: "+exampleName, false)
+			} else {
+				g.ScriptRunning = false
+				g.AppendLine("Example completed: "+exampleName, false)
+			}
 			g.AppendLine("", true)
 		} else {
 			g.AppendLine("Example not found: "+exampleName, false)
+			g.AppendLine("Available examples: donut, print", false)
+			g.AppendLine("", true)
 		}
 		return
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			if runtimeErr, ok := r.(*balena.RuntimeError); ok {
+				g.AppendLine("Error: "+runtimeErr.Error(), false)
+			} else {
+				g.AppendLine("Error: "+fmt.Sprintf("%v", r), false)
+			}
+		}
+	}()
+
+	g.RunBalenaScript(command)
+
+	_, hasUpdate := g.BalenaEnv.Globals.Values["_update"]
+	_, hasDraw := g.BalenaEnv.Globals.Values["_draw"]
+
+	if hasUpdate || hasDraw {
+		g.ScriptRunning = true
+		g.AppendLine("Script started (press ESC to stop)", false)
+	} else {
+		g.ScriptRunning = false
+	}
+
+	g.AppendLine("", true)
 }
 
 func (g *Game) Update() (err error) {
@@ -333,27 +374,38 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if g.Navbar.CliEnabled {
 		screen.Fill(g.Screen.CliBgColor)
 		lineHeight := g.Screen.FontSize + 1
+
 		var totalLines int
 		for _, line := range g.LinearBuffer {
 			totalLines += len(line.Content)
 		}
 
-		y := g.Screen.Height - totalLines*lineHeight
+		maxVisibleLines := g.Screen.Height / lineHeight
+
+		startY := 0
+		if totalLines > maxVisibleLines {
+			startY = g.Screen.Height - maxVisibleLines*lineHeight
+		} else {
+			startY = g.Screen.Height - totalLines*lineHeight
+		}
+
+		y := startY
 		for _, line := range g.LinearBuffer {
 			prefix := "- "
 			if line.IsInput {
 				prefix = "> "
 			}
 			for _, wrappedLine := range line.Content {
-				img := ebiten.NewImage(g.Screen.Width, lineHeight)
-				textOP := &text.DrawOptions{}
-				textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
-				text.Draw(img, prefix+wrappedLine, TextFace, textOP)
+				if y >= 0 && y < g.Screen.Height {
+					img := ebiten.NewImage(g.Screen.Width, lineHeight)
+					textOP := &text.DrawOptions{}
+					textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
+					text.Draw(img, prefix+wrappedLine, TextFace, textOP)
 
-				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Translate(0, float64(y))
-				screen.DrawImage(img, op)
-
+					op := &ebiten.DrawImageOptions{}
+					op.GeoM.Translate(0, float64(y))
+					screen.DrawImage(img, op)
+				}
 				y += lineHeight
 				prefix = "  "
 			}
@@ -580,6 +632,9 @@ func MakeGame() *Game {
 	}
 
 	game.BalenaEnv = balena.NewInterpreter()
+	game.BalenaEnv.OutputFunc = func(output string) {
+		game.AppendLine(output, false)
+	}
 	game.setupBalenaAPI()
 
 	ebiten.SetCursorMode(ebiten.CursorModeHidden)

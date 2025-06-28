@@ -36,6 +36,13 @@ func (g *Game) setupBalenaAPI() {
 		return nil
 	})
 
+	g.BalenaEnv.Globals.Define("print", func(a ...interface{}) interface{} {
+		for _, arg := range a {
+			g.AppendLine(arg.(string), false)
+		}
+		return nil
+	})
+
 	g.BalenaEnv.Globals.Define("txt", g.bindingDrawText)
 
 	g.BalenaEnv.Globals.Define("sin", func(a ...interface{}) interface{} {
@@ -66,7 +73,6 @@ func (g *Game) setupBalenaAPI() {
 		return math.Sqrt(a[0].(float64))
 	})
 
-	// Add global variables for the donut script
 	g.BalenaEnv.Globals.Define("time", 0.0)
 	g.BalenaEnv.Globals.Define("screen_width", 128.0)
 	g.BalenaEnv.Globals.Define("screen_height", 128.0)
