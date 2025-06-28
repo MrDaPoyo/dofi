@@ -2,98 +2,124 @@ package main
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	env "github.com/mrdapoyo/dofi/balena/env"
 	parser "github.com/mrdapoyo/dofi/balena/parser"
+	scanner "github.com/mrdapoyo/dofi/balena/scanner"
 )
 
-func (g *Game) SetupBalenaAPI() *env.Environment {
-	var env = env.NewEnvironment()
+func (g *Game) setupBalenaAPI() {
+	g.BalenaEnv.Globals.Define("clear", func(_ ...interface{}) interface{} {
+		g.LinearBuffer = nil
+		g.Input.CurrentInputString = ""
+		return nil
+	})
 
-	env.SetUserData("game", env.NewGoObject(g))
+	// pset(x, y, r, g,b): set a pixel in the 128×128 back-buffer
+	g.BalenaEnv.Globals.Define("pset", func(a ...interface{}) interface{} {
+		if len(a) != 5 {
+			return nil
+		}
+		x, y := int(a[0].(float64)), int(a[1].(float64))
+		clr := color.RGBA{uint8(a[2].(float64)), uint8(a[3].(float64)), uint8(a[4].(float64)), 255}
+		if x >= 0 && x < 128 && y >= 0 && y < 128 {
+			g.Screen.Buffer[y][x] = clr
+		}
+		return nil
+	})
 
-	env.RegisterExternalBinding("clear", g.bindingClearLines)
-	env.RegisterExternalBinding("pset", g.bindingDrawPixel)
-	env.RegisterExternalBinding("txt", g.bindingDrawText)
+	g.BalenaEnv.Globals.Define("cls", func(_ ...interface{}) interface{} {
+		g.ClearScreenBuffer()
+		return nil
+	})
 
-	return env
+	g.BalenaEnv.Globals.Define("txt", g.bindingDrawText)
+
+	g.BalenaEnv.Globals.Define("sin", func(a ...interface{}) interface{} {
+		if len(a) != 1 {
+			return nil
+		}
+		return math.Sin(a[0].(float64))
+	})
+
+	g.BalenaEnv.Globals.Define("cos", func(a ...interface{}) interface{} {
+		if len(a) != 1 {
+			return nil
+		}
+		return math.Cos(a[0].(float64))
+	})
+
+	g.BalenaEnv.Globals.Define("floor", func(a ...interface{}) interface{} {
+		if len(a) != 1 {
+			return nil
+		}
+		return math.Floor(a[0].(float64))
+	})
+
+	g.BalenaEnv.Globals.Define("sqrt", func(a ...interface{}) interface{} {
+		if len(a) != 1 {
+			return nil
+		}
+		return math.Sqrt(a[0].(float64))
+	})
 }
 
-func (g *Game) RunBalenaScript(env *env.Environment, code string) []string {
-	p := parser.NewParser(code)
-	program := p.ParseProgram()
-	if len(p.Errors()) != 0 {
-		errors := []string{}
-		for _, err := range p.Errors() {
-			errors = append(errors, err)
+func (g *Game) RunBalenaScript(code string) {
+	g.ClearScreenBuffer()
+
+	tokens := scanner.NewScanner(code).ScanTokens()
+	raw := parser.NewParser(tokens).Parse()
+
+	stmts := make([]parser.Stmt, 0, len(raw))
+	for _, s := range raw {
+		if s != nil {
+			stmts = append(stmts, s)
 		}
-		return errors
 	}
-	evaluated := balena.Eval(program, env)
-	if evaluated != nil {
-		return []string{evaluated.Inspect()}
+	if len(stmts) == 0 {
+		return
+	}
+
+	g.BalenaEnv.Execute(stmts)
+}
+
+func (g *Game) bindingDrawText(a ...interface{}) interface{} {
+	if len(a) != 4 {
+		return nil
+	}
+	x := int(a[0].(float64))
+	y := int(a[1].(float64))
+	s := a[2].(string)
+	shade := uint8(a[3].(float64))
+
+	col := color.RGBA{shade, shade, shade, 255}
+	op := &text.DrawOptions{}
+	op.ColorScale.Scale(float32(col.R)/255, float32(col.G)/255, float32(col.B)/255, 1)
+	op.GeoM.Translate(float64(x), float64(y))
+
+	img := ebiten.NewImage(g.Screen.Width, g.Screen.Height)
+	text.Draw(img, s, TextFace, op)
+
+	buf := make([]byte, 4*g.Screen.Width*g.Screen.Height)
+	img.ReadPixels(buf)
+	for i := 0; i < len(buf); i += 4 {
+		r, gC, bC, aC := buf[i], buf[i+1], buf[i+2], buf[i+3]
+		yy := y + (i/4)/128
+		xx := x + (i/4)%128
+		if xx >= 0 && xx < 128 && yy >= 0 && yy < 128 {
+			g.Screen.Buffer[yy][xx] = color.RGBA{r, gC, bC, aC}
+		}
 	}
 	return nil
 }
 
-func (g *Game) bindingClearLines(args ...balena.Object) balena.Object {
-	g.LinearBuffer = []LinearBuffer{}
-	g.Input.CurrentInputString = ""
-	return balena.EVAL_NULL
+func (g *Game) ClearScreenBuffer() {
+	for y := 0; y < len(g.Screen.Buffer); y++ {
+		for x := 0; x < len(g.Screen.Buffer[y]); x++ {
+			g.Screen.Buffer[y][x] = color.RGBA{0, 0, 0, 0}
+		}
+	}
 }
-
-func (g *Game) bindingDrawPixel(args ...balena.Object) balena.Object {
-	if len(args) != 5 {
-		return balena.NewError("wrong number of arguments. got=%d, want=5", len(args))
-	}
-
-	x, ok1 := args[0].(*balena.ObjectInteger)
-	y, ok2 := args[1].(*balena.ObjectInteger)
-	r, ok3 := args[2].(*balena.ObjectInteger)
-	gc, ok4 := args[3].(*balena.ObjectInteger)
-	b, ok5 := args[4].(*balena.ObjectInteger)
-	if !ok1 || !ok2 || !ok3 || !ok4 || !ok5 {
-		return balena.NewError("arguments 1-5 must be integers")
-	}
-	color := color.RGBA{uint8(r.Value), uint8(gc.Value), uint8(b.Value), 255}
-	if x.Value >= 0 && x.Value < 128 && y.Value >= 0 && y.Value < 128 {
-		g.Screen.Buffer[y.Value][x.Value] = color
-		return balena.EVAL_NULL
-	}
-	g.AppendLine("Error: Pixel out of bounds", true)
-	return balena.EVAL_NULL
-}
-
-func (g *Game) bindingDrawText(args ...balena.Object) balena.Object {
-	if len(args) != 5 {
-		return balena.NewError("wrong number of arguments. got=%d, want=5", len(args))
-	}
-
-	x, ok1 := args[1].(*balena.ObjectInteger)
-	y, ok2 := args[2].(*balena.ObjectInteger)
-	value, ok3 := args[3].(*balena.String)
-	c, ok4 := args[4].(*balena.ObjectInteger)
-	if !ok1 || !ok2 || !ok3 || !ok4 {
-		return balena.NewError("arguments 2-5 must be correct types")
-	}
-	col := color.RGBA{uint8(c.Value), uint8(c.Value), uint8(c.Value), 255}
-	var op = &text.DrawOptions{}
-	op.ColorScale.Scale(float32(col.R)/255, float32(col.G)/255, float32(col.B)/255, float32(col.A)/255)
-	op.GeoM.Translate(float64(x.Value), float64(y.Value))
-	image := ebiten.NewImage(g.Screen.Width, g.Screen.Height)
-	text.Draw(image, value.Value, TextFace, op)
-	buffer := make([]byte, 4*g.Screen.Width*g.Screen.Height)
-	image.ReadPixels(buffer)
-	for i := 0; i < len(buffer); i += 4 {
-		r := buffer[i]
-		green := buffer[i+1]
-		b := buffer[i+2]
-		a := buffer[i+3]
-		g.Screen.Buffer[int(y.Value)+i/4/128][int(x.Value)+i/4%128] = color.RGBA{r, green, b, a}
-	}
-	return balena.EVAL_NULL
-}
-

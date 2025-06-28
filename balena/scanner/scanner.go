@@ -139,6 +139,10 @@ func (s *Scanner) scanToken() {
 		}
 	case '"':
 		s.newString()
+	case '[':
+		s.addToken(token.LEFT_BRACKET, "[", nil)
+	case ']':
+		s.addToken(token.RIGHT_BRACKET, "]", nil)
 	default:
 		if s.isDigit(r) {
 			s.newNumber()

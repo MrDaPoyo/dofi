@@ -15,12 +15,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	balena "github.com/mrdapoyo/dofi/balena"
+	balena "github.com/mrdapoyo/dofi/balena/interpreter"
 )
 
 type Game struct {
 	Screen        ScreenSpecs
-	BalenaEnv     *balena.Environment
+	BalenaEnv     *balena.Interpreter
 	Navbar        Navbar
 	Input         Input
 	LinearBuffer  []LinearBuffer
@@ -142,18 +142,13 @@ func (g *Game) HandleCommand(command string) {
 	if strings.HasPrefix(command, "example") {
 		exampleName := strings.TrimPrefix(command, "example ")
 		if exampleBalena, exists := LuaExamples[exampleName]; exists {
-			if err := g.RunBalenaScript(g.BalenaEnv, exampleBalena); err != nil {
-				err := fmt.Sprintf("Error running example: %s", strings.Join(err, " "))
-				g.AppendLine(fmt.Sprintf("Error running example: %s", err), false)
-				log.Println(err)
-			} else {
-				g.ScriptRunning = true
-				g.AppendLine("Running example: "+exampleName, false)
-			}
+			g.RunBalenaScript(exampleBalena)
+			g.ScriptRunning = true
+			g.AppendLine("Running example: "+exampleName, false)
+			g.AppendLine("", true)
 		} else {
 			g.AppendLine("Example not found: "+exampleName, false)
 		}
-		g.AppendLine("", true)
 		return
 	}
 }
@@ -166,9 +161,10 @@ func (g *Game) Update() (err error) {
 			g.AppendLine("", true)
 			return nil
 		}
-		if _, err := g.BalenaEnv.CallFunction("_update"); err != nil {
-			g.AppendLine("Balena error in _update: "+err.Error(), false)
-			log.Println("Balena error in _update: " + err.Error())
+		if fn, ok := g.BalenaEnv.Globals.Values["_update"]; ok {
+			if callable, ok := fn.(balena.BalenaCallable); ok {
+				callable.Call(g.BalenaEnv, nil)
+			}
 		}
 		return nil
 	}
@@ -300,122 +296,125 @@ func (g *Game) Update() (err error) {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
 
-	if !g.ScriptRunning {
-		if g.Navbar.CliEnabled {
-			screen.Fill(g.Screen.CliBgColor)
-			lineHeight := g.Screen.FontSize + 1
-			var totalLines int
-			for _, line := range g.LinearBuffer {
-				totalLines += len(line.Content)
+	if g.ScriptRunning {
+		bufferImg := ebiten.NewImage(len(g.Screen.Buffer[0]), len(g.Screen.Buffer))
+
+		pixels := make([]byte, len(g.Screen.Buffer)*len(g.Screen.Buffer[0])*4)
+		for y := 0; y < len(g.Screen.Buffer); y++ {
+			for x := 0; x < len(g.Screen.Buffer[y]); x++ {
+				pixel := g.Screen.Buffer[y][x]
+				idx := (y*len(g.Screen.Buffer[0]) + x) * 4
+				pixels[idx] = pixel.R
+				pixels[idx+1] = pixel.G
+				pixels[idx+2] = pixel.B
+				pixels[idx+3] = pixel.A
 			}
+		}
 
-			y := g.Screen.Height - totalLines*lineHeight
-			for _, line := range g.LinearBuffer {
-				prefix := "- "
-				if line.IsInput {
-					prefix = "> "
-				}
-				for _, wrappedLine := range line.Content {
-					img := ebiten.NewImage(g.Screen.Width, lineHeight)
-					textOP := &text.DrawOptions{}
-					textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
-					text.Draw(img, prefix+wrappedLine, TextFace, textOP)
+		bufferImg.WritePixels(pixels)
+		screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
 
-					op := &ebiten.DrawImageOptions{}
-					op.GeoM.Translate(0, float64(y))
-					screen.DrawImage(img, op)
-
-					y += lineHeight
-					prefix = "  "
-				}
+		if fn, ok := g.BalenaEnv.Globals.Values["_draw"]; ok {
+			if callable, ok := fn.(balena.BalenaCallable); ok {
+				callable.Call(g.BalenaEnv, nil)
 			}
-		} else {
-			screen.Fill(g.Screen.BgColor)
-			navbarHeight := g.Navbar.NavbarHeight
-			navbarImg := ebiten.NewImage(g.Screen.Width, navbarHeight)
-			navbarImg.Fill(g.Navbar.NavbarColor)
-			screen.DrawImage(navbarImg, nil)
+		}
+		return
+	}
 
-			totalTabWidth := 0
-			enabledTabs := 0
-			for _, tab := range g.Navbar.Tabs {
-				if tab.Enabled {
-					enabledTabs++
-					totalTabWidth += tab.Icon.Bounds().Dx() + 2
-				}
+	if g.Navbar.CliEnabled {
+		screen.Fill(g.Screen.CliBgColor)
+		lineHeight := g.Screen.FontSize + 1
+		var totalLines int
+		for _, line := range g.LinearBuffer {
+			totalLines += len(line.Content)
+		}
+
+		y := g.Screen.Height - totalLines*lineHeight
+		for _, line := range g.LinearBuffer {
+			prefix := "- "
+			if line.IsInput {
+				prefix = "> "
 			}
-			if enabledTabs > 0 {
-				totalTabWidth += (enabledTabs - 1) * 2 // spacing between tabs
+			for _, wrappedLine := range line.Content {
+				img := ebiten.NewImage(g.Screen.Width, lineHeight)
+				textOP := &text.DrawOptions{}
+				textOP.ColorScale.ScaleWithColor(g.Screen.CliColor)
+				text.Draw(img, prefix+wrappedLine, TextFace, textOP)
+
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Translate(0, float64(y))
+				screen.DrawImage(img, op)
+
+				y += lineHeight
+				prefix = "  "
 			}
-
-			xPosition := g.Screen.Width - totalTabWidth - 1
-			for _, tab := range g.Navbar.Tabs {
-				if !tab.Enabled {
-					continue
-				}
-
-				iconWidth := tab.Icon.Bounds().Dx() + 2
-				iconHeight := tab.Icon.Bounds().Dy() + 2
-
-				tabImg := ebiten.NewImage(iconWidth, iconHeight)
-				tabImg.Fill(g.Navbar.TabColor)
-
-				iconOP := &ebiten.DrawImageOptions{}
-				iconOP.GeoM.Translate(float64((iconWidth-tab.Icon.Bounds().Dx())/2), float64((iconHeight-tab.Icon.Bounds().Dy())/2))
-				tabImg.DrawImage(tab.Icon, iconOP)
-
-				tabOp := &ebiten.DrawImageOptions{}
-				tabOp.GeoM.Translate(float64(xPosition), float64((navbarHeight-iconHeight)/2))
-				screen.DrawImage(tabImg, tabOp)
-
-				xPosition += iconWidth + 2
-			}
-
-			var contentImage = ebiten.NewImage(g.Screen.Width, g.Screen.Height-navbarHeight)
-			contentImage.Fill(g.Screen.BgColor)
-
-			if g.Navbar.Tabs[g.Navbar.CurrentTab].Name == "code" {
-				if editor, exists := CodeEditors[g.Navbar.CurrentTab]; exists {
-					g.CodeEditor(contentImage, editor, navbarHeight)
-				} else {
-					CodeEditors[g.Navbar.CurrentTab] = &CodeEditor{
-						Content: []string{""},
-						Line:    0,
-						Column:  0,
-						ScrollY: 0,
-						Saved:   false,
-					}
-					g.CodeEditor(screen, CodeEditors[g.Navbar.CurrentTab], navbarHeight)
-				}
-			}
-			var contentImageOp = &ebiten.DrawImageOptions{}
-			contentImageOp.GeoM.Translate(0, float64(navbarHeight))
-			screen.DrawImage(contentImage, contentImageOp)
-
-			g.DrawMouse(screen)
 		}
 	} else {
-		if _, err := g.BalenaEnv.CallFunction("_draw"); err != nil {
-			g.AppendLine("Balena error in _draw: "+err.Error(), false)
-			log.Println("Balena error in _draw: " + err.Error())
-		}
-	}
-	bufferImg := ebiten.NewImage(len(g.Screen.Buffer[0]), len(g.Screen.Buffer))
+		screen.Fill(g.Screen.BgColor)
+		navbarHeight := g.Navbar.NavbarHeight
+		navbarImg := ebiten.NewImage(g.Screen.Width, navbarHeight)
+		navbarImg.Fill(g.Navbar.NavbarColor)
+		screen.DrawImage(navbarImg, nil)
 
-	pixels := make([]byte, len(g.Screen.Buffer)*len(g.Screen.Buffer[0])*4)
-	for y := 0; y < len(g.Screen.Buffer); y++ {
-		for x := 0; x < len(g.Screen.Buffer[y]); x++ {
-			pixel := g.Screen.Buffer[y][x]
-			idx := (y*len(g.Screen.Buffer[0]) + x) * 4
-			pixels[idx] = pixel.R
-			pixels[idx+1] = pixel.G
-			pixels[idx+2] = pixel.B
-			pixels[idx+3] = pixel.A
+		totalTabWidth := 0
+		enabledTabs := 0
+		for _, tab := range g.Navbar.Tabs {
+			if tab.Enabled {
+				enabledTabs++
+				totalTabWidth += tab.Icon.Bounds().Dx() + 2
+			}
 		}
-	}
+		if enabledTabs > 0 {
+			totalTabWidth += (enabledTabs - 1) * 2 // spacing between tabs
+		}
 
-	bufferImg.WritePixels(pixels)
-	screen.DrawImage(bufferImg, &ebiten.DrawImageOptions{})
+		xPosition := g.Screen.Width - totalTabWidth - 1
+		for _, tab := range g.Navbar.Tabs {
+			if !tab.Enabled {
+				continue
+			}
+
+			iconWidth := tab.Icon.Bounds().Dx() + 2
+			iconHeight := tab.Icon.Bounds().Dy() + 2
+
+			tabImg := ebiten.NewImage(iconWidth, iconHeight)
+			tabImg.Fill(g.Navbar.TabColor)
+
+			iconOP := &ebiten.DrawImageOptions{}
+			iconOP.GeoM.Translate(float64((iconWidth-tab.Icon.Bounds().Dx())/2), float64((iconHeight-tab.Icon.Bounds().Dy())/2))
+			tabImg.DrawImage(tab.Icon, iconOP)
+
+			tabOp := &ebiten.DrawImageOptions{}
+			tabOp.GeoM.Translate(float64(xPosition), float64((navbarHeight-iconHeight)/2))
+			screen.DrawImage(tabImg, tabOp)
+
+			xPosition += iconWidth + 2
+		}
+
+		var contentImage = ebiten.NewImage(g.Screen.Width, g.Screen.Height-navbarHeight)
+		contentImage.Fill(g.Screen.BgColor)
+
+		if g.Navbar.Tabs[g.Navbar.CurrentTab].Name == "code" {
+			if editor, exists := CodeEditors[g.Navbar.CurrentTab]; exists {
+				g.CodeEditor(contentImage, editor, navbarHeight)
+			} else {
+				CodeEditors[g.Navbar.CurrentTab] = &CodeEditor{
+					Content: []string{""},
+					Line:    0,
+					Column:  0,
+					ScrollY: 0,
+					Saved:   false,
+				}
+				g.CodeEditor(screen, CodeEditors[g.Navbar.CurrentTab], navbarHeight)
+			}
+		}
+		var contentImageOp = &ebiten.DrawImageOptions{}
+		contentImageOp.GeoM.Translate(0, float64(navbarHeight))
+		screen.DrawImage(contentImage, contentImageOp)
+
+		g.DrawMouse(screen)
+	}
 }
 
 func (g *Game) DrawMouse(screen *ebiten.Image) {
@@ -572,7 +571,8 @@ func MakeGame() *Game {
 		},
 	}
 
-	game.BalenaEnv = game.SetupBalenaAPI()
+	game.BalenaEnv = balena.NewInterpreter()
+	game.setupBalenaAPI()
 
 	ebiten.SetCursorMode(ebiten.CursorModeHidden)
 
@@ -604,17 +604,14 @@ func MakeGame() *Game {
 func main() {
 	game := MakeGame()
 
-	if os.Args[1] == "-run" {
+	if len(os.Args) > 1 && os.Args[1] == "-run" {
 		if len(os.Args) > 2 {
 			scriptPath := os.Args[2]
 			scriptContent, err := os.ReadFile(scriptPath)
 			if err != nil {
 				log.Fatalf("Error reading script file: %v", err)
 			}
-			if err := game.RunBalenaScript(game.BalenaEnv, string(scriptContent));
-				err != nil {
-				log.Fatalf("Error running script: %v", err)
-			}
+			game.RunBalenaScript(string(scriptContent))
 			game.ScriptRunning = true
 		} else {
 			log.Fatal("No script file provided. Usage: go run main.go <script.bal>")
@@ -623,7 +620,6 @@ func main() {
 
 	ebiten.SetWindowSize(game.Screen.Width*game.Screen.UpscalingFactor, game.Screen.Height*game.Screen.UpscalingFactor)
 	ebiten.SetWindowTitle("Dofi! :3")
-	ebiten.SetTPS(60)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}

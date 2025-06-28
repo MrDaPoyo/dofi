@@ -11,6 +11,13 @@ type Resolver struct {
 	currentFunction FunctionType
 }
 
+func (r *Resolver) VisitArrayExpr(expr *parser.ArrayExpr) interface{} {
+	for _, element := range expr.Elements {
+		r.ResolveExpr(element)
+	}
+	return nil
+}
+
 type FunctionType int
 
 const (
@@ -82,7 +89,7 @@ func (r *Resolver) Declare(name token.Token) {
 	if len(r.scopes) == 0 {
 		return
 	}
-	
+
 	scope := r.scopes[len(r.scopes)-1]
 	if _, ok := scope[name.Lexeme]; ok {
 		r.interpreter.error(name, "Variable with this name already declared in this scope")

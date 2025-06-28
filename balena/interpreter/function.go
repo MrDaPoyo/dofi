@@ -1,6 +1,8 @@
 package balena
 
 import (
+	"fmt"
+
 	env "github.com/mrdapoyo/dofi/balena/env"
 	parser "github.com/mrdapoyo/dofi/balena/parser"
 )
@@ -25,7 +27,7 @@ func (lf *BalenaFunction) Call(interpreter *Interpreter, arguments []interface{}
 			if returnValue, ok := r.(Return); ok {
 				result = returnValue.Value
 			} else {
-				panic(r)
+				panic("unexpected panic in function call: " + fmt.Sprintf("%v", r))
 			}
 		}
 	}()

@@ -15,6 +15,8 @@ const (
 	SEMICOLON
 	SLASH
 	STAR
+	LEFT_BRACKET
+	RIGHT_BRACKET
 
 	// one or two character tokens
 	BANG

@@ -320,6 +320,21 @@ func (p *Parser) primary() Expr {
 		return &LiteralExpr{Value: nil}
 	}
 
+	if p.match(token.LEFT_BRACKET) {
+		// Array literal: [expr, expr, ...]
+		elements := []Expr{}
+		if !p.check(token.RIGHT_BRACKET) {
+			for {
+				elements = append(elements, p.expression())
+				if !p.match(token.COMMA) {
+					break
+				}
+			}
+		}
+		p.consume(token.RIGHT_BRACKET, "Expect ']' after array elements.")
+		return &ArrayExpr{Elements: elements}
+	}
+
 	if p.match(token.IDENTIFIER) {
 		return &VariableExpr{Name: p.previous()}
 	}
@@ -375,6 +390,7 @@ type ExprVisitor interface {
 	VisitAssignExpr(expr *AssignExpr) interface{}
 	VisitLogicalExpr(expr *LogicalExpr) interface{}
 	VisitCallExpr(expr *CallExpr) interface{}
+	VisitArrayExpr(expr *ArrayExpr) interface{}
 }
 
 type BinaryExpr struct {
@@ -447,6 +463,14 @@ type CallExpr struct {
 
 func (e *CallExpr) Accept(visitor ExprVisitor) interface{} {
 	return visitor.VisitCallExpr(e)
+}
+
+type ArrayExpr struct {
+	Elements []Expr
+}
+
+func (e *ArrayExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitArrayExpr(e)
 }
 
 type Stmt interface {
@@ -630,8 +654,10 @@ func (p *Parser) forStatement() Stmt {
 
 	body := p.statement()
 
+	// Create the while loop body that includes both the original body and the increment
+	var whileBody Stmt = body
 	if increment != nil {
-		body = &BlockStmt{
+		whileBody = &BlockStmt{
 			Statements: []Stmt{
 				body,
 				&ExpressionStmt{Expression: increment},
@@ -644,7 +670,7 @@ func (p *Parser) forStatement() Stmt {
 	}
 	body = &WhileStmt{
 		Condition: condition,
-		Body:      body,
+		Body:      whileBody,
 	}
 
 	if initializer != nil {

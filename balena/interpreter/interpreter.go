@@ -18,6 +18,7 @@ type ExprVisitor interface {
 	VisitAssignExpr(expr *parser.AssignExpr) interface{}
 	VisitLogicalExpr(expr *parser.LogicalExpr) interface{}
 	VisitCallExpr(expr *parser.CallExpr) interface{}
+	VisitArrayExpr(expr *parser.ArrayExpr) interface{}
 }
 
 type Interpreter struct {
@@ -32,12 +33,23 @@ func NewInterpreter() *Interpreter {
 		Environment: environment.NewEnvironment(),
 	}
 	interpreter.Globals.Define("clock", &Clock{})
+	interpreter.Globals.Define("print", func(args ...interface{}) interface{} {
+		for _, arg := range args {
+			fmt.Print(stringify(arg))
+		}
+		fmt.Println()
+		return nil
+	})
+	loadBuiltins(interpreter)
 	interpreter.Environment = interpreter.Globals
 	return interpreter
 }
 
 func (i *Interpreter) Execute(statements []parser.Stmt) {
 	for _, stmt := range statements {
+		if stmt == nil {
+			continue
+		}
 		stmt.Accept(i)
 	}
 }
@@ -100,7 +112,7 @@ func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) {
 
 func (i *Interpreter) VisitWhileStmt(stmt *parser.WhileStmt) {
 	for i.isTruthy(i.evaluate(stmt.Condition)) {
-		i.execute([]parser.Stmt{stmt.Body})
+		stmt.Body.Accept(i)
 	}
 }
 
@@ -234,6 +246,10 @@ func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) interface{} {
 		arguments = append(arguments, i.evaluate(argument))
 	}
 
+	if fn, ok := callee.(func(...interface{}) interface{}); ok {
+		return fn(arguments...)
+	}
+
 	function, ok := callee.(BalenaCallable)
 	if !ok {
 		panic(&RuntimeError{
@@ -241,13 +257,21 @@ func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) interface{} {
 			Message: "Can only call functions and classes.",
 		})
 	}
-	if len(expr.Arguments) != function.Arity() {
+	if ar := function.Arity(); ar >= 0 && len(expr.Arguments) != ar {
 		panic(&RuntimeError{
 			Token:   expr.Paren,
-			Message: fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(expr.Arguments)),
+			Message: fmt.Sprintf("Expected %d arguments but got %d.", ar, len(expr.Arguments)),
 		})
 	}
 	return function.Call(i, arguments)
+}
+
+func (i *Interpreter) VisitArrayExpr(expr *parser.ArrayExpr) interface{} {
+	result := make([]interface{}, len(expr.Elements))
+	for idx, el := range expr.Elements {
+		result[idx] = i.evaluate(el)
+	}
+	return result
 }
 
 func (i *Interpreter) evaluate(expr parser.Expr) interface{} {
@@ -256,6 +280,9 @@ func (i *Interpreter) evaluate(expr parser.Expr) interface{} {
 
 func (i *Interpreter) execute(statements []parser.Stmt) {
 	for _, statement := range statements {
+		if statement == nil {
+			continue
+		}
 		statement.Accept(i)
 	}
 }

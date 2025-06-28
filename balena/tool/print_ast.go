@@ -10,6 +10,18 @@ type AstPrinter struct {
 	lastResult string
 }
 
+func (a *AstPrinter) VisitArrayExpr(expr *parser.ArrayExpr) interface{} {
+	result := "(array"
+	if len(expr.Elements) == 0 {
+		return result + ")"
+	}
+	for _, element := range expr.Elements {
+		result += " " + element.Accept(a).(string)
+	}
+	result += ")"
+	return result
+}
+
 func (a *AstPrinter) VisitLogicalExpr(expr *parser.LogicalExpr) interface{} {
 	return a.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }

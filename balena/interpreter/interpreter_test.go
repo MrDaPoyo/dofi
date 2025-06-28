@@ -78,3 +78,15 @@ count(1);`
 		t.Fatalf("unexpected output: %q", out)
 	}
 }
+
+func TestBuiltinAdd(t *testing.T) {
+	RegisterBuiltin("add", 2, func(args ...interface{}) interface{} {
+		return args[0].(float64) + args[1].(float64)
+	})
+
+	interp := NewInterpreter()
+	out := runScript(t, interp, "print add(1, 2);")
+	if out != "3" {
+		t.Fatalf("expected 3, got %q", out)
+	}
+}
