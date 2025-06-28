@@ -1,6 +1,10 @@
 package balena
 
-import "github.com/mrdapoyo/dofi/balena/token"
+import (
+	"fmt"
+
+	"github.com/mrdapoyo/dofi/balena/token"
+)
 
 type RuntimeError struct {
 	Token   token.Token
@@ -8,5 +12,5 @@ type RuntimeError struct {
 }
 
 func (e *RuntimeError) Error() string {
-	return e.Message
+	return fmt.Sprintf("[line %d] %s", e.Token.Line, e.Message)
 }

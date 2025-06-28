@@ -59,11 +59,7 @@ func (r *Resolver) ResolveExpr(expr parser.Expr) {
 }
 
 func (r *Resolver) BeginScope() {
-	if r.scopes == nil {
-		r.scopes = []map[string]bool{}
-	}
-	scope := make(map[string]bool)
-	r.scopes = append(r.scopes, scope)
+	r.scopes = append(r.scopes, make(map[string]bool))
 }
 
 func (r *Resolver) EndScope() {
@@ -208,5 +204,8 @@ func (r *Resolver) VisitReturnStmt(stmt *parser.ReturnStmt) {
 
 func (r *Resolver) VisitWhileStmt(stmt *parser.WhileStmt) {
 	r.ResolveExpr(stmt.Condition)
+
+	r.BeginScope()
 	r.ResolveStmt(stmt.Body)
+	r.EndScope()
 }

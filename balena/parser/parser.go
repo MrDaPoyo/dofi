@@ -623,9 +623,15 @@ func (p *Parser) whileStatement() Stmt {
 	condition := p.expression()
 	p.consume(token.RIGHT_PAREN, "Expect ')' after condition.")
 	body := p.statement()
+
+	// Always wrap the body in a block to ensure proper scoping
+	blockBody := &BlockStmt{
+		Statements: []Stmt{body},
+	}
+
 	return &WhileStmt{
 		Condition: condition,
-		Body:      body,
+		Body:      blockBody,
 	}
 }
 
@@ -657,32 +663,44 @@ func (p *Parser) forStatement() Stmt {
 	// Create the while loop body that includes both the original body and the increment
 	var whileBody Stmt = body
 	if increment != nil {
-		whileBody = &BlockStmt{
-			Statements: []Stmt{
-				body,
-				&ExpressionStmt{Expression: increment},
-			},
+		// Put the increment inside the body block, not outside
+		if blockBody, ok := body.(*BlockStmt); ok {
+			// If body is already a block, add increment to it
+			blockBody.Statements = append(blockBody.Statements, &ExpressionStmt{Expression: increment})
+			whileBody = blockBody
+		} else {
+			// If body is not a block, create a block with body and increment
+			whileBody = &BlockStmt{
+				Statements: []Stmt{
+					body,
+					&ExpressionStmt{Expression: increment},
+				},
+			}
 		}
 	}
 
 	if condition == nil {
 		condition = &LiteralExpr{Value: true}
 	}
-	body = &WhileStmt{
+
+	// Create the while loop
+	whileLoop := &WhileStmt{
 		Condition: condition,
 		Body:      whileBody,
 	}
 
+	// If there's an initializer, create a block that includes both initializer and while loop
+	// This ensures the initializer variables are in the same scope as the while loop
 	if initializer != nil {
-		body = &BlockStmt{
+		return &BlockStmt{
 			Statements: []Stmt{
 				initializer,
-				body,
+				whileLoop,
 			},
 		}
 	}
 
-	return body
+	return whileLoop
 }
 
 func (p *Parser) returnStatement() Stmt {

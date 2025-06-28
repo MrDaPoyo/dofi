@@ -161,6 +161,14 @@ func (g *Game) Update() (err error) {
 			g.AppendLine("", true)
 			return nil
 		}
+
+		// Update time for animations
+		if timeVal, ok := g.BalenaEnv.Globals.Values["time"]; ok {
+			if timeFloat, ok := timeVal.(float64); ok {
+				g.BalenaEnv.Globals.Values["time"] = timeFloat + 1.0
+			}
+		}
+
 		if fn, ok := g.BalenaEnv.Globals.Values["_update"]; ok {
 			if callable, ok := fn.(balena.BalenaCallable); ok {
 				callable.Call(g.BalenaEnv, nil)

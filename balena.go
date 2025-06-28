@@ -65,6 +65,19 @@ func (g *Game) setupBalenaAPI() {
 		}
 		return math.Sqrt(a[0].(float64))
 	})
+
+	// Add global variables for the donut script
+	g.BalenaEnv.Globals.Define("time", 0.0)
+	g.BalenaEnv.Globals.Define("screen_width", 128.0)
+	g.BalenaEnv.Globals.Define("screen_height", 128.0)
+	g.BalenaEnv.Globals.Define("cx", 64.0)
+	g.BalenaEnv.Globals.Define("cy", 64.0)
+	g.BalenaEnv.Globals.Define("R1", 20.0)
+	g.BalenaEnv.Globals.Define("R2", 40.0)
+	g.BalenaEnv.Globals.Define("K2", 200.0)
+	g.BalenaEnv.Globals.Define("K1", 128.0*200.0*3.0/(8.0*(20.0+40.0)))
+	g.BalenaEnv.Globals.Define("A_speed", 0.07)
+	g.BalenaEnv.Globals.Define("B_speed", 0.03)
 }
 
 func (g *Game) RunBalenaScript(code string) {

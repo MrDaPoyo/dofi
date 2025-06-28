@@ -162,10 +162,23 @@ func (i *Interpreter) VisitUnaryExpr(expr *parser.UnaryExpr) interface{} {
 func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) interface{} {
 	variable, exists := i.Environment.Get(expr.Name)
 	if !exists {
-		panic(&RuntimeError{
-			Token:   expr.Name,
-			Message: "Undefined variable '" + expr.Name.Lexeme + "'.",
-		})
+		if i.Environment == i.Globals {
+			variable, exists = i.Globals.Get(expr.Name)
+			if !exists {
+				panic(&RuntimeError{
+					Token:   expr.Name,
+					Message: "Undefined variable '" + expr.Name.Lexeme + "'.",
+				})
+			}
+		} else {
+			variable, exists = i.Environment.Get(expr.Name)
+			if !exists {
+				panic(&RuntimeError{
+					Token:   expr.Name,
+					Message: "Undefined variable '" + expr.Name.Lexeme + "'.",
+				})
+			}
+		}
 	}
 	return variable
 }
