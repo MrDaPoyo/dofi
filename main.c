@@ -26,6 +26,14 @@ Color palette[16] = {
     {125, 62, 191, 255}   // 15 Blue Violet
 };
 
+Color systemPalette[5] = {
+    {70, 82, 113, 255},  //  0 Blue
+    {60, 72, 103, 255},  //  1 Dark Blue
+    {204, 116, 83, 255}, // 2 Tangerine
+    {154, 56, 63, 255},  // 3 Dark Red
+    {255, 255, 255, 255} // 4 White
+};
+
 void pset(int x, int y, uint8_t color)
 {
     if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
@@ -44,6 +52,8 @@ typedef enum
     EDITOR_SPRITE,
     EDITOR_MAP,
     EDITOR_SOUND,
+    EDITOR_TEXT,
+    EDITOR_IMAGE,
     EDITOR_COUNT
 } EditorTab;
 
@@ -73,14 +83,14 @@ void RenderSoundEditor(void);
 
 int main()
 {
-    NavbarBGColor = palette[3];
-    NavbarBorderColor = palette[7];
-    CliBGColor = palette[15];
-    CliTextColor = palette[5];
+    NavbarBGColor = systemPalette[2];
+    NavbarBorderColor = systemPalette[3];
+    CliBGColor = systemPalette[0];
+    CliTextColor = systemPalette[4];
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
     SetConfigFlags(0);
-    SetTargetFPS(30);
+    SetTargetFPS(60);
 
     Image img = GenImageColor(WIDTH, HEIGHT, BLACK);
     Texture2D tex = LoadTextureFromImage(img);
@@ -92,15 +102,19 @@ int main()
     iconPlay = LoadTexture("assets/icons/play.png");
     iconCode = LoadTexture("assets/icons/code.png");
 
+    Texture2D cursorTexture = LoadTexture("assets/icons/mouse-with-shadow.png");
+    SetMouseOffset(-(cursorTexture.width * SCALE) / 2, -(cursorTexture.height * SCALE) / 2);
+    HideCursor();
+
     while (!WindowShouldClose())
     {
+        Vector2 mousePos = GetMousePosition();
+
         if (IsKeyPressed(KEY_F1))
-            currentSuperTab = SUPER_CLI;
-        if (IsKeyPressed(KEY_F2))
-            currentSuperTab = SUPER_EDITORS;
+            switchSuperTab();
 
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(CliBGColor);
 
         if (currentSuperTab == SUPER_CLI)
         {
@@ -111,6 +125,8 @@ int main()
             RenderEditors();
         }
 
+        DrawTextureEx(cursorTexture, (Vector2){mousePos.x, mousePos.y}, 0.0f, SCALE, WHITE);
+
         EndDrawing();
     }
 
@@ -119,10 +135,19 @@ int main()
     UnloadTexture(iconMusic);
     UnloadTexture(iconPlay);
     UnloadTexture(iconCode);
+    UnloadTexture(cursorTexture);
 
     UnloadTexture(tex);
     CloseWindow();
     return 0;
+}
+
+void switchSuperTab()
+{
+    if (currentSuperTab == SUPER_CLI)
+        currentSuperTab = SUPER_EDITORS;
+    else
+        currentSuperTab = SUPER_CLI;
 }
 
 void RenderCLI(Texture2D tex)
@@ -141,7 +166,7 @@ void RenderCLI(Texture2D tex)
 
     DrawTextureEx(tex, (Vector2){0, 0}, 0, SCALE, WHITE);
 
-    DrawText("CLI Mode (F2 = Editors)", 10, 10, 10, YELLOW);
+    DrawText("CLI Mode (F1 = Switch)", 10, 10, 10, YELLOW);
 }
 
 void RenderEditors(void)
@@ -173,6 +198,10 @@ void RenderEditors(void)
             icon = iconMap;
         else if (i == EDITOR_SOUND)
             icon = iconMusic;
+        else if (i == EDITOR_TEXT)
+            icon = iconCode;
+        else if (i == EDITOR_IMAGE)
+            icon = iconPlay;
 
         {
             float iconSize = (float)(scaledBtnSize - 4 * SCALE);
@@ -188,14 +217,16 @@ void RenderEditors(void)
         }
     }
 
-    DrawText("Editors Mode (F1 = CLI)", 10 * SCALE, scaledNavHeight + 10 * SCALE, 10 * SCALE, BLACK);
-
     if (currentEditorTab == EDITOR_SPRITE)
         RenderSpriteEditor();
     if (currentEditorTab == EDITOR_MAP)
         RenderMapEditor();
     if (currentEditorTab == EDITOR_SOUND)
         RenderSoundEditor();
+    if (currentEditorTab == EDITOR_TEXT)
+        RenderTextEditor();
+    if (currentEditorTab == EDITOR_IMAGE)
+        RenderImageEditor();
 }
 
 void RenderSpriteEditor(void)
