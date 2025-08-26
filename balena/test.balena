@@ -1,8 +1,0 @@
-fn count(n) {
-  while (n < 100) {
-    n = n + 1;
-    print n;
-  }
-}
-
-count(1);
