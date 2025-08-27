@@ -26,12 +26,13 @@ Color palette[16] = {
     {125, 62, 191, 255}   // 15 Blue Violet
 };
 
-Color systemPalette[5] = {
-    {70, 82, 113, 255},  //  0 Blue
-    {60, 72, 103, 255},  //  1 Dark Blue
-    {204, 116, 83, 255}, // 2 Tangerine
-    {154, 56, 63, 255},  // 3 Dark Red
-    {255, 255, 255, 255} // 4 White
+Color systemPalette[6] = {
+    {70, 82, 113, 255},   // 0 Blue
+    {60, 72, 103, 255},   // 1 Dark Blue
+    {204, 116, 83, 255},  // 2 Tangerine
+    {154, 56, 63, 255},   // 3 Dark Red
+    {255, 255, 255, 255}, // 4 White
+    {10, 10, 10, 255},    // 5 Black
 };
 
 void pset(int x, int y, uint8_t color)
@@ -72,6 +73,7 @@ Texture2D iconCode;
 
 Color NavbarBGColor;
 Color NavbarBorderColor;
+Color EditorBGColor;
 Color CliBGColor;
 Color CliTextColor;
 
@@ -85,14 +87,15 @@ int main()
 {
     NavbarBGColor = systemPalette[2];
     NavbarBorderColor = systemPalette[3];
-    CliBGColor = systemPalette[0];
+    EditorBGColor = systemPalette[0];
+    CliBGColor = systemPalette[5];
     CliTextColor = systemPalette[4];
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
     SetConfigFlags(0);
     SetTargetFPS(60);
 
-    Image img = GenImageColor(WIDTH, HEIGHT, BLACK);
+    Image img = GenImageColor(WIDTH, HEIGHT, WHITE);
     Texture2D tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
@@ -114,7 +117,7 @@ int main()
             switchSuperTab();
 
         BeginDrawing();
-        ClearBackground(CliBGColor);
+        ClearBackground(EditorBGColor);
 
         if (currentSuperTab == SUPER_CLI)
         {
@@ -123,9 +126,8 @@ int main()
         else
         {
             RenderEditors();
+            DrawTextureEx(cursorTexture, (Vector2){mousePos.x, mousePos.y}, 0.0f, SCALE, WHITE);
         }
-
-        DrawTextureEx(cursorTexture, (Vector2){mousePos.x, mousePos.y}, 0.0f, SCALE, WHITE);
 
         EndDrawing();
     }
@@ -152,10 +154,7 @@ void switchSuperTab()
 
 void RenderCLI(Texture2D tex)
 {
-    for (int i = 0; i < WIDTH; i++)
-    {
-        pset(i, i, (i / 8) % 16);
-    }
+    DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
 
     Color pixels[WIDTH * HEIGHT];
     for (int i = 0; i < WIDTH * HEIGHT; i++)
@@ -184,7 +183,7 @@ void RenderEditors(void)
     {
         int x = i * (scaledBtnSize + scaledGap);
         Rectangle btn = {scaledGap + x, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
-        DrawRectangleRec(btn, (i == currentEditorTab) ? (Color){255, 169, 133, 255} : (Color){154, 56, 63, 255});
+        DrawRectangleRec(btn, (i == currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
 
         if (CheckCollisionPointRec(GetMousePosition(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
