@@ -1,11 +1,6 @@
 #include "raylib.h"
 #include <stdint.h>
 #include "colors.h"
-#include "editors/play_editor.c"
-#include "editors/map_editor.c"
-#include "editors/sound_editor.c"
-#include "editors/sprite_editor.c"
-#include "editors/text_editor.c"
 
 extern void RenderTextEditor(void);
 extern void RenderSpriteEditor(void);
@@ -54,6 +49,19 @@ Texture2D iconCode;
 #define NAVBAR_HEIGHT 16
 #define BUTTON_SIZE 12
 #define GAP 2
+
+#define SCALED_NAV_HEIGHT (NAVBAR_HEIGHT * SCALE)
+
+static inline Vector2 GetMousePosition_real_for_editors(void) { return GetMousePosition(); }
+#define GetMousePosition() (Vector2){ GetMousePosition_real_for_editors().x, GetMousePosition_real_for_editors().y - (float)SCALED_NAV_HEIGHT }
+
+#include "editors/play_editor.c"
+#include "editors/map_editor.c"
+#include "editors/sound_editor.c"
+#include "editors/sprite_editor.c"
+#include "editors/text_editor.c"
+
+#undef GetMousePosition
 
 Color NavbarBGColor;
 Color NavbarBorderColor;
@@ -218,6 +226,13 @@ void RenderEditors(void)
         }
     }
 
+    int editorY = scaledNavHeight;
+    int editorH = GetScreenHeight() - scaledNavHeight;
+
+    DrawRectangle(0, editorY, GetScreenWidth(), editorH, EditorBGColor);
+
+    BeginScissorMode(0, editorY, GetScreenWidth(), editorH);
+
     if (currentEditorTab == EDITOR_TEXT)
         RenderTextEditor();
     if (currentEditorTab == EDITOR_SPRITE)
@@ -228,4 +243,6 @@ void RenderEditors(void)
         RenderSoundEditor();
     if (currentEditorTab == EDITOR_PLAY)
         RenderPlayEditor();
+
+    EndScissorMode();
 }
