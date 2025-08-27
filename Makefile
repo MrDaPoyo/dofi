@@ -22,7 +22,7 @@ $(BIN): $(SRC)
 	$(CC) $(CFLAGS) -o $(BIN) $(SRC) $(LIBS)
 
 run: $(BIN)
-	$(RUN)
+	$(RUN) -O3
 
 clean:
 	-rm -f $(BIN) $(BIN).exe

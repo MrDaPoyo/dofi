@@ -40,6 +40,7 @@ Texture2D iconMap;
 Texture2D iconMusic;
 Texture2D iconPlay;
 Texture2D iconCode;
+Texture2D iconUndefined;
 
 #define NAVBAR_HEIGHT 16
 #define BUTTON_SIZE 12
@@ -84,6 +85,7 @@ int main()
     iconMusic = LoadTexture("assets/icons/music.png");
     iconPlay = LoadTexture("assets/icons/play.png");
     iconCode = LoadTexture("assets/icons/code.png");
+    iconUndefined = LoadTexture("assets/icons/undefined.png");
 
     Texture2D cursorTexture = LoadTexture("assets/icons/mouse_with_shadow.png");
     SetMouseOffset(-(cursorTexture.width * SCALE) / 2, -(cursorTexture.height * SCALE) / 2);
@@ -117,6 +119,7 @@ int main()
     UnloadTexture(iconMusic);
     UnloadTexture(iconPlay);
     UnloadTexture(iconCode);
+    UnloadTexture(iconUndefined);
     UnloadTexture(cursorTexture);
 
     UnloadTexture(tex);
@@ -191,6 +194,8 @@ void RenderEditors(void)
             icon = iconMusic;
         else if (i == EDITOR_PLAY)
             icon = iconPlay;
+        else
+            icon = iconUndefined;
 
         {
             float iconSize = (float)(scaledBtnSize - 4 * SCALE);
