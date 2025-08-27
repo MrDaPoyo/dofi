@@ -34,16 +34,16 @@ typedef enum
 
 typedef enum
 {
+    EDITOR_TEXT,
     EDITOR_SPRITE,
     EDITOR_MAP,
     EDITOR_SOUND,
-    EDITOR_TEXT,
     EDITOR_PLAY,
     EDITOR_COUNT
 } EditorTab;
 
 SuperTab currentSuperTab = SUPER_CLI;
-EditorTab currentEditorTab = EDITOR_SPRITE;
+EditorTab currentEditorTab = EDITOR_TEXT;
 
 Texture2D iconSprite;
 Texture2D iconMap;
@@ -164,7 +164,17 @@ void RenderEditors(void)
     for (int i = 0; i < EDITOR_COUNT; i++)
     {
         int x = i * (scaledBtnSize + scaledGap);
-        Rectangle btn = {scaledGap + x, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
+
+        Rectangle btn;
+        if (i == EDITOR_PLAY)
+        {
+            btn = (Rectangle){GetScreenWidth() - scaledGap - scaledBtnSize, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
+        }
+        else
+        {
+            btn = (Rectangle){scaledGap + x, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
+        }
+
         DrawRectangleRec(btn, (i == currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
 
         if (CheckCollisionPointRec(GetMousePosition(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -173,20 +183,30 @@ void RenderEditors(void)
         }
 
         Texture2D icon;
-        if (i == EDITOR_SPRITE)
+        if (i == EDITOR_TEXT)
+            icon = iconCode;
+        else if (i == EDITOR_SPRITE)
             icon = iconSprite;
         else if (i == EDITOR_MAP)
             icon = iconMap;
         else if (i == EDITOR_SOUND)
             icon = iconMusic;
-        else if (i == EDITOR_TEXT)
-            icon = iconCode;
         else if (i == EDITOR_PLAY)
             icon = iconPlay;
 
         {
             float iconSize = (float)(scaledBtnSize - 4 * SCALE);
-            float dstX = (float)(scaledGap + x) + 2.0f * SCALE;
+            float dstX;
+
+            if (i == EDITOR_PLAY)
+            {
+                dstX = (float)(GetScreenWidth() - scaledGap - scaledBtnSize) + 2.0f * SCALE;
+            }
+            else
+            {
+                dstX = (float)(scaledGap + x) + 2.0f * SCALE;
+            }
+
             float dstY = (float)btn.y + ((float)btn.height - iconSize) * 0.5f;
             DrawTexturePro(
                 icon,
@@ -198,14 +218,14 @@ void RenderEditors(void)
         }
     }
 
+    if (currentEditorTab == EDITOR_TEXT)
+        RenderTextEditor();
     if (currentEditorTab == EDITOR_SPRITE)
         RenderSpriteEditor();
     if (currentEditorTab == EDITOR_MAP)
         RenderMapEditor();
     if (currentEditorTab == EDITOR_SOUND)
         RenderSoundEditor();
-    if (currentEditorTab == EDITOR_TEXT)
-        RenderTextEditor();
     if (currentEditorTab == EDITOR_PLAY)
         RenderPlayEditor();
 }
