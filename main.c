@@ -1,39 +1,23 @@
 #include "raylib.h"
 #include <stdint.h>
+#include "colors.h"
+#include "editors/play_editor.c"
+#include "editors/map_editor.c"
+#include "editors/sound_editor.c"
+#include "editors/sprite_editor.c"
+#include "editors/text_editor.c"
+
+extern void RenderTextEditor(void);
+extern void RenderSpriteEditor(void);
+extern void RenderMapEditor(void);
+extern void RenderSoundEditor(void);
+extern void RenderPlayEditor(void);
 
 #define WIDTH 128
 #define HEIGHT 128
 #define SCALE 4
 
 uint8_t framebuffer[WIDTH * HEIGHT];
-
-Color palette[16] = {
-    {0, 0, 0, 255},       // 0  Black
-    {16, 8, 32, 255},     // 1  Dark Purple
-    {81, 30, 67, 255},    // 2  Violet
-    {204, 116, 83, 255},  // 3  Burnt Umber
-    {174, 181, 189, 255}, // 4  French Gray
-    {255, 255, 255, 255}, // 5  White
-    {233, 56, 65, 255},   // 6  Imperial Red
-    {235, 108, 130, 255}, // 7  Bright Pink
-    {241, 137, 45, 255},  // 8  Tangerine
-    {255, 209, 157, 255}, // 9  Sunset
-    {255, 233, 71, 255},  // 10 Maize
-    {30, 138, 76, 255},   // 11 Sea Green
-    {52, 235, 164, 255},  // 12 Aquamarine
-    {5, 68, 148, 255},    // 13 Polynesian Blue
-    {77, 128, 201, 255},  // 14 Glaucous
-    {125, 62, 191, 255}   // 15 Blue Violet
-};
-
-Color systemPalette[6] = {
-    {70, 82, 113, 255},   // 0 Blue
-    {60, 72, 103, 255},   // 1 Dark Blue
-    {204, 116, 83, 255},  // 2 Tangerine
-    {154, 56, 63, 255},   // 3 Dark Red
-    {255, 255, 255, 255}, // 4 White
-    {10, 10, 10, 255},    // 5 Black
-};
 
 void pset(int x, int y, uint8_t color)
 {
@@ -54,7 +38,7 @@ typedef enum
     EDITOR_MAP,
     EDITOR_SOUND,
     EDITOR_TEXT,
-    EDITOR_IMAGE,
+    EDITOR_PLAY,
     EDITOR_COUNT
 } EditorTab;
 
@@ -79,9 +63,7 @@ Color CliTextColor;
 
 void RenderCLI(Texture2D tex);
 void RenderEditors(void);
-void RenderSpriteEditor(void);
-void RenderMapEditor(void);
-void RenderSoundEditor(void);
+void switchSuperTab(void);
 
 int main()
 {
@@ -154,7 +136,7 @@ void switchSuperTab()
 
 void RenderCLI(Texture2D tex)
 {
-    DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
+    DrawRectangle(0, 0, WIDTH * SCALE, HEIGHT * SCALE, CliBGColor);
 
     Color pixels[WIDTH * HEIGHT];
     for (int i = 0; i < WIDTH * HEIGHT; i++)
@@ -199,7 +181,7 @@ void RenderEditors(void)
             icon = iconMusic;
         else if (i == EDITOR_TEXT)
             icon = iconCode;
-        else if (i == EDITOR_IMAGE)
+        else if (i == EDITOR_PLAY)
             icon = iconPlay;
 
         {
@@ -224,31 +206,6 @@ void RenderEditors(void)
         RenderSoundEditor();
     if (currentEditorTab == EDITOR_TEXT)
         RenderTextEditor();
-    if (currentEditorTab == EDITOR_IMAGE)
-        RenderImageEditor();
-}
-
-void RenderSpriteEditor(void)
-{
-    DrawText("Sprite Editor", 10, NAVBAR_HEIGHT + 40, 20, RED);
-}
-
-void RenderMapEditor(void)
-{
-    DrawText("Map Editor", 10, NAVBAR_HEIGHT + 40, 20, GREEN);
-}
-
-void RenderSoundEditor(void)
-{
-    DrawText("Sound Editor", 10, NAVBAR_HEIGHT + 40, 20, BLUE);
-}
-
-void RenderTextEditor(void)
-{
-    DrawText("Text Editor", 10, NAVBAR_HEIGHT + 40, 20, BLACK);
-}
-
-void RenderImageEditor(void)
-{
-    DrawText("Image Editor", 10, NAVBAR_HEIGHT + 40, 20, PURPLE);
+    if (currentEditorTab == EDITOR_PLAY)
+        RenderPlayEditor();
 }
