@@ -95,7 +95,7 @@ int main()
     iconPlay = LoadTexture("assets/icons/play.png");
     iconCode = LoadTexture("assets/icons/code.png");
 
-    Texture2D cursorTexture = LoadTexture("assets/icons/mouse-with-shadow.png");
+    Texture2D cursorTexture = LoadTexture("assets/icons/mouse_with_shadow.png");
     SetMouseOffset(-(cursorTexture.width * SCALE) / 2, -(cursorTexture.height * SCALE) / 2);
     HideCursor();
 
