@@ -1,12 +1,7 @@
 #include "raylib.h"
 #include <stdint.h>
 #include "colors.h"
-
-extern void RenderTextEditor(void);
-extern void RenderSpriteEditor(void);
-extern void RenderMapEditor(void);
-extern void RenderSoundEditor(void);
-extern void RenderPlayEditor(void);
+#include "editors/editors.h"
 
 #define WIDTH 128
 #define HEIGHT 128
@@ -52,16 +47,11 @@ Texture2D iconCode;
 
 #define SCALED_NAV_HEIGHT (NAVBAR_HEIGHT * SCALE)
 
-static inline Vector2 GetMousePosition_real_for_editors(void) { return GetMousePosition(); }
-#define GetMousePosition() (Vector2){ GetMousePosition_real_for_editors().x, GetMousePosition_real_for_editors().y - (float)SCALED_NAV_HEIGHT }
-
-#include "editors/play_editor.c"
-#include "editors/map_editor.c"
-#include "editors/sound_editor.c"
-#include "editors/sprite_editor.c"
-#include "editors/text_editor.c"
-
-#undef GetMousePosition
+static inline Vector2 GetMousePositionForEditors(void)
+{
+    Vector2 m = GetMousePosition();
+    return m;
+}
 
 Color NavbarBGColor;
 Color NavbarBorderColor;
@@ -83,7 +73,7 @@ int main()
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
     SetConfigFlags(0);
-    SetTargetFPS(60);
+    SetTargetFPS(45);
 
     Image img = GenImageColor(WIDTH, HEIGHT, WHITE);
     Texture2D tex = LoadTextureFromImage(img);
@@ -101,7 +91,7 @@ int main()
 
     while (!WindowShouldClose())
     {
-        Vector2 mousePos = GetMousePosition();
+    Vector2 mousePos = GetMousePositionForEditors();
 
         if (IsKeyPressed(KEY_F1))
             switchSuperTab();
@@ -185,7 +175,7 @@ void RenderEditors(void)
 
         DrawRectangleRec(btn, (i == currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
 
-        if (CheckCollisionPointRec(GetMousePosition(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if (CheckCollisionPointRec(GetMousePositionForEditors(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
             currentEditorTab = (EditorTab)i;
         }

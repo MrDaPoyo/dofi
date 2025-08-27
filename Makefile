@@ -2,7 +2,7 @@ NAME = dofi
 
 CC = gcc
 
-SRC = main.c
+SRC = $(wildcard *.c editors/*.c)
 
 BIN = $(NAME)
 
@@ -26,5 +26,8 @@ run: $(BIN)
 
 clean:
 	-rm -f $(BIN) $(BIN).exe
+
+release:
+	$(CC) $(CFLAGS) -o $(BIN) $(SRC) $(LIBS) -s
 
 .PHONY: all run clean

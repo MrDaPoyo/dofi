@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "../colors.h"
+#include "editors.h"
 
 #define NAVBAR_HEIGHT 16
 
