@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "colors.h"
 #include "editors/editors.h"
+#include "fonts.h"
 
 #define WIDTH 128
 #define HEIGHT 128
@@ -79,6 +80,7 @@ int main()
     Image img = GenImageColor(WIDTH, HEIGHT, WHITE);
     Texture2D tex = LoadTextureFromImage(img);
     UnloadImage(img);
+    LoadFonts();
 
     iconSprite = LoadTexture("assets/icons/brush.png");
     iconMap = LoadTexture("assets/icons/tile.png");
@@ -93,7 +95,7 @@ int main()
 
     while (!WindowShouldClose())
     {
-    Vector2 mousePos = GetMousePositionForEditors();
+        Vector2 mousePos = GetMousePositionForEditors();
 
         if (IsKeyPressed(KEY_F1))
             switchSuperTab();
@@ -124,6 +126,7 @@ int main()
 
     UnloadTexture(tex);
     CloseWindow();
+    UnloadFonts();
     return 0;
 }
 
@@ -176,9 +179,9 @@ void RenderEditors(void)
             btn = (Rectangle){scaledGap + x, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
         }
 
-        DrawRectangleRec(btn, (i == currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
+        DrawRectangleRec(btn, (i == (int)currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
 
-    if (CheckCollisionPointRec(GetMousePositionForEditors(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        if (CheckCollisionPointRec(GetMousePositionForEditors(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
             currentEditorTab = (EditorTab)i;
         }

@@ -7,4 +7,6 @@ void RenderMapEditor(void);
 void RenderSoundEditor(void);
 void RenderPlayEditor(void);
 
+void RenderString(const char *str, int x, int y);
+
 #endif
