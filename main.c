@@ -3,6 +3,7 @@
 #include "colors.h"
 #include "editors/editors.h"
 #include "fonts.h"
+#include "scale.h"
 
 #define WIDTH 128
 #define HEIGHT 128
@@ -53,6 +54,26 @@ static inline Vector2 GetMousePositionForEditors(void)
 {
     Vector2 m = GetMousePosition();
     return m;
+}
+
+int GetDisplayScale(void)
+{
+    return SCALE;
+}
+
+int GetScaledNavHeight(void)
+{
+    return SCALED_NAV_HEIGHT;
+}
+
+int GetEditorCanvasHeight(void)
+{
+    return HEIGHT;
+}
+
+int GetScaledEditorHeight(void)
+{
+    return HEIGHT * SCALE;
 }
 
 Color NavbarBGColor;
@@ -212,7 +233,7 @@ void RenderEditors(void)
     }
 
     int editorY = scaledNavHeight;
-    int editorH = GetScreenHeight() - scaledNavHeight;
+    int editorH = GetScaledEditorHeight();
 
     DrawRectangle(0, editorY, GetScreenWidth(), editorH, EditorBGColor);
 

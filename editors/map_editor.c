@@ -1,10 +1,11 @@
 #include "raylib.h"
 #include "../colors.h"
 #include "editors.h"
-
-#define NAVBAR_HEIGHT 16
+#include "../scale.h"
 
 void RenderMapEditor(void)
 {
-    DrawText("Map Editor", 10, NAVBAR_HEIGHT + 40, 20, GREEN);
+    int scale = GetDisplayScale();
+    int navY = GetScaledNavHeight();
+    DrawText("Map Editor", 10 * scale, navY + 40 * scale, 20 * scale, GREEN);
 }

@@ -1,10 +1,11 @@
 #include "raylib.h"
 #include "../colors.h"
 #include "editors.h"
-
-#define NAVBAR_HEIGHT 16
+#include "../scale.h"
 
 void RenderSpriteEditor(void)
 {
-    DrawText("Sprite Editor", 10, NAVBAR_HEIGHT + 40, 20, RED);
+    int scale = GetDisplayScale();
+    int navY = GetScaledNavHeight();
+    DrawText("Sprite Editor", 10 * scale, navY + 40 * scale, 20 * scale, RED);
 }

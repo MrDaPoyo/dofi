@@ -1,10 +1,11 @@
 #include "raylib.h"
 #include "../colors.h"
 #include "editors.h"
-
-#define NAVBAR_HEIGHT 16
+#include "../scale.h"
 
 void RenderSoundEditor(void)
 {
-    DrawText("Sound Editor", 10, NAVBAR_HEIGHT + 40, 20, BLUE);
+    int scale = GetDisplayScale();
+    int navY = GetScaledNavHeight();
+    DrawText("Sound Editor", 10 * scale, navY + 40 * scale, 20 * scale, BLUE);
 }
