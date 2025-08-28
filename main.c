@@ -3,20 +3,11 @@
 #include "colors.h"
 #include "editors/editors.h"
 #include "fonts.h"
-#include "scale.h"
+#include "display.h"
+#include "icons.h"
 
-#define WIDTH 128
-#define HEIGHT 128
-#define SCALE 4
-
-uint8_t framebuffer[WIDTH * HEIGHT];
-
-void pset(int x, int y, uint8_t color)
-{
-    if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
-        return;
-    framebuffer[y * WIDTH + x] = color;
-}
+#define BUTTON_SIZE 12
+#define GAP 2
 
 typedef enum
 {
@@ -37,17 +28,6 @@ typedef enum
 SuperTab currentSuperTab = SUPER_CLI;
 EditorTab currentEditorTab = EDITOR_TEXT;
 
-Texture2D iconSprite;
-Texture2D iconMap;
-Texture2D iconMusic;
-Texture2D iconPlay;
-Texture2D iconCode;
-Texture2D iconUndefined;
-
-#define NAVBAR_HEIGHT 16
-#define BUTTON_SIZE 12
-#define GAP 2
-
 #define SCALED_NAV_HEIGHT (NAVBAR_HEIGHT * SCALE)
 
 static inline Vector2 GetMousePositionForEditors(void)
@@ -56,45 +36,11 @@ static inline Vector2 GetMousePositionForEditors(void)
     return m;
 }
 
-int GetDisplayScale(void)
-{
-    return SCALE;
-}
-
-int GetScaledNavHeight(void)
-{
-    return NAVBAR_HEIGHT * SCALE;
-}
-
-int GetEditorCanvasHeight(void)
-{
-    return HEIGHT;
-}
-
-int GetScaledEditorHeight(void)
-{
-    return HEIGHT * SCALE;
-}
-
-int GetNavHeight(void)
-{
-    return NAVBAR_HEIGHT;
-}
-
-int GetEditorCanvasWidth(void)
-{
-    return WIDTH;
-}
-
 Color NavbarBGColor;
 Color NavbarBorderColor;
 Color EditorBGColor;
 Color CliBGColor;
 Color CliTextColor;
-
-void RenderCLI(void);
-void RenderEditors(void);
-void switchSuperTab(void);
 
 RenderTexture2D gRenderTex;
 
@@ -115,12 +61,7 @@ int main()
 
     gRenderTex = LoadRenderTexture(WIDTH, HEIGHT);
 
-    iconSprite = LoadTexture("assets/icons/brush.png");
-    iconMap = LoadTexture("assets/icons/tile.png");
-    iconMusic = LoadTexture("assets/icons/music.png");
-    iconPlay = LoadTexture("assets/icons/play.png");
-    iconCode = LoadTexture("assets/icons/code.png");
-    iconUndefined = LoadTexture("assets/icons/undefined.png");
+    LoadIcons();
 
     Texture2D cursorTexture = LoadTexture("assets/icons/mouse_with_shadow.png");
     SetMouseOffset(-(cursorTexture.width * SCALE) / 2, -(cursorTexture.height * SCALE) / 2);
@@ -158,12 +99,8 @@ int main()
         EndDrawing();
     }
 
-    UnloadTexture(iconSprite);
-    UnloadTexture(iconMap);
-    UnloadTexture(iconMusic);
-    UnloadTexture(iconPlay);
-    UnloadTexture(iconCode);
-    UnloadTexture(iconUndefined);
+    UnloadIcons();
+
     UnloadTexture(cursorTexture);
     UnloadRenderTexture(gRenderTex);
 

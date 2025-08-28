@@ -1,7 +1,6 @@
 #include "raylib.h"
 #include "../colors.h"
 #include "editors.h"
-#include "../scale.h"
 
 void RenderSoundEditor(void)
 {

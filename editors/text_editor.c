@@ -2,7 +2,8 @@
 #include "../colors.h"
 #include "editors.h"
 #include "../fonts.h"
-#include "../scale.h"
+#include "../display.h"
+#include <stdio.h>
 
 #define GAP 2
 
