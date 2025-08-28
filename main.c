@@ -63,7 +63,7 @@ int GetDisplayScale(void)
 
 int GetScaledNavHeight(void)
 {
-    return SCALED_NAV_HEIGHT;
+    return NAVBAR_HEIGHT * SCALE;
 }
 
 int GetEditorCanvasHeight(void)
@@ -76,6 +76,16 @@ int GetScaledEditorHeight(void)
     return HEIGHT * SCALE;
 }
 
+int GetNavHeight(void)
+{
+    return NAVBAR_HEIGHT;
+}
+
+int GetEditorCanvasWidth(void)
+{
+    return WIDTH;
+}
+
 Color NavbarBGColor;
 Color NavbarBorderColor;
 Color EditorBGColor;
@@ -85,6 +95,9 @@ Color CliTextColor;
 void RenderCLI(void);
 void RenderEditors(void);
 void switchSuperTab(void);
+
+RenderTexture2D gRenderTex;
+
 
 int main()
 {
@@ -99,6 +112,8 @@ int main()
     SetTargetFPS(45);
 
     LoadFonts();
+
+    gRenderTex = LoadRenderTexture(WIDTH, HEIGHT);
 
     iconSprite = LoadTexture("assets/icons/brush.png");
     iconMap = LoadTexture("assets/icons/tile.png");
@@ -119,6 +134,8 @@ int main()
             switchSuperTab();
 
         BeginDrawing();
+
+        BeginTextureMode(gRenderTex);
         ClearBackground(EditorBGColor);
 
         if (currentSuperTab == SUPER_CLI)
@@ -128,8 +145,15 @@ int main()
         else
         {
             RenderEditors();
-            DrawTextureEx(cursorTexture, (Vector2){mousePos.x, mousePos.y}, 0.0f, SCALE, WHITE);
+            DrawTextureEx(cursorTexture, (Vector2){mousePos.x / (float)SCALE, mousePos.y / (float)SCALE}, 0.0f, 1.0f, WHITE);
         }
+
+        EndTextureMode();
+
+        DrawTexturePro(gRenderTex.texture,
+            (Rectangle){0, 0, (float)gRenderTex.texture.width, -(float)gRenderTex.texture.height},
+            (Rectangle){0, 0, WIDTH * SCALE, HEIGHT * SCALE},
+            (Vector2){0, 0}, 0.0f, WHITE);
 
         EndDrawing();
     }
@@ -141,6 +165,7 @@ int main()
     UnloadTexture(iconCode);
     UnloadTexture(iconUndefined);
     UnloadTexture(cursorTexture);
+    UnloadRenderTexture(gRenderTex);
 
     CloseWindow();
     UnloadFonts();
@@ -157,43 +182,43 @@ void switchSuperTab()
 
 void RenderCLI()
 {
-    DrawRectangle(0, 0, WIDTH * SCALE, HEIGHT * SCALE, CliBGColor);
+    DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
 
     DrawText("CLI Mode (F1 = Switch)", 10, 10, 10, YELLOW);
 }
 
 void RenderEditors(void)
 {
-    int scaledNavHeight = NAVBAR_HEIGHT * SCALE;
-    int scaledBtnSize = BUTTON_SIZE * SCALE;
-    int scaledGap = GAP * SCALE;
+    int navH = NAVBAR_HEIGHT;
+    int btnSize = BUTTON_SIZE;
+    int gap = GAP;
 
     // navbar
-    DrawRectangle(0, 0, GetScreenWidth(), scaledNavHeight, NavbarBGColor);
-    DrawRectangleLines(0, 0, GetScreenWidth(), scaledNavHeight, NavbarBorderColor);
+    DrawRectangle(0, 0, WIDTH, navH, NavbarBGColor);
 
     // buttons
     for (int i = 0; i < EDITOR_COUNT; i++)
     {
-        int x = i * (scaledBtnSize + scaledGap);
+        int x = i * (btnSize + gap);
 
         Rectangle btn;
         if (i == EDITOR_PLAY)
         {
-            btn = (Rectangle){GetScreenWidth() - scaledGap - scaledBtnSize, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
+            btn = (Rectangle){(float)(WIDTH - gap - btnSize), 2.0f, (float)btnSize, (float)btnSize};
         }
         else
         {
-            btn = (Rectangle){scaledGap + x, 4 * SCALE / 2, scaledBtnSize, scaledBtnSize};
+            btn = (Rectangle){(float)(gap + x), 2.0f, (float)btnSize, (float)btnSize};
         }
 
         DrawRectangleRec(btn, (i == (int)currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
 
-        if (CheckCollisionPointRec(GetMousePositionForEditors(), btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        Vector2 m = GetMousePositionForEditors();
+        Vector2 mLog = (Vector2){m.x / (float)SCALE, m.y / (float)SCALE};
+        if (CheckCollisionPointRec(mLog, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
             currentEditorTab = (EditorTab)i;
         }
-
         Texture2D icon;
         if (i == EDITOR_TEXT)
             icon = iconCode;
@@ -209,16 +234,16 @@ void RenderEditors(void)
             icon = iconUndefined;
 
         {
-            float iconSize = (float)(scaledBtnSize - 4 * SCALE);
+            float iconSize = (float)(btnSize - 4);
             float dstX;
 
             if (i == EDITOR_PLAY)
             {
-                dstX = (float)(GetScreenWidth() - scaledGap - scaledBtnSize) + 2.0f * SCALE;
+                dstX = (float)(WIDTH - gap - btnSize) + 2.0f;
             }
             else
             {
-                dstX = (float)(scaledGap + x) + 2.0f * SCALE;
+                dstX = (float)(gap + x) + 2.0f;
             }
 
             float dstY = (float)btn.y + ((float)btn.height - iconSize) * 0.5f;
@@ -232,12 +257,12 @@ void RenderEditors(void)
         }
     }
 
-    int editorY = scaledNavHeight;
-    int editorH = GetScaledEditorHeight();
+    int editorY = NAVBAR_HEIGHT;
+    int editorH = GetEditorCanvasHeight();
 
-    DrawRectangle(0, editorY, GetScreenWidth(), editorH, EditorBGColor);
+    DrawRectangle(0, editorY, WIDTH, editorH, EditorBGColor);
 
-    BeginScissorMode(0, editorY, GetScreenWidth(), editorH);
+    BeginScissorMode(0, editorY, WIDTH, editorH);
 
     if (currentEditorTab == EDITOR_TEXT)
         RenderTextEditor();

@@ -5,7 +5,6 @@
 
 void RenderSoundEditor(void)
 {
-    int scale = GetDisplayScale();
-    int navY = GetScaledNavHeight();
-    DrawText("Sound Editor", 10 * scale, navY + 40 * scale, 20 * scale, BLUE);
+    int navY = GetNavHeight();
+    DrawText("Sound Editor", 10, navY + 40, 20, BLUE);
 }

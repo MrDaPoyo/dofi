@@ -5,7 +5,6 @@
 
 void RenderSpriteEditor(void)
 {
-    int scale = GetDisplayScale();
-    int navY = GetScaledNavHeight();
-    DrawText("Sprite Editor", 10 * scale, navY + 40 * scale, 20 * scale, RED);
+    int navY = GetNavHeight();
+    DrawText("Sprite Editor", 10, navY + 40, 20, RED);
 }

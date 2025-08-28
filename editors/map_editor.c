@@ -5,7 +5,6 @@
 
 void RenderMapEditor(void)
 {
-    int scale = GetDisplayScale();
-    int navY = GetScaledNavHeight();
-    DrawText("Map Editor", 10 * scale, navY + 40 * scale, 20 * scale, GREEN);
+    int navY = GetNavHeight();
+    DrawText("Map Editor", 10, navY + 40, 20, GREEN);
 }

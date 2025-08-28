@@ -5,7 +5,6 @@
 
 void RenderPlayEditor(void)
 {
-    int scale = GetDisplayScale();
-    int navY = GetScaledNavHeight();
-    DrawText("Play Editor", 10 * scale, navY + 40 * scale, 20 * scale, systemPalette[4]);
+    int navY = GetNavHeight();
+    DrawText("Play Editor", 10, navY + 40, 20, systemPalette[4]);
 }

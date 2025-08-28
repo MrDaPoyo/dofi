@@ -3,7 +3,8 @@
 
 int GetDisplayScale(void);
 int GetScaledNavHeight(void);
-/* Logical editor canvas height (in logical pixels) and its scaled value */
+int GetNavHeight(void);
+int GetEditorCanvasWidth(void);
 int GetEditorCanvasHeight(void);
 int GetScaledEditorHeight(void);
 
