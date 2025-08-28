@@ -11,4 +11,7 @@ void RenderPlayEditor(void);
 
 void RenderLine(const char *str, int index);
 
+// TEXT EDITOR STUFF
+extern const char *testString;
+
 #endif
