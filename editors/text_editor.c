@@ -46,6 +46,10 @@ static char textBuffer[4096] = "hello world\nthis is a test\nthree lines";
 static int cursorLine = 0;
 static int cursorChar = 0;
 
+#define VISIBLE_LINES 14
+static int scrollLineOffset = 0;
+static int scrollCharOffset = 0;
+
 #define REPEAT_INITIAL_DELAY 0.40
 #define REPEAT_INTERVAL      0.06
 
@@ -175,6 +179,67 @@ static void MoveCursorDown(void)
     }
 }
 
+static int GetTotalLines(const char *s)
+{
+    if (s == NULL) return 0;
+    int lines = 0;
+    const char *p = s;
+    if (*p != '\0') lines = 1;
+    while (*p)
+    {
+        if (*p == '\n') lines++;
+        p++;
+    }
+    return lines;
+}
+
+static void ClampScrollOffsets(void)
+{
+    int total = GetTotalLines(textBuffer);
+    if (scrollLineOffset < 0) scrollLineOffset = 0;
+    int maxV = total - VISIBLE_LINES;
+    if (maxV < 0) maxV = 0;
+    if (scrollLineOffset > maxV) scrollLineOffset = maxV;
+
+    int fontSize = 5;
+    int charWidth = MeasureText("-", fontSize);
+    int screenW = GetScreenWidth();
+    int visibleCols = (screenW - GAP * 2) / (charWidth > 0 ? charWidth : 1);
+
+    if (scrollCharOffset < 0) scrollCharOffset = 0;
+
+    int maxLineLen = 0;
+    for (int i = 0; i < total; i++)
+    {
+        int len = LineLength(textBuffer, i);
+        if (len > maxLineLen) maxLineLen = len;
+    }
+    int maxH = maxLineLen - visibleCols;
+    if (maxH < 0) maxH = 0;
+    if (scrollCharOffset > maxH) scrollCharOffset = maxH;
+}
+
+static void EnsureCursorVisible(void)
+{
+    if (cursorLine < scrollLineOffset) scrollLineOffset = cursorLine;
+    else if (cursorLine >= scrollLineOffset + VISIBLE_LINES) scrollLineOffset = cursorLine - VISIBLE_LINES + 1;
+
+    int fontSize = 5;
+    int charWidth = MeasureText("-", fontSize);
+    int screenW = GetScreenWidth();
+    int visibleCols = (screenW - GAP * 2) / (charWidth > 0 ? charWidth : 1);
+
+    if (cursorChar < scrollCharOffset) scrollCharOffset = cursorChar;
+    else if (cursorChar >= scrollCharOffset + visibleCols) scrollCharOffset = cursorChar - visibleCols + 1;
+
+    ClampScrollOffsets();
+}
+
+static void ScrollLeft(void)  { if (scrollCharOffset > 0) scrollCharOffset--; ClampScrollOffsets(); }
+static void ScrollRight(void) { scrollCharOffset++; ClampScrollOffsets(); }
+static void ScrollUp(void)    { scrollLineOffset = (scrollLineOffset > 0) ? scrollLineOffset - 1 : 0; ClampScrollOffsets(); }
+static void ScrollDown(void)  { scrollLineOffset++; ClampScrollOffsets(); }
+
 static void ProcessKeyRepeat(int key, int idx, void (*action)(void))
 {
     double t = GetTime();
@@ -215,13 +280,27 @@ static void HandleTextInput(void)
         }
     }
 
-    ProcessKeyRepeat(KEY_LEFT, KR_LEFT, MoveCursorLeft);
-    ProcessKeyRepeat(KEY_RIGHT, KR_RIGHT, MoveCursorRight);
-    ProcessKeyRepeat(KEY_UP, KR_UP, MoveCursorUp);
-    ProcessKeyRepeat(KEY_DOWN, KR_DOWN, MoveCursorDown);
+    bool ctrlDown = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
+
+    if (ctrlDown)
+    {
+        ProcessKeyRepeat(KEY_LEFT,  KR_LEFT,  ScrollLeft);
+        ProcessKeyRepeat(KEY_RIGHT, KR_RIGHT, ScrollRight);
+        ProcessKeyRepeat(KEY_UP,    KR_UP,    ScrollUp);
+        ProcessKeyRepeat(KEY_DOWN,  KR_DOWN,  ScrollDown);
+    }
+    else
+    {
+        ProcessKeyRepeat(KEY_LEFT,  KR_LEFT,  MoveCursorLeft);
+        ProcessKeyRepeat(KEY_RIGHT, KR_RIGHT, MoveCursorRight);
+        ProcessKeyRepeat(KEY_UP,    KR_UP,    MoveCursorUp);
+        ProcessKeyRepeat(KEY_DOWN,  KR_DOWN,  MoveCursorDown);
+    }
+
     ProcessKeyRepeat(KEY_BACKSPACE, KR_BACKSPACE, HandleBackspace);
 
     if (IsKeyPressed(KEY_DELETE)) HandleDelete();
+
     if (IsKeyPressed(KEY_ENTER))
     {
         int pos = FindAbsolutePos(textBuffer, cursorLine, cursorChar);
@@ -229,6 +308,7 @@ static void HandleTextInput(void)
         cursorLine++;
         cursorChar = 0;
     }
+
     if (IsKeyPressed(KEY_HOME))
     {
         cursorChar = 0;
@@ -238,6 +318,25 @@ static void HandleTextInput(void)
         int len = LineLength(textBuffer, cursorLine);
         cursorChar = (len >= 0) ? len : 0;
     }
+
+    if (IsKeyPressed(KEY_PAGE_UP))
+    {
+        scrollLineOffset -= VISIBLE_LINES;
+        if (scrollLineOffset < 0) scrollLineOffset = 0;
+    }
+    if (IsKeyPressed(KEY_PAGE_DOWN))
+    {
+        scrollLineOffset += VISIBLE_LINES;
+    }
+
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0.0f)
+    {
+        scrollLineOffset -= (int)wheel;
+    }
+
+    ClampScrollOffsets();
+    EnsureCursorVisible();
 }
 
 void RenderCursor(int lineIndex, int charIndex)
@@ -245,32 +344,46 @@ void RenderCursor(int lineIndex, int charIndex)
     int navY = GetNavHeight();
     int fontSize = 5;
 
-    int y = lineIndex * fontSize + GAP * (lineIndex + 1) + navY;
+    int visibleRow = lineIndex - scrollLineOffset;
+    if (visibleRow < 0 || visibleRow >= VISIBLE_LINES) return;
+
     const char *lineText = GetLineText(textBuffer, lineIndex);
     if (lineText == NULL) lineText = "";
-    int x = MeasureText("-", fontSize) * (charIndex + 1) - 2;
-    Color cursorColor = systemPalette[2];
 
-    if (fmod(GetTime(), 1.0) < 0.5)
-        cursorColor = systemPalette[3];
-    
+    if (charIndex < scrollCharOffset) return;
+
+    int charWidth = MeasureText("-", fontSize);
+    int x = GAP + charWidth * (charIndex - scrollCharOffset);
+    int y = visibleRow * fontSize + GAP * (visibleRow + 1) + navY;
+
+    Color cursorColor = systemPalette[2];
+    if (fmod(GetTime(), 1.0) < 0.5) cursorColor = systemPalette[3];
 
     DrawRectangle(x, y, 3, fontSize, cursorColor);
 }
-
 
 void RenderTextEditor(void)
 {
     HandleTextInput();
 
-    int lineIndex = 0;
+    int totalLines = GetTotalLines(textBuffer);
+    int fontSize = 5;
+    int charWidth = MeasureText("-", fontSize);
+    int screenW = GetScreenWidth();
+    int visibleCols = (screenW - GAP * 2) / (charWidth > 0 ? charWidth : 1);
 
-    while (lineIndex < 14)
+    int row = 0;
+    for (row = 0; row < VISIBLE_LINES; row++)
     {
+        int lineIndex = scrollLineOffset + row;
+        if (lineIndex >= totalLines) break;
         const char *line = GetLineText(textBuffer, lineIndex);
         if (line == NULL) break;
-        RenderLine(line, lineIndex);
-        lineIndex++;
+        int len = (int)strlen(line);
+        const char *display = line;
+        if (len > scrollCharOffset) display = line + scrollCharOffset;
+        else display = "";
+        RenderLine(display, row);
     }
 
     RenderCursor(cursorLine, cursorChar);
