@@ -14,6 +14,8 @@ int GetScaledEditorHeight(void);
 #define SCALE 4
 
 #define NAVBAR_HEIGHT 16
+#define NAVBAR_BUTTON_SIZE 12
+#define NAVBAR_BUTTON_GAP 2
 
 void switchSuperTab(void);
 void RenderCLI(void);

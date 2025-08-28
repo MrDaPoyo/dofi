@@ -6,8 +6,6 @@
 #include "display.h"
 #include "icons.h"
 
-#define BUTTON_SIZE 12
-#define GAP 2
 
 typedef enum
 {
@@ -127,8 +125,8 @@ void RenderCLI()
 void RenderEditors(void)
 {
     int navH = NAVBAR_HEIGHT;
-    int btnSize = BUTTON_SIZE;
-    int gap = GAP;
+    int btnSize = NAVBAR_BUTTON_SIZE;
+    int gap = NAVBAR_BUTTON_GAP;
 
     // navbar
     DrawRectangle(0, 0, WIDTH, navH, NavbarBGColor);
