@@ -61,7 +61,7 @@ Color EditorBGColor;
 Color CliBGColor;
 Color CliTextColor;
 
-void RenderCLI(Texture2D tex);
+void RenderCLI(void);
 void RenderEditors(void);
 void switchSuperTab(void);
 
@@ -77,9 +77,6 @@ int main()
     SetConfigFlags(0);
     SetTargetFPS(45);
 
-    Image img = GenImageColor(WIDTH, HEIGHT, WHITE);
-    Texture2D tex = LoadTextureFromImage(img);
-    UnloadImage(img);
     LoadFonts();
 
     iconSprite = LoadTexture("assets/icons/brush.png");
@@ -105,7 +102,7 @@ int main()
 
         if (currentSuperTab == SUPER_CLI)
         {
-            RenderCLI(tex);
+            RenderCLI();
         }
         else
         {
@@ -124,7 +121,6 @@ int main()
     UnloadTexture(iconUndefined);
     UnloadTexture(cursorTexture);
 
-    UnloadTexture(tex);
     CloseWindow();
     UnloadFonts();
     return 0;
@@ -138,18 +134,9 @@ void switchSuperTab()
         currentSuperTab = SUPER_CLI;
 }
 
-void RenderCLI(Texture2D tex)
+void RenderCLI()
 {
     DrawRectangle(0, 0, WIDTH * SCALE, HEIGHT * SCALE, CliBGColor);
-
-    Color pixels[WIDTH * HEIGHT];
-    for (int i = 0; i < WIDTH * HEIGHT; i++)
-    {
-        pixels[i] = palette[framebuffer[i]];
-    }
-    UpdateTexture(tex, pixels);
-
-    DrawTextureEx(tex, (Vector2){0, 0}, 0, SCALE, WHITE);
 
     DrawText("CLI Mode (F1 = Switch)", 10, 10, 10, YELLOW);
 }
