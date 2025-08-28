@@ -46,9 +46,8 @@ static char textBuffer[4096] = "hello world\nthis is a test\nthree lines";
 static int cursorLine = 0;
 static int cursorChar = 0;
 
-// Add key repeat state and helper
-#define REPEAT_INITIAL_DELAY 0.40   // seconds before first repeat
-#define REPEAT_INTERVAL      0.06   // seconds between repeats
+#define REPEAT_INITIAL_DELAY 0.40
+#define REPEAT_INTERVAL      0.06
 
 enum { KR_LEFT = 0, KR_RIGHT, KR_UP, KR_DOWN, KR_BACKSPACE, KR_COUNT };
 static double keyNextRepeat[KR_COUNT] = { 0.0 };
@@ -216,14 +215,12 @@ static void HandleTextInput(void)
         }
     }
 
-    // use repeating handlers for arrows and backspace
     ProcessKeyRepeat(KEY_LEFT, KR_LEFT, MoveCursorLeft);
     ProcessKeyRepeat(KEY_RIGHT, KR_RIGHT, MoveCursorRight);
     ProcessKeyRepeat(KEY_UP, KR_UP, MoveCursorUp);
     ProcessKeyRepeat(KEY_DOWN, KR_DOWN, MoveCursorDown);
     ProcessKeyRepeat(KEY_BACKSPACE, KR_BACKSPACE, HandleBackspace);
 
-    // single-press behaviour for other keys
     if (IsKeyPressed(KEY_DELETE)) HandleDelete();
     if (IsKeyPressed(KEY_ENTER))
     {
