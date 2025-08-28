@@ -4,6 +4,7 @@
 #include "../fonts.h"
 #include "../display.h"
 #include <stdio.h>
+#include <string.h>
 
 #define GAP 2
 
@@ -14,29 +15,27 @@ void RenderLine(const char *str, int index)
 
     int y = index * fontSize + GAP * (index + 1) + navY;
 
-    char y_str[32];
-    sprintf(y_str, "%d", index);
-
-    RenderString(y_str, GAP, y);
+    RenderString(str, GAP, y);
 }
+
+
+const char *testString = "hello world\nthis is a test\nthree lines";
 
 void RenderTextEditor(void)
 {
-    RenderLine("hey there babe 0", 0);
-    RenderLine("hey there babe 1", 1);
-    RenderLine("hey there babe 2", 2);
-    RenderLine("hey there babe 3", 3);
-    RenderLine("hey there babe 4", 4);
-    RenderLine("hey there babe 5", 5);
-    RenderLine("hey there babe 6", 6);
-    RenderLine("hey there babe 7", 7);
-    RenderLine("hey there babe 8", 8);
-    RenderLine("hey there babe 9", 9);
-    RenderLine("hey there babe 10", 10);
-    RenderLine("hey there babe 11", 11);
-    RenderLine("hey there babe 12", 12);
-    RenderLine("hey there babe 13", 13);
+    char buffer[256];
+    strncpy(buffer, testString, sizeof(buffer));
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    char *line = strtok(buffer, "\n");
+    int lineIndex = 0;
+
+    while (line != NULL && lineIndex < 14)
+    {
+        RenderLine(line, lineIndex);
+        line = strtok(NULL, "\n");
+        lineIndex++;
+    }
 }
 
-// there is a 14 line limit. I still gotta implement scrolling and cursors and actual text, etc etc
-
+// there's a 14 line limit btw
