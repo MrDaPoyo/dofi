@@ -24,8 +24,6 @@ void RenderLine(const char *str, int index)
     RenderString(str, GAP, y);
 }
 
-#include "text_editor_input.h"
-
 const char *GetLineText(const char *str, int index)
 {
     static char linebuf[256];
@@ -50,6 +48,13 @@ const char *GetLineText(const char *str, int index)
     linebuf[len] = '\0';
     return linebuf;
 }
+
+int scrollLineOffset = 0;
+int scrollCharOffset = 0;
+#define VISIBLE_LINES 14
+static const char *textBuffer = NULL;
+int cursorLine = 0;
+int cursorChar = 0;
 
 void RenderCursor(int lineIndex, int charIndex)
 {
@@ -78,15 +83,28 @@ void RenderCursor(int lineIndex, int charIndex)
     DrawRectangle(x, y, 3, fontSize, cursorColor);
 }
 
+int GetTotalLines(const char *str)
+{
+    if (str == NULL)
+        return 0;
+
+    int lines = 1;
+    const char *p = str;
+    while (*p != '\0')
+    {
+        if (*p == '\n')
+            lines++;
+        p++;
+    }
+    return lines;
+}
+
 void RenderTextEditor(void)
 {
-    TextEditor_HandleInput();
-
     int totalLines = GetTotalLines(textBuffer);
     int fontSize = 5;
     int charWidth = MeasureText("-", fontSize);
     int screenW = GetScreenWidth();
-    int visibleCols = (screenW - GAP * 2) / (charWidth > 0 ? charWidth : 1);
 
     int row = 0;
     for (row = 0; row < VISIBLE_LINES; row++)
