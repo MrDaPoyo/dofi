@@ -8,13 +8,11 @@
 #include <math.h>
 #include "text_editor.h"
 
-
 #define VISIBLE_LINES 14
 #define CURSOR_SCROLL_GAP 2
 #define GAP 2
 
 int fontSize = 5;
-
 
 void RenderLine(const char *str, int index)
 {
@@ -113,6 +111,72 @@ void processInput(struct TextEditor *editor)
             cursorChar = 0;
         }
     }
+    else if (IsKeyPressed(KEY_BACKSPACE))
+    {
+        const char *curLine = GetLineText(textBuffer, cursorLine);
+        int curLen = curLine ? (int)strlen(curLine) : 0;
+        if (cursorChar > 0)
+        {
+            cursorChar--;
+        }
+        else if (cursorLine > 0)
+        {
+            cursorLine--;
+            const char *prevLine = GetLineText(textBuffer, cursorLine);
+            if (prevLine)
+            {
+            int prevLen = (int)strlen(prevLine);
+            memmove(editor->buffer + (prevLine - textBuffer) + prevLen,
+                editor->buffer + (prevLine - textBuffer) + prevLen + 1,
+                strlen(editor->buffer + (prevLine - textBuffer) + prevLen + 1) + 1);
+            cursorChar = prevLen;
+            }
+        }
+    }
+    else if (IsKeyPressed(KEY_ENTER))
+    {
+        const char *text = editor->buffer ? editor->buffer : "";
+        const char *p = text;
+        int curLine = 0;
+
+        while (curLine < cursorLine && *p)
+        {
+            if (*p == '\n')
+                curLine++;
+            p++;
+        }
+
+        const char *lineStart = p;
+        int lineLen = 0;
+
+        while (lineStart[lineLen] && lineStart[lineLen] != '\n')
+            lineLen++;
+        if (cursorChar > lineLen)
+            cursorChar = lineLen;
+
+        const char *splitPos = lineStart + cursorChar;
+
+        size_t totalLen = strlen(text);
+        size_t leftLen = (size_t)(splitPos - text);
+        size_t rightLen = totalLen - leftLen;
+
+        char *newbuf = malloc(totalLen + 2 + 1);
+        if (newbuf == NULL)
+        {
+            cursorLine++;
+            cursorChar = 0;
+        }
+        else
+        {
+            memcpy(newbuf, text, leftLen);
+            newbuf[leftLen] = '\n';
+            memcpy(newbuf + leftLen + 1, text + leftLen, rightLen);
+            newbuf[totalLen + 1] = '\0';
+            editor->buffer = newbuf;
+            cursorLine++;
+            cursorChar = 0;
+        }
+    }
 
     if (cursorLine - scrollLineOffset < 0)
     {
@@ -184,8 +248,8 @@ int GetTotalLines(const char *str)
 }
 
 struct TextEditor editors[10] = {
-    [0] = {
-        .buffer = "",
+    {
+        .buffer = "test1234\n5678",
         .cursorLine = 0,
         .cursorChar = 0,
         .scrollLineOffset = 0,
