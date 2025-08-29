@@ -50,9 +50,9 @@ const char *GetLineText(const char *str, int index)
 }
 
 #define VISIBLE_LINES 14
-#define CURSOR_SCROLL_GAP 5
+#define CURSOR_SCROLL_GAP 2
 
-static const char *textBuffer = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234\naaaaaa\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n20";
+static const char *textBuffer = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234\naaaaaa\n1\n2\n3\n4\n5\n6\n7\n8\n9\n00\n000\n0000\n00000\n\n\n\n\n20";
 
 int scrollLineOffset = 0;
 int scrollCharOffset = 0;
@@ -62,48 +62,85 @@ int fontSize = 5;
 
 static int GetMaxLineWidth(void)
 {
-    return GetScreenWidth() / MeasureText("-", fontSize);
+    return WIDTH / MeasureText("-", fontSize);
 }
 
 void processInput(void)
 {
+    const char *lineText = GetLineText(textBuffer, cursorLine);
+    int length = (lineText != NULL) ? (int)strlen(lineText) : 0;
+    int nextLineLength = GetLineText(textBuffer, cursorLine + 1) ? (int)strlen(GetLineText(textBuffer, cursorLine + 1)) : 0;
+    int prevLineLength = GetLineText(textBuffer, cursorLine - 1) ? (int)strlen(GetLineText(textBuffer, cursorLine - 1)) : 0;
+    int maxVisibleChars = GetMaxLineWidth() - CURSOR_SCROLL_GAP;
+
     if (IsKeyPressed(KEY_UP))
     {
         cursorLine--;
         if (cursorLine < 0)
             cursorLine = 0;
+        if (cursorChar > prevLineLength)
+            cursorChar = prevLineLength;
     }
     else if (IsKeyPressed(KEY_DOWN))
     {
         cursorLine++;
         if (cursorLine >= GetTotalLines(textBuffer))
             cursorLine = GetTotalLines(textBuffer) - 1;
-        int lineLength = GetLineText(textBuffer, cursorLine) ? (int)strlen(GetLineText(textBuffer, cursorLine)) : 0;
-        if (cursorChar > lineLength)
-        {
-            cursorChar = lineLength;
-        }
+        if (cursorChar > nextLineLength)
+            cursorChar = nextLineLength;
     }
     else if (IsKeyPressed(KEY_LEFT))
     {
-        cursorChar--;
-        if (cursorChar < 0)
+        if (cursorChar > 0)
+        {
+            cursorChar--;
+        }
+        else if (cursorLine > 0)
         {
             cursorLine--;
-            if (cursorLine < 0)
-                cursorLine = 0;
-            cursorChar = GetLineText(textBuffer, cursorLine) ? (int)strlen(GetLineText(textBuffer, cursorLine)) : 0;
+            const char *prevLine = GetLineText(textBuffer, cursorLine);
+            cursorChar = prevLine ? (int)strlen(prevLine) : 0;
         }
     }
     else if (IsKeyPressed(KEY_RIGHT))
     {
-        cursorChar++;
-        const char *lineText = GetLineText(textBuffer, cursorLine);
-        if (lineText != NULL && cursorChar > (int)strlen(lineText))
-            cursorChar = (int)strlen(lineText);
+        const char *curLine = GetLineText(textBuffer, cursorLine);
+        int curLen = curLine ? (int)strlen(curLine) : 0;
+        if (cursorChar < curLen)
+        {
+            cursorChar++;
+        }
+        else if (cursorLine < GetTotalLines(textBuffer) - 1)
+        {
+            cursorLine++;
+            cursorChar = 0;
+        }
+    }
 
-        if (cursorChar > (GetMaxLineWidth() - CURSOR_SCROLL_GAP))
-            scrollCharOffset += 1;
+    if (cursorLine - scrollLineOffset < 0)
+    {
+        scrollLineOffset = cursorLine;
+        if (scrollLineOffset < 0)
+            scrollLineOffset = 0;
+    }
+    else if (cursorLine - scrollLineOffset >= VISIBLE_LINES)
+    {
+        scrollLineOffset = cursorLine - VISIBLE_LINES + 1;
+        if (scrollLineOffset < 0)
+            scrollLineOffset = 0;
+    }
+
+    if (cursorChar - scrollCharOffset < 0)
+    {
+        scrollCharOffset = cursorChar - CURSOR_SCROLL_GAP;
+        if (scrollCharOffset < 0)
+            scrollCharOffset = 0;
+    }
+    else if (cursorChar - scrollCharOffset >= maxVisibleChars)
+    {
+        scrollCharOffset = cursorChar - maxVisibleChars + 1;
+        if (scrollCharOffset < 0)
+            scrollCharOffset = 0;
     }
 }
 
@@ -151,7 +188,6 @@ int GetTotalLines(const char *str)
 
 void RenderTextEditor(void)
 {
-    printf("%d\n", GetMaxLineWidth());
     processInput();
 
     int totalLines = GetTotalLines(textBuffer);
