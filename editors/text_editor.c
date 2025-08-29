@@ -6,8 +6,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "text_editor.h"
 
+
+#define VISIBLE_LINES 14
+#define CURSOR_SCROLL_GAP 2
 #define GAP 2
+
+int fontSize = 5;
+
 
 void RenderLine(const char *str, int index)
 {
@@ -49,25 +56,15 @@ const char *GetLineText(const char *str, int index)
     return linebuf;
 }
 
-#define VISIBLE_LINES 14
-#define CURSOR_SCROLL_GAP 2
-
-static const char *textBuffer = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234\naaaaaa\n1\n2\n3\n4\n5\n6\n7\n8\n9\n00\n000\n0000\n00000\n\n\n\n\n20";
-
-int scrollLineOffset = 0;
-int scrollCharOffset = 0;
-int cursorLine = 0;
-int cursorChar = 25;
-int fontSize = 5;
-
 static int GetMaxLineWidth(void)
 {
     return WIDTH / MeasureText("-", fontSize);
 }
 
-void processInput(void)
+void processInput(struct TextEditor *editor)
 {
-    const char *lineText = GetLineText(textBuffer, cursorLine);
+    const char *lineText = GetLineText(editor->buffer, cursorLine);
+    const char *textBuffer = editor->buffer;
     int length = (lineText != NULL) ? (int)strlen(lineText) : 0;
     int nextLineLength = GetLineText(textBuffer, cursorLine + 1) ? (int)strlen(GetLineText(textBuffer, cursorLine + 1)) : 0;
     int prevLineLength = GetLineText(textBuffer, cursorLine - 1) ? (int)strlen(GetLineText(textBuffer, cursorLine - 1)) : 0;
@@ -144,7 +141,7 @@ void processInput(void)
     }
 }
 
-void RenderCursor(int lineIndex, int charIndex)
+void RenderCursor(struct TextEditor *editor, int lineIndex, int charIndex)
 {
     int navY = GetNavHeight();
 
@@ -152,7 +149,7 @@ void RenderCursor(int lineIndex, int charIndex)
     if (visibleRow < 0 || visibleRow >= VISIBLE_LINES)
         return;
 
-    const char *lineText = GetLineText(textBuffer, lineIndex);
+    const char *lineText = GetLineText(editor->buffer, lineIndex);
     if (lineText == NULL)
         lineText = "";
 
@@ -186,11 +183,26 @@ int GetTotalLines(const char *str)
     return lines;
 }
 
+struct TextEditor editors[10] = {
+    [0] = {
+        .buffer = "",
+        .cursorLine = 0,
+        .cursorChar = 0,
+        .scrollLineOffset = 0,
+        .scrollCharOffset = 0
+    }
+};
+
 void RenderTextEditor(void)
 {
-    processInput();
+    struct TextEditor *editor = &editors[0];
 
-    int totalLines = GetTotalLines(textBuffer);
+    if (GetKeyPressed() != 0 || GetCharPressed() != 0)
+    {
+        processInput(editor);
+    }
+
+    int totalLines = GetTotalLines(editor->buffer);
     int charWidth = MeasureText("-", fontSize);
     int screenW = GetScreenWidth();
 
@@ -200,7 +212,7 @@ void RenderTextEditor(void)
         int lineIndex = scrollLineOffset + row;
         if (lineIndex >= totalLines)
             break;
-        const char *line = GetLineText(textBuffer, lineIndex);
+        const char *line = GetLineText(editor->buffer, lineIndex);
         if (line == NULL)
             break;
         int len = (int)strlen(line);
@@ -212,7 +224,7 @@ void RenderTextEditor(void)
         RenderLine(display, row);
     }
 
-    RenderCursor(cursorLine, cursorChar);
+    RenderCursor(editor, cursorLine, cursorChar);
 }
 
 // there's a 14 line limit btw
