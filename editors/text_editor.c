@@ -52,9 +52,48 @@ const char *GetLineText(const char *str, int index)
 int scrollLineOffset = 0;
 int scrollCharOffset = 0;
 #define VISIBLE_LINES 14
-static const char *textBuffer = NULL;
+#define CURSOR_SCROLL_GAP
+static const char *textBuffer = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234\naaaaaa\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n20";
 int cursorLine = 0;
-int cursorChar = 0;
+int cursorChar = 25;
+
+void processInput(void)
+{
+    if (IsKeyPressed(KEY_UP))
+    {
+        cursorLine--;
+        if (cursorLine < 0)
+            cursorLine = 0;
+    }
+    else if (IsKeyPressed(KEY_DOWN))
+    {
+        cursorLine++;
+        if (cursorLine >= GetTotalLines(textBuffer))
+            cursorLine = GetTotalLines(textBuffer) - 1;
+        int lineLength = GetLineText(textBuffer, cursorLine) ? (int)strlen(GetLineText(textBuffer, cursorLine)) : 0;
+        if (cursorChar > lineLength) {
+            cursorChar = lineLength;
+        }
+    }
+    else if (IsKeyPressed(KEY_LEFT))
+    {
+        cursorChar--;
+        if (cursorChar < 0)
+        {
+            cursorLine--;
+            if (cursorLine < 0)
+                cursorLine = 0;
+            cursorChar = 0;
+        }
+    }
+    else if (IsKeyPressed(KEY_RIGHT))
+    {
+        cursorChar++;
+        const char *lineText = GetLineText(textBuffer, cursorLine);
+        if (lineText != NULL && cursorChar > (int)strlen(lineText))
+            cursorChar = (int)strlen(lineText);
+    }
+}
 
 void RenderCursor(int lineIndex, int charIndex)
 {
@@ -101,6 +140,8 @@ int GetTotalLines(const char *str)
 
 void RenderTextEditor(void)
 {
+    processInput();
+
     int totalLines = GetTotalLines(textBuffer);
     int fontSize = 5;
     int charWidth = MeasureText("-", fontSize);
