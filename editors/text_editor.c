@@ -113,23 +113,85 @@ void processInput(struct TextEditor *editor)
     }
     else if (IsKeyPressed(KEY_BACKSPACE))
     {
-        const char *curLine = GetLineText(textBuffer, cursorLine);
-        int curLen = curLine ? (int)strlen(curLine) : 0;
         if (cursorChar > 0)
         {
-            cursorChar--;
+            const char *text = editor->buffer ? editor->buffer : "";
+            const char *p = text;
+            int curLine = 0;
+
+            while (curLine < cursorLine && *p)
+            {
+                if (*p == '\n')
+                    curLine++;
+                p++;
+            }
+
+            const char *lineStart = p;
+            int lineLen = 0;
+
+            while (lineStart[lineLen] && lineStart[lineLen] != '\n')
+                lineLen++;
+            if (cursorChar > lineLen)
+                cursorChar = lineLen;
+
+            const char *delPos = lineStart + cursorChar - 1;
+
+            size_t totalLen = strlen(text);
+            size_t leftLen = (size_t)(delPos - text);
+            size_t rightLen = totalLen - leftLen - 1;
+
+            char *newbuf = malloc(totalLen);
+            if (newbuf == NULL)
+            {
+                cursorChar--;
+                if (cursorChar < 0)
+                {
+                    cursorChar = 0;
+                }
+            }
+            else
+            {
+                memcpy(newbuf, text, leftLen);
+                memcpy(newbuf + leftLen, text + leftLen + 1, rightLen);
+                newbuf[totalLen - 1] = '\0';
+                editor->buffer = newbuf;
+                cursorChar--;
+                if (cursorChar < 0)
+                {
+                    cursorChar = 0;
+                }
+            }
         }
         else if (cursorLine > 0)
         {
-            cursorLine--;
-            const char *prevLine = GetLineText(textBuffer, cursorLine);
-            if (prevLine)
+            const char *text = editor->buffer ? editor->buffer : "";
+            const char *p = text;
+            int curLine = 0;
+
+            while (curLine < cursorLine && *p)
             {
-            int prevLen = (int)strlen(prevLine);
-            memmove(editor->buffer + (prevLine - textBuffer) + prevLen,
-                editor->buffer + (prevLine - textBuffer) + prevLen + 1,
-                strlen(editor->buffer + (prevLine - textBuffer) + prevLen + 1) + 1);
-            cursorChar = prevLen;
+                if (*p == '\n')
+                    curLine++;
+                p++;
+            }
+
+            const char *lineStart = p;
+            int lineLen = 0;
+
+            while (lineStart[lineLen] && lineStart[lineLen] != '\n')
+                lineLen++;
+            if (cursorChar > lineLen)
+                cursorChar = lineLen;
+
+            const char *prevLineStart = text;
+            int prevLineIndex = cursorLine - 1;
+            int prevLineCount = 0;
+
+            while (prevLineCount < prevLineIndex && *prevLineStart)
+            {
+                if (*prevLineStart == '\n')
+                    prevLineCount++;
+                prevLineStart++;
             }
         }
     }
