@@ -4,6 +4,7 @@
 #include "../fonts.h"
 #include "../display.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "text_editor.h"
@@ -154,8 +155,6 @@ void processInput(struct TextEditor *editor)
                 memcpy(newbuf, text, leftLen);
                 memcpy(newbuf + leftLen, text + leftLen + 1, rightLen);
                 newbuf[totalLen - 1] = '\0';
-                // Assuming editor->buffer was dynamically allocated, it should be freed.
-                // free((void*)editor->buffer); // This might be risky if some buffers are static strings.
                 editor->buffer = newbuf;
                 cursorChar--;
                 if (cursorChar < 0)
