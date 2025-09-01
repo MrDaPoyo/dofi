@@ -154,6 +154,8 @@ void processInput(struct TextEditor *editor)
                 memcpy(newbuf, text, leftLen);
                 memcpy(newbuf + leftLen, text + leftLen + 1, rightLen);
                 newbuf[totalLen - 1] = '\0';
+                // Assuming editor->buffer was dynamically allocated, it should be freed.
+                // free((void*)editor->buffer); // This might be risky if some buffers are static strings.
                 editor->buffer = newbuf;
                 cursorChar--;
                 if (cursorChar < 0)
@@ -165,9 +167,11 @@ void processInput(struct TextEditor *editor)
         else if (cursorLine > 0)
         {
             const char *text = editor->buffer ? editor->buffer : "";
+            const char *prevLineText = GetLineText(text, cursorLine - 1);
+            int prevLineLen = prevLineText ? (int)strlen(prevLineText) : 0;
+
             const char *p = text;
             int curLine = 0;
-
             while (curLine < cursorLine && *p)
             {
                 if (*p == '\n')
@@ -175,23 +179,21 @@ void processInput(struct TextEditor *editor)
                 p++;
             }
 
-            const char *lineStart = p;
-            int lineLen = 0;
+            const char *newline_to_remove = p - 1;
+            size_t totalLen = strlen(text);
+            size_t leftLen = (size_t)(newline_to_remove - text);
+            size_t rightLen = totalLen - leftLen - 1;
 
-            while (lineStart[lineLen] && lineStart[lineLen] != '\n')
-                lineLen++;
-            if (cursorChar > lineLen)
-                cursorChar = lineLen;
-
-            const char *prevLineStart = text;
-            int prevLineIndex = cursorLine - 1;
-            int prevLineCount = 0;
-
-            while (prevLineCount < prevLineIndex && *prevLineStart)
+            char *newbuf = malloc(totalLen);
+            if (newbuf != NULL)
             {
-                if (*prevLineStart == '\n')
-                    prevLineCount++;
-                prevLineStart++;
+                memcpy(newbuf, text, leftLen);
+                memcpy(newbuf + leftLen, newline_to_remove + 1, rightLen);
+                newbuf[totalLen - 1] = '\0';
+
+                editor->buffer = newbuf;
+                cursorLine--;
+                cursorChar = prevLineLen;
             }
         }
     }
