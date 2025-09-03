@@ -6,7 +6,7 @@ SRC = $(wildcard *.c editors/*.c)
 
 BIN = $(NAME)
 
-CFLAGS = -Wall -Wextra -O2
+CFLAGS = -Wall -Wextra -O3 -g -Werror -Wno-error=unused
 
 ifeq ($(OS),Windows_NT)
 	LIBS = -lraylib -lopengl32 -lgdi32 -lwinmm
@@ -22,9 +22,9 @@ $(BIN): $(SRC)
 	$(CC) $(CFLAGS) -o $(BIN) $(SRC) $(LIBS)
 
 run: $(BIN)
-	$(RUN) -O3
+	$(RUN)
 
 clean:
-	-rm -f $(BIN) $(BIN).exe
+	rm -f $(BIN) $(BIN).exe
 
 .PHONY: all run clean

@@ -1,21 +1,15 @@
 #ifndef TEXT_EDITOR_H
 #define TEXT_EDITOR_H
 
+#include "text_buffer.h"
+
 struct TextEditor
 {
-    const char *buffer;
-    int scrollLineOffset;
-    int scrollCharOffset;
+    struct TextBuffer buffer;
     int cursorLine;
     int cursorChar;
 };
 
-extern struct TextEditor editors[10];
-
-int scrollLineOffset;
-int scrollCharOffset;
-int cursorLine;
-int cursorChar;
-int fontSize;
+struct TextEditor createTextEditor(size_t startingBufferSize);
 
 #endif

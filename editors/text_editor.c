@@ -4,10 +4,8 @@
 #include "../fonts.h"
 #include "../display.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 #include "text_editor.h"
+#include "text_buffer.h"
 
 #define VISIBLE_LINES 14
 #define CURSOR_SCROLL_GAP 2
@@ -18,7 +16,6 @@ int fontSize = 5;
 void RenderLine(const char *str, int index)
 {
     int navY = GetNavHeight();
-    int fontSize = 5;
 
     int y = index * fontSize + GAP * (index + 1) + navY;
 
@@ -28,21 +25,37 @@ void RenderLine(const char *str, int index)
     }
 
     RenderString(str, GAP, y);
+};
+
+struct TextEditor editors[10];
+struct TextEditor *editor = &editors[0];
+
+void initEditors(void)
+{
+    for (size_t i = 0; i < sizeof(editors) / sizeof(editors[0]); i++)
+    {
+        editors[i] = (struct TextEditor) {
+            .buffer = createBuffer(10),
+            .cursorChar = 0,
+            .cursorLine = 0,
+        };
+    }
 }
 
-struct TextEditor editors[10] = {
-    {
-        .buffer = "test1234\n5678",
-        .cursorLine = 0,
-        .cursorChar = 0,
-        .scrollLineOffset = 0,
-        .scrollCharOffset = 0
-    }
-};
+void PrintBufferLength(void)
+{
+    printf("Buffer Length: %li\n", editor->buffer.bufferSize);
+}
 
 void RenderTextEditor(void)
 {
-    struct TextEditor *editor = &editors[0];
+    static int initialized = 0;
+    if (!initialized) {
+        initEditors();
+        editor = &editors[0];
+        printf("Editor Size: %zu", editor->buffer.bufferSize);
+        initialized = 1;
+    }
 }
 
 // there's a 14 line limit btw
