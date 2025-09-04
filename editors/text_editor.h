@@ -10,8 +10,12 @@ struct TextEditor
     int cursorChar;
 };
 
-void InitTextEditors(void);
+#define TOTAL_TEXT_EDITORS 10
 
+extern struct TextEditor editors[TOTAL_TEXT_EDITORS];
+extern struct TextEditor* editor;
+
+void InitTextEditors(void);
 struct TextEditor createTextEditor(size_t startingBufferSize);
 
 #endif

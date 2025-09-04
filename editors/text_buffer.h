@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #define MAX_TOTAL_BUFFER_SIZE 65536
+#define BUFFER_SIZE_INCREMENT 1024
 
 struct TextBuffer
 {
@@ -13,7 +14,7 @@ struct TextBuffer
 };
 
 struct TextBuffer createBuffer(size_t bufferSize);
-void modifyBufferCapacity(struct TextBuffer* buffer, size_t newBufferSize);
-void appendCharacter(struct TextBuffer* buffer, char character);
+struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBufferSize);
+struct TextBuffer appendCharacter(struct TextBuffer buffer, char character);
 
 #endif
