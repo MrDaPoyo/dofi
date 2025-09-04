@@ -5,6 +5,7 @@
 #include "fonts.h"
 #include "display.h"
 #include "icons.h"
+#include "editors/text_editor.h"
 
 
 typedef enum
@@ -64,6 +65,9 @@ int main()
     Texture2D cursorTexture = LoadTexture("assets/icons/mouse_with_shadow.png");
     SetMouseOffset(-(cursorTexture.width * SCALE) / 2, -(cursorTexture.height * SCALE) / 2);
     HideCursor();
+
+    // initialize uhhhhhhh editors
+    InitTextEditors();
 
     while (!WindowShouldClose())
     {

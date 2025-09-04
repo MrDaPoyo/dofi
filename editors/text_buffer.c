@@ -6,6 +6,7 @@
 struct TextBuffer createBuffer(size_t bufferSize) {
     const unsigned int newBufferSize = bufferSize <= MAX_TOTAL_BUFFER_SIZE ? bufferSize : MAX_TOTAL_BUFFER_SIZE;
     char* newBuffer = malloc(newBufferSize);
+    newBuffer[0] = '\0';
     const struct TextBuffer newTextBuffer = {
         .buffer = newBuffer,
         .bufferSize = newBufferSize,

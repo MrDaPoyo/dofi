@@ -30,7 +30,7 @@ void RenderLine(const char *str, int index)
 struct TextEditor editors[10];
 struct TextEditor *editor = &editors[0];
 
-void initEditors(void)
+void InitTextEditors(void)
 {
     for (size_t i = 0; i < sizeof(editors) / sizeof(editors[0]); i++)
     {
@@ -44,18 +44,14 @@ void initEditors(void)
 
 void PrintBufferLength(void)
 {
-    printf("Buffer Length: %li\n", editor->buffer.bufferSize);
+    if (editor->buffer.bufferSize > 0) {
+        printf("Buffer Length: %li\n", editor->buffer.bufferSize);
+    }
 }
 
 void RenderTextEditor(void)
 {
-    static int initialized = 0;
-    if (!initialized) {
-        initEditors();
-        editor = &editors[0];
-        printf("Editor Size: %zu", editor->buffer.bufferSize);
-        initialized = 1;
-    }
+    RenderLine(editor->buffer.buffer, 1);
 }
 
 // there's a 14 line limit btw

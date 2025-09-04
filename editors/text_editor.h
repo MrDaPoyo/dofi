@@ -10,6 +10,8 @@ struct TextEditor
     int cursorChar;
 };
 
+void InitTextEditors(void);
+
 struct TextEditor createTextEditor(size_t startingBufferSize);
 
 #endif
