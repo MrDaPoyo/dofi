@@ -62,8 +62,8 @@ struct TextBuffer appendCharacter(struct TextBuffer buffer, char character) {
         }
     }
 
-    buffer.buffer[buffer.totalChars - 1] = character;
-    buffer.buffer[buffer.totalChars] = '\0';
+    buffer.buffer[buffer.totalChars] = character;
+    buffer.buffer[buffer.totalChars + 1] = '\0';
     buffer.totalChars++;
 
     printf("Buffer Size After Input '%c': %li", character, buffer.bufferSize);

@@ -31,7 +31,7 @@ struct TextEditor* editor = &editors[0];
 void InitTextEditors(void) {
     for (size_t i = 0; i < sizeof(editors) / sizeof(editors[0]); i++) {
         editors[i] = (struct TextEditor){
-            .buffer = createBuffer(0),
+            .buffer = createBuffer(0), // ts makes a buffer with zero bytes, but that's expanded when the buffer's first character is appended
             .cursorChar = 0,
             .cursorLine = 0,
         };
@@ -50,7 +50,7 @@ void RenderTextEditor(void) {
     RenderLine(editor->buffer.buffer, 1);
     pressedKey = GetCharPressed();
     if (pressedKey != 0) {
-        appendCharacter(editor->buffer, pressedKey);
+        editor->buffer = appendCharacter(editor->buffer, pressedKey);
         pressedKey = GetCharPressed();
     }
 }
