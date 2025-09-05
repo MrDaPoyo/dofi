@@ -7,7 +7,9 @@
 #include "text_editor.h"
 #include "text_buffer.h"
 
-#define VISIBLE_LINES 14
+#include <string.h>
+
+#define VISIBLE_LINES (14 + 1)
 #define CURSOR_SCROLL_GAP 2
 #define GAP 2
 
@@ -24,6 +26,50 @@ void RenderLine(const char* str, int index) {
 
     RenderString(str, GAP, y);
 };
+
+struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, int y_index) {
+    struct LineCollection result = { .count = 0 };
+    const char* work_buffer = buffer->buffer;
+    const int maxLines = 14;
+
+    const char* lineStart = work_buffer;
+    int currentLine = 0;
+
+    for (unsigned int i = 0; ; i++) {
+        char c = work_buffer[i];
+
+        if (c == '\n' || c == '\0') {
+            if (currentLine >= y_index && result.count < maxLines) {
+                result.lines[result.count] = lineStart;
+                result.count++;
+            }
+
+            currentLine++;
+            lineStart = &work_buffer[i + 1];
+
+            if (c == '\0') break;
+        }
+    }
+    return result;
+}
+
+void RenderBuffer(const struct TextBuffer buffer, int y_index) {
+    struct LineCollection lc = retrieveAllLines(&buffer, y_index);
+
+    for (int i = 0; i < lc.count; i++) {
+        const char* start = lc.lines[i];
+        const char* end = start;
+        while (*end != '\n' && *end != '\0') end++;
+
+        unsigned long len = end - start;
+        char temp[1025]; // max 1024 chars per line
+        if (len >= sizeof(temp)) len = sizeof(temp) - 1;
+        memcpy(temp, start, len);
+        temp[len] = '\0';
+
+        RenderLine(temp, i);
+    }
+}
 
 struct TextEditor editors[10];
 struct TextEditor* editor = &editors[0];
@@ -47,7 +93,8 @@ void PrintBufferLength(void) {
 char pressedKey;
 
 void RenderTextEditor(void) {
-    RenderLine(editor->buffer.buffer, 1);
+    RenderBuffer(editor->buffer, editor->cursorLine);
+
     pressedKey = GetCharPressed();
     if (IsKeyPressed(KEY_RIGHT)) {
         if (editor->cursorChar < editor->buffer.totalChars) {
@@ -59,14 +106,15 @@ void RenderTextEditor(void) {
             editor->cursorChar--;
         }
     }
+    if (IsKeyPressed(KEY_ENTER)) {
+        pressedKey = '\n';
+    }
 
     if (pressedKey != 0) {
         editor->buffer = insertCharacter(editor->buffer, pressedKey, editor->cursorChar);
         editor->cursorChar++;
         pressedKey = GetCharPressed();
     }
-
-    printf("Buffer: %s\n", editor->buffer.buffer);
 }
 
 // there's a 14 line limit btw

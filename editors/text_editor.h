@@ -10,6 +10,11 @@ struct TextEditor
     size_t cursorChar;
 };
 
+struct LineCollection {
+    const char* lines[14];
+    int count;
+};
+
 #define TOTAL_TEXT_EDITORS 10
 
 extern struct TextEditor editors[TOTAL_TEXT_EDITORS];
