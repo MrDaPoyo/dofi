@@ -53,6 +53,11 @@ struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, int y_in
     return result;
 }
 
+size_t retrieveLinesCount(struct TextBuffer buffer) {
+    const struct LineCollection lines = retrieveAllLines(&buffer, 0);
+    return lines.count;
+}
+
 void RenderBuffer(const struct TextBuffer buffer, int y_index) {
     struct LineCollection lc = retrieveAllLines(&buffer, y_index);
 
@@ -80,6 +85,8 @@ void InitTextEditors(void) {
             .buffer = createBuffer(0), // ts makes a buffer with zero bytes, but that's expanded when the buffer's first character is appended
             .cursorChar = 0,
             .cursorLine = 0,
+            .scrollOffsetX = 0,
+            .scrollOffsetY = 0,
         };
     }
 }
@@ -93,7 +100,7 @@ void PrintBufferLength(void) {
 char pressedKey;
 
 void RenderTextEditor(void) {
-    RenderBuffer(editor->buffer, editor->cursorLine);
+    RenderBuffer(editor->buffer, editor->scrollOffsetY);
 
     pressedKey = GetCharPressed();
     if (IsKeyPressed(KEY_RIGHT)) {
@@ -106,13 +113,23 @@ void RenderTextEditor(void) {
             editor->cursorChar--;
         }
     }
+    if (IsKeyPressed(KEY_DOWN)) {
+        if (editor->cursorLine < retrieveLinesCount(editor->buffer)) {
+            editor->cursorLine++;
+        }
+    }
     if (IsKeyPressed(KEY_ENTER)) {
         pressedKey = '\n';
     }
 
     if (pressedKey != 0) {
         editor->buffer = insertCharacter(editor->buffer, pressedKey, editor->cursorChar);
-        editor->cursorChar++;
+        if (pressedKey == '\n') {
+            editor->cursorChar = 0;
+            editor->cursorLine++;
+        } else {
+            editor->cursorChar++;
+        }
         pressedKey = GetCharPressed();
     }
 }

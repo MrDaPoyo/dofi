@@ -8,6 +8,8 @@ struct TextEditor
     struct TextBuffer buffer;
     size_t cursorLine;
     size_t cursorChar;
+    size_t scrollOffsetY;
+    size_t scrollOffsetX;
 };
 
 struct LineCollection {
