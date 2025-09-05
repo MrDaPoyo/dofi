@@ -16,5 +16,6 @@ struct TextBuffer
 struct TextBuffer createBuffer(size_t bufferSize);
 struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBufferSize);
 struct TextBuffer appendCharacter(struct TextBuffer buffer, char character);
+struct TextBuffer insertCharacter(struct TextBuffer buffer, char character, size_t position);
 
 #endif

@@ -49,24 +49,41 @@ struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBuffe
     return buffer;
 };
 
-struct TextBuffer appendCharacter(struct TextBuffer buffer, char character) {
-    if (buffer.totalChars + 1 >= buffer.bufferSize) {
+struct TextBuffer checkIfMoreSpaceIsNeeded(struct TextBuffer buffer) {
+    if (buffer.totalChars + 2 >= buffer.bufferSize) {
         const size_t availableBufferSize = retrieveAvailableBufferSize();
 
         if (buffer.bufferSize + BUFFER_SIZE_INCREMENT <= availableBufferSize) {
             buffer = modifyBufferCapacity(buffer, buffer.bufferSize + BUFFER_SIZE_INCREMENT);
         } else if (availableBufferSize > buffer.bufferSize) {
             buffer = modifyBufferCapacity(buffer, availableBufferSize);
-        } else {
-            return buffer;
         }
     }
+    return buffer;
+}
+
+struct TextBuffer appendCharacter(struct TextBuffer buffer, char character) {
+    buffer = checkIfMoreSpaceIsNeeded(buffer);
 
     buffer.buffer[buffer.totalChars] = character;
     buffer.buffer[buffer.totalChars + 1] = '\0';
     buffer.totalChars++;
 
-    printf("Buffer Size After Input '%c': %li", character, buffer.bufferSize);
+    return buffer;
+}
+
+struct TextBuffer insertCharacter(struct TextBuffer buffer, char character, size_t position) {
+    buffer = checkIfMoreSpaceIsNeeded(buffer);
+
+    // this just shifts the chars so that i can make room for the inserted char
+    for (size_t i = buffer.totalChars; i > position; i--) {
+        buffer.buffer[i] = buffer.buffer[i - 1];
+    }
+
+    buffer.buffer[position] = character;
+    buffer.totalChars++;
+    buffer.buffer[buffer.totalChars] = '\0';
 
     return buffer;
 }
+

@@ -49,10 +49,24 @@ char pressedKey;
 void RenderTextEditor(void) {
     RenderLine(editor->buffer.buffer, 1);
     pressedKey = GetCharPressed();
+    if (IsKeyPressed(KEY_RIGHT)) {
+        if (editor->cursorChar < editor->buffer.totalChars) {
+            editor->cursorChar++;
+        }
+    }
+    if (IsKeyPressed(KEY_LEFT)) {
+        if (editor->cursorChar > 0) {
+            editor->cursorChar--;
+        }
+    }
+
     if (pressedKey != 0) {
-        editor->buffer = appendCharacter(editor->buffer, pressedKey);
+        editor->buffer = insertCharacter(editor->buffer, pressedKey, editor->cursorChar);
+        editor->cursorChar++;
         pressedKey = GetCharPressed();
     }
+
+    printf("Buffer: %s\n", editor->buffer.buffer);
 }
 
 // there's a 14 line limit btw

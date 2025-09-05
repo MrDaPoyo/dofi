@@ -6,8 +6,8 @@
 struct TextEditor
 {
     struct TextBuffer buffer;
-    int cursorLine;
-    int cursorChar;
+    size_t cursorLine;
+    size_t cursorChar;
 };
 
 #define TOTAL_TEXT_EDITORS 10
