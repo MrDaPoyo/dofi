@@ -1,12 +1,11 @@
 #include "raylib.h"
-#include <stdint.h>
 #include "colors.h"
 #include "editors/editors.h"
 #include "fonts.h"
 #include "display.h"
 #include "icons.h"
 #include "editors/text_editor.h"
-
+#include "intro.h"
 
 typedef enum
 {
@@ -43,7 +42,6 @@ Color CliTextColor;
 
 RenderTexture2D gRenderTex;
 
-
 int main()
 {
     NavbarBGColor = systemPalette[2];
@@ -53,8 +51,11 @@ int main()
     CliTextColor = systemPalette[4];
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
+
+    RenderIntro();
+
     SetConfigFlags(0);
-    SetTargetFPS(45);
+    SetTargetFPS(60);
 
     LoadFonts();
 
@@ -122,7 +123,6 @@ void switchSuperTab()
 void RenderCLI()
 {
     DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
-
     DrawText("CLI Mode (F1 = Switch)", 10, 10, 10, YELLOW);
 }
 
