@@ -33,8 +33,9 @@ jobs:
       - name: Run build script
         run: |
           source ~/emsdk/emsdk_env.sh
-          chmod +x scripts/build.sh
-          ./scripts/build.sh
+          cd ./build_web
+          chmod +x ./build-wasm.sh
+          ./build-wasm.sh
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3.9.3
