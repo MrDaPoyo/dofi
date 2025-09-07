@@ -66,8 +66,6 @@ void RenderIntro() {
         heightDelay++;
     }
 
-    printf("Size of total tiles: %d\n", totalTiles);
-
     while (elapsed < INTRO_TIME && !WindowShouldClose()) {
         float dt = GetFrameTime();
         elapsed += dt;
