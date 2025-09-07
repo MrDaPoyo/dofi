@@ -32,6 +32,7 @@ jobs:
 
       - name: Compile Raylib for Web
         run: |
+          source ~/emsdk/emsdk_env.sh
           cd ./raylib/src
           make clean
           make PLATFORM=PLATFORM_WEB RAYLIB_LIBTYPE=STATIC
