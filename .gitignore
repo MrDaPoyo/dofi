@@ -1,4 +1,6 @@
-dofi
+src/dofi
 .vscode
 .clang-format
 .idea
+.emsdk
+out/*

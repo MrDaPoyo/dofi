@@ -74,7 +74,7 @@ int main()
     {
         Vector2 mousePos = GetMousePositionForEditors();
 
-        if (IsKeyPressed(KEY_F1))
+        if (IsKeyPressed(KEY_TAB))
             switchSuperTab();
 
         BeginDrawing();
@@ -123,7 +123,7 @@ void switchSuperTab()
 void RenderCLI()
 {
     DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
-    DrawText("CLI Mode (F1 = Switch)", 10, 10, 10, YELLOW);
+    DrawText("CLI Mode (TAB = Switch)", 2, 5, 5, YELLOW);
 }
 
 void RenderEditors(void)

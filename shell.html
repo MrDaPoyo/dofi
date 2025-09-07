@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dofi Fantasy Console!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        canvas {
+            display: block;
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="spinner"></div>
+
+<script>
+    var Module = {
+        canvas: document.getElementById('canvas')
+    };
+
+    function resizeCanvas() {
+        const canvas = Module.canvas;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        if (windowWidth > windowHeight) {
+            canvas.height = windowHeight;
+            canvas.width = windowHeight;
+        } else {
+            canvas.width = windowWidth;
+            canvas.height = windowWidth;
+        }
+
+        canvas.style.width = canvas.width + 'px';
+        canvas.style.height = canvas.height + 'px';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', resizeCanvas);
+</script>
+
+{{{ SCRIPT }}}
+</body>
+</html>
