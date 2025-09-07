@@ -72,8 +72,42 @@ struct TextBuffer appendCharacter(struct TextBuffer buffer, char character) {
     return buffer;
 }
 
-struct TextBuffer insertCharacter(struct TextBuffer buffer, char character, size_t position) {
-    buffer = checkIfMoreSpaceIsNeeded(buffer);
+size_t getIndexFromEditorBuffer(struct TextEditor* editor) {
+    const char* work_buffer = editor->buffer.buffer;
+
+    const size_t row = editor->cursorLine;
+    const size_t col = editor->cursorChar;
+
+    size_t currentIndex = 0;
+    size_t currentLine = 0;
+
+    while (work_buffer[currentIndex] != '\0') {
+        if (currentLine == row) {
+            size_t lineStart = currentIndex;
+
+            for (size_t i = 0; ; i++) {
+                char c = work_buffer[lineStart + i];
+                if (c == '\n' || c == '\0') {
+                    return lineStart + i;
+                }
+                if (i == col) {
+                    return lineStart + i;
+                }
+            }
+        }
+
+        if (work_buffer[currentIndex] == '\n') {
+            currentLine++;
+        }
+        currentIndex++;
+    }
+
+    return currentIndex;
+}
+
+struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
+    struct TextBuffer buffer = checkIfMoreSpaceIsNeeded(editor->buffer);
+    const size_t position = getIndexFromEditorBuffer(editor);
 
     // this just shifts the chars so that i can make room for the inserted char
     for (size_t i = buffer.totalChars; i > position; i--) {
@@ -84,6 +118,7 @@ struct TextBuffer insertCharacter(struct TextBuffer buffer, char character, size
     buffer.totalChars++;
     buffer.buffer[buffer.totalChars] = '\0';
 
-    return buffer;
-}
+    editor->buffer = buffer;
 
+    return *editor;
+}

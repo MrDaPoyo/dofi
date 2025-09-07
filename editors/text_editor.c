@@ -123,7 +123,7 @@ void RenderTextEditor(void) {
     }
 
     if (pressedKey != 0) {
-        editor->buffer = insertCharacter(editor->buffer, pressedKey, editor->cursorChar);
+        *editor = insertCharacter(editor, pressedKey);
         if (pressedKey == '\n') {
             editor->cursorChar = 0;
             editor->cursorLine++;
