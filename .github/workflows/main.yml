@@ -24,7 +24,6 @@ jobs:
           cd ~/emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          source ./emsdk_env.sh
 
       - name: Clone raylib
         run: |
@@ -32,15 +31,16 @@ jobs:
 
       - name: Compile Raylib for Web
         run: |
+          # Source Emscripten in the same step
           source ~/emsdk/emsdk_env.sh
-          cd ./raylib/src
+          cd raylib/src
           make clean
           make PLATFORM=PLATFORM_WEB RAYLIB_LIBTYPE=STATIC
 
       - name: Run build script
         run: |
           source ~/emsdk/emsdk_env.sh
-          cd ./build_web
+          cd build_web
           chmod +x ./build-wasm.sh
           ./build-wasm.sh
 
