@@ -5,13 +5,16 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -24,6 +27,8 @@ jobs:
           cd ~/emsdk
           ./emsdk install latest
           ./emsdk activate latest
+          echo "EMSDK=$(realpath ~/emsdk)" >> $GITHUB_ENV
+          echo "PATH=$(realpath ~/emsdk/upstream/emscripten):$PATH" >> $GITHUB_ENV
 
       - name: Clone raylib
         run: |
@@ -31,22 +36,22 @@ jobs:
 
       - name: Compile Raylib for Web
         run: |
-          # Source Emscripten in the same step
-          source ~/emsdk/emsdk_env.sh
+          source $EMSDK/emsdk_env.sh
           cd raylib/src
           make clean
           make PLATFORM=PLATFORM_WEB RAYLIB_LIBTYPE=STATIC
 
       - name: Run build script
         run: |
-          source ~/emsdk/emsdk_env.sh
-          mkdir out
+          source $EMSDK/emsdk_env.sh
+          mkdir -p out
+          mkdir -p build_web
           cd build_web
-          chmod +x ./build-wasm.sh
-          ./build-wasm.sh
+          chmod +x ../build-wasm.sh
+          ../build-wasm.sh
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3.9.3
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
