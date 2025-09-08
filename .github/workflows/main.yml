@@ -40,6 +40,7 @@ jobs:
       - name: Run build script
         run: |
           source ~/emsdk/emsdk_env.sh
+          mkdir out
           cd build_web
           chmod +x ./build-wasm.sh
           ./build-wasm.sh
