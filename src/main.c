@@ -52,6 +52,7 @@ int main()
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
 
+    SetExitKey(KEY_F11);
     RenderIntro();
 
     SetConfigFlags(0);
@@ -74,7 +75,7 @@ int main()
     {
         Vector2 mousePos = GetMousePositionForEditors();
 
-        if (IsKeyPressed(KEY_TAB))
+        if (IsKeyPressed(KEY_ESCAPE))
             switchSuperTab();
 
         BeginDrawing();
@@ -123,7 +124,7 @@ void switchSuperTab()
 void RenderCLI()
 {
     DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
-    DrawText("CLI Mode (TAB = Switch)", 2, 5, 5, YELLOW);
+    DrawText("CLI Mode (ESC = Switch)", 2, 5, 5, YELLOW);
 }
 
 void RenderEditors(void)
