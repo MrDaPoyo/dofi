@@ -20,3 +20,5 @@ emcc ../src/**/*.c \
     -s ASSERTIONS \
     -DPLATFORM_WEB \
     -o ../out/index.html
+
+emrun --no_browser ../out/index.html
