@@ -8,6 +8,10 @@ BIN = $(NAME)
 
 CFLAGS = -Wall -Wextra -O3 -g -Werror -Wno-error=unused
 
+ASSETS = src/assets
+
+OUTPUT_DIR = out
+
 ifeq ($(OS),Windows_NT)
 	LIBS = -lraylib -lopengl32 -lgdi32 -lwinmm
 	RUN = .\$(BIN).exe
@@ -19,7 +23,9 @@ endif
 all: $(BIN)
 
 $(BIN): $(SRC)
-	$(CC) $(CFLAGS) -o $(BIN) $(SRC) $(LIBS)
+	mkdir -p $(OUTPUT_DIR)
+	$(CC) $(CFLAGS) -o $(OUTPUT_DIR)/$(BIN) $(SRC) $(LIBS)
+	cp -r $(ASSETS) $(OUTPUT_DIR)/assets
 
 run: $(BIN)
 	$(RUN)
