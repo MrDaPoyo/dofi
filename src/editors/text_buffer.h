@@ -5,6 +5,7 @@
 
 #define MAX_TOTAL_BUFFER_SIZE 65536
 #define BUFFER_SIZE_INCREMENT 1024
+#define BUFFER_SIZE_DECREMENT 512
 
 struct TextBuffer
 {
@@ -17,6 +18,7 @@ struct TextBuffer createBuffer(size_t bufferSize);
 struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBufferSize);
 struct TextBuffer appendCharacter(struct TextBuffer buffer, char character);
 struct TextEditor insertCharacter(struct TextEditor* editor, char character);
+struct TextEditor removeCharacter(struct TextEditor* editor);
 size_t getIndexFromEditorBuffer(struct TextEditor* editor);
 
 #endif

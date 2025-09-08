@@ -2,7 +2,7 @@ NAME = dofi
 
 CC = gcc
 
-SRC = $(wildcard *.c editors/*.c)
+SRC = $(wildcard src/*.c src/editors/*.c)
 
 BIN = $(NAME)
 

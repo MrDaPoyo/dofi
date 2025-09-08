@@ -49,21 +49,29 @@ struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBuffe
     return buffer;
 };
 
-struct TextBuffer checkIfMoreSpaceIsNeeded(struct TextBuffer buffer) {
-    if (buffer.totalChars + 2 >= buffer.bufferSize) {
-        const size_t availableBufferSize = retrieveAvailableBufferSize();
+struct TextBuffer checkBufferSpace(struct TextBuffer buffer) {
+    const size_t availableBufferSize = retrieveAvailableBufferSize();
 
+    if (buffer.totalChars + 2 >= buffer.bufferSize) {
         if (buffer.bufferSize + BUFFER_SIZE_INCREMENT <= availableBufferSize) {
             buffer = modifyBufferCapacity(buffer, buffer.bufferSize + BUFFER_SIZE_INCREMENT);
         } else if (availableBufferSize > buffer.bufferSize) {
             buffer = modifyBufferCapacity(buffer, availableBufferSize);
         }
     }
+    else if (buffer.totalChars < buffer.bufferSize / 4 && buffer.bufferSize > BUFFER_SIZE_DECREMENT) {
+        size_t newSize = buffer.bufferSize - BUFFER_SIZE_DECREMENT;
+        if (newSize < BUFFER_SIZE_DECREMENT) {
+            newSize = BUFFER_SIZE_DECREMENT;
+        }
+        buffer = modifyBufferCapacity(buffer, newSize);
+    }
+
     return buffer;
 }
 
 struct TextBuffer appendCharacter(struct TextBuffer buffer, char character) {
-    buffer = checkIfMoreSpaceIsNeeded(buffer);
+    buffer = checkBufferSpace(buffer);
 
     buffer.buffer[buffer.totalChars] = character;
     buffer.buffer[buffer.totalChars + 1] = '\0';
@@ -106,7 +114,7 @@ size_t getIndexFromEditorBuffer(struct TextEditor* editor) {
 }
 
 struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
-    struct TextBuffer buffer = checkIfMoreSpaceIsNeeded(editor->buffer);
+    struct TextBuffer buffer = checkBufferSpace(editor->buffer);
     const size_t position = getIndexFromEditorBuffer(editor);
 
     // this just shifts the chars so that i can make room for the inserted char
@@ -120,5 +128,21 @@ struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
 
     editor->buffer = buffer;
 
+    return *editor;
+}
+
+struct TextEditor removeCharacter(struct TextEditor* editor) {
+    struct TextBuffer buffer = checkBufferSpace(editor->buffer);
+    size_t position = getIndexFromEditorBuffer(editor);
+
+    if (position < buffer.totalChars) {
+        for (size_t i = position; i < buffer.totalChars - 1; i++) {
+            buffer.buffer[i] = buffer.buffer[i + 1];
+        }
+        buffer.buffer[buffer.totalChars - 1] = '\0';
+        buffer.totalChars--;
+    }
+
+    editor->buffer = buffer;
     return *editor;
 }

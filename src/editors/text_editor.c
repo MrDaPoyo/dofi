@@ -27,13 +27,13 @@ void RenderLine(const char* str, int index) {
     RenderString(str, GAP, y);
 };
 
-struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, int y_index) {
+struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y_index) {
     struct LineCollection result = { .count = 0 };
     const char* work_buffer = buffer->buffer;
     const int maxLines = 14;
 
     const char* lineStart = work_buffer;
-    int currentLine = 0;
+    size_t currentLine = 0;
 
     for (unsigned int i = 0; ; i++) {
         char c = work_buffer[i];
@@ -58,7 +58,7 @@ size_t retrieveLinesCount(struct TextBuffer buffer) {
     return lines.count;
 }
 
-void RenderBuffer(const struct TextBuffer buffer, int y_index) {
+void RenderBuffer(const struct TextBuffer buffer, size_t y_index) {
     struct LineCollection lc = retrieveAllLines(&buffer, y_index);
 
     for (int i = 0; i < lc.count; i++) {
