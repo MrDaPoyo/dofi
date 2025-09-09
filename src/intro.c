@@ -52,6 +52,7 @@ void RenderIntro() {
     Vector2 logoVec = { WIDTH / 2 - logo.width * 2, HEIGHT / 2 - logo.height * 2 };
 
     LoadFonts();
+    Sound jingle = LoadSound("assets/audio/jingle.mp3");
 
     int heightDelay = 1;
     int totalTiles = 0;
@@ -65,6 +66,8 @@ void RenderIntro() {
         }
         heightDelay++;
     }
+
+    PlaySound(jingle);
 
     while (elapsed < INTRO_TIME && !WindowShouldClose()) {
         float dt = GetFrameTime();

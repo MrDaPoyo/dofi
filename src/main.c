@@ -53,6 +53,8 @@ int main()
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
 
     SetExitKey(KEY_F11);
+    InitAudioDevice();
+
     RenderIntro();
 
     SetConfigFlags(0);
