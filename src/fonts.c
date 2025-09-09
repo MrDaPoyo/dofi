@@ -2,8 +2,6 @@
 #include "fonts.h"
 #include "colors.h"
 
-#include <stdio.h>
-
 Font GeneralFont;
 
 void LoadFonts(void)

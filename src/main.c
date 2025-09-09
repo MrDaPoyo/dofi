@@ -6,15 +6,14 @@
 #include "icons.h"
 #include "editors/text_editor.h"
 #include "intro.h"
+#include "audio.h"
 
-typedef enum
-{
+typedef enum {
     SUPER_CLI,
     SUPER_EDITORS
 } SuperTab;
 
-typedef enum
-{
+typedef enum {
     EDITOR_TEXT,
     EDITOR_SPRITE,
     EDITOR_MAP,
@@ -28,8 +27,7 @@ EditorTab currentEditorTab = EDITOR_TEXT;
 
 #define SCALED_NAV_HEIGHT (NAVBAR_HEIGHT * SCALE)
 
-static inline Vector2 GetMousePositionForEditors(void)
-{
+static inline Vector2 GetMousePositionForEditors(void) {
     Vector2 m = GetMousePosition();
     return m;
 }
@@ -42,8 +40,7 @@ Color CliTextColor;
 
 RenderTexture2D gRenderTex;
 
-int main()
-{
+int main() {
     NavbarBGColor = systemPalette[2];
     NavbarBorderColor = systemPalette[3];
     EditorBGColor = systemPalette[0];
@@ -65,6 +62,7 @@ int main()
     gRenderTex = LoadRenderTexture(WIDTH, HEIGHT);
 
     LoadIcons();
+    LoadAudios();
 
     Texture2D cursorTexture = LoadTexture("assets/icons/mouse_with_shadow.png");
     SetMouseOffset(-(cursorTexture.width * SCALE) / 2, -(cursorTexture.height * SCALE) / 2);
@@ -73,8 +71,7 @@ int main()
     // initialize uhhhhhhh editors
     InitTextEditors();
 
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()) {
         Vector2 mousePos = GetMousePositionForEditors();
 
         if (IsKeyPressed(KEY_ESCAPE))
@@ -85,22 +82,24 @@ int main()
         BeginTextureMode(gRenderTex);
         ClearBackground(EditorBGColor);
 
-        if (currentSuperTab == SUPER_CLI)
-        {
+        if (currentSuperTab == SUPER_CLI) {
             RenderCLI();
-        }
-        else
-        {
+        } else {
             RenderEditors();
-            DrawTextureEx(cursorTexture, (Vector2){mousePos.x / (float)SCALE, mousePos.y / (float)SCALE}, 0.0f, 1.0f, WHITE);
+            DrawTextureEx(cursorTexture,
+                (Vector2){ mousePos.x / (float)SCALE, mousePos.y / (float)SCALE },
+                0.0f, 1.0f, WHITE);
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+                PlaySound(audios[0]);
+            }
         }
 
         EndTextureMode();
 
         DrawTexturePro(gRenderTex.texture,
-            (Rectangle){0, 0, (float)gRenderTex.texture.width, -(float)gRenderTex.texture.height},
-            (Rectangle){0, 0, WIDTH * SCALE, HEIGHT * SCALE},
-            (Vector2){0, 0}, 0.0f, WHITE);
+            (Rectangle){ 0, 0, (float)gRenderTex.texture.width, -(float)gRenderTex.texture.height },
+            (Rectangle){ 0, 0, WIDTH * SCALE, HEIGHT * SCALE },
+            (Vector2){ 0, 0 }, 0.0f, WHITE);
 
         EndDrawing();
     }
@@ -111,26 +110,24 @@ int main()
     UnloadRenderTexture(gRenderTex);
 
     CloseWindow();
+    UnloadAudios();
     UnloadFonts();
     return 0;
 }
 
-void switchSuperTab()
-{
+void switchSuperTab() {
     if (currentSuperTab == SUPER_CLI)
         currentSuperTab = SUPER_EDITORS;
     else
         currentSuperTab = SUPER_CLI;
 }
 
-void RenderCLI()
-{
+void RenderCLI() {
     DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
     DrawText("CLI Mode (ESC = Switch)", 2, 5, 5, YELLOW);
 }
 
-void RenderEditors(void)
-{
+void RenderEditors(void) {
     int navH = NAVBAR_HEIGHT;
     int btnSize = NAVBAR_BUTTON_SIZE;
     int gap = NAVBAR_BUTTON_GAP;
@@ -139,26 +136,21 @@ void RenderEditors(void)
     DrawRectangle(0, 0, WIDTH, navH, NavbarBGColor);
 
     // buttons
-    for (int i = 0; i < EDITOR_COUNT; i++)
-    {
+    for (int i = 0; i < EDITOR_COUNT; i++) {
         int x = i * (btnSize + gap);
 
         Rectangle btn;
-        if (i == EDITOR_PLAY)
-        {
-            btn = (Rectangle){(float)(WIDTH - gap - btnSize), 2.0f, (float)btnSize, (float)btnSize};
-        }
-        else
-        {
-            btn = (Rectangle){(float)(gap + x), 2.0f, (float)btnSize, (float)btnSize};
+        if (i == EDITOR_PLAY) {
+            btn = (Rectangle){ (float)(WIDTH - gap - btnSize), 2.0f, (float)btnSize, (float)btnSize };
+        } else {
+            btn = (Rectangle){ (float)(gap + x), 2.0f, (float)btnSize, (float)btnSize };
         }
 
-        DrawRectangleRec(btn, (i == (int)currentEditorTab) ? (Color){255, 169, 133, 255} : systemPalette[3]);
+        DrawRectangleRec(btn, (i == (int)currentEditorTab) ? (Color){ 255, 169, 133, 255 } : systemPalette[3]);
 
         Vector2 m = GetMousePositionForEditors();
-        Vector2 mLog = (Vector2){m.x / (float)SCALE, m.y / (float)SCALE};
-        if (CheckCollisionPointRec(mLog, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        {
+        Vector2 mLog = (Vector2){ m.x / (float)SCALE, m.y / (float)SCALE };
+        if (CheckCollisionPointRec(mLog, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             currentEditorTab = (EditorTab)i;
         }
         Texture2D icon;
@@ -179,21 +171,18 @@ void RenderEditors(void)
             float iconSize = (float)(btnSize - 4);
             float dstX;
 
-            if (i == EDITOR_PLAY)
-            {
+            if (i == EDITOR_PLAY) {
                 dstX = (float)(WIDTH - gap - btnSize) + 2.0f;
-            }
-            else
-            {
+            } else {
                 dstX = (float)(gap + x) + 2.0f;
             }
 
             float dstY = (float)btn.y + ((float)btn.height - iconSize) * 0.5f;
             DrawTexturePro(
                 icon,
-                (Rectangle){0, 0, icon.width, icon.height},
-                (Rectangle){dstX, dstY, iconSize, iconSize},
-                (Vector2){0, 0},
+                (Rectangle){ 0, 0, icon.width, icon.height },
+                (Rectangle){ dstX, dstY, iconSize, iconSize },
+                (Vector2){ 0, 0 },
                 0.0f,
                 WHITE);
         }

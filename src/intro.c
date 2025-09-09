@@ -51,7 +51,6 @@ void RenderIntro() {
     Texture2D logo = LoadTexture("assets/logo_small_nobg.png");
     Vector2 logoVec = { WIDTH / 2 - logo.width * 2, HEIGHT / 2 - logo.height * 2 };
 
-    LoadFonts();
     Sound jingle = LoadSound("assets/audio/jingle.mp3");
 
     int heightDelay = 1;
@@ -93,6 +92,6 @@ void RenderIntro() {
         EndDrawing();
     }
 
-    UnloadFonts();
+    UnloadSound(jingle);
     UnloadRenderTexture(gRenderTex);
 }

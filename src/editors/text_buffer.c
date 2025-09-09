@@ -59,13 +59,6 @@ struct TextBuffer checkBufferSpace(struct TextBuffer buffer) {
             buffer = modifyBufferCapacity(buffer, availableBufferSize);
         }
     }
-    else if (buffer.totalChars < buffer.bufferSize / 4 && buffer.bufferSize > BUFFER_SIZE_DECREMENT) {
-        size_t newSize = buffer.bufferSize - BUFFER_SIZE_DECREMENT;
-        if (newSize < BUFFER_SIZE_DECREMENT) {
-            newSize = BUFFER_SIZE_DECREMENT;
-        }
-        buffer = modifyBufferCapacity(buffer, newSize);
-    }
 
     return buffer;
 }
