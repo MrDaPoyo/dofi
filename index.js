@@ -27,7 +27,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /tmp/tmpuf3l4hml.js
+// include: /tmp/tmp7n36d6af.js
 
   Module['expectedDataFileDownloads'] ??= 0;
   Module['expectedDataFileDownloads']++;
@@ -159,25 +159,25 @@ Module['FS_createPath']("/assets", "icons", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/assets/audio/jingle.mp3", "start": 0, "end": 32600}, {"filename": "/assets/fonts/cg-pixel-4x5-mono.otf", "start": 32600, "end": 43736}, {"filename": "/assets/fonts/pico-8.ttf", "start": 43736, "end": 54984}, {"filename": "/assets/icons/brush.png", "start": 54984, "end": 55119}, {"filename": "/assets/icons/code.png", "start": 55119, "end": 55256}, {"filename": "/assets/icons/mouse.png", "start": 55256, "end": 55398}, {"filename": "/assets/icons/mouse_shadow.png", "start": 55398, "end": 55518}, {"filename": "/assets/icons/mouse_with_shadow.png", "start": 55518, "end": 55681}, {"filename": "/assets/icons/music.png", "start": 55681, "end": 55809}, {"filename": "/assets/icons/play.png", "start": 55809, "end": 55954}, {"filename": "/assets/icons/tile.png", "start": 55954, "end": 56091}, {"filename": "/assets/icons/undefined.png", "start": 56091, "end": 56243}, {"filename": "/assets/logo.aseprite", "start": 56243, "end": 56643}, {"filename": "/assets/logo.png", "start": 56643, "end": 57271}, {"filename": "/assets/logo_small.png", "start": 57271, "end": 57523}, {"filename": "/assets/logo_small_nobg.png", "start": 57523, "end": 57788}], "remote_package_size": 57788});
+    loadPackage({"files": [{"filename": "/assets/audio/jingle.mp3", "start": 0, "end": 32600}, {"filename": "/assets/audio/mouse-click.mp3", "start": 32600, "end": 36779}, {"filename": "/assets/fonts/cg-pixel-4x5-mono.otf", "start": 36779, "end": 47915}, {"filename": "/assets/fonts/pico-8.ttf", "start": 47915, "end": 59163}, {"filename": "/assets/icons/brush.png", "start": 59163, "end": 59298}, {"filename": "/assets/icons/code.png", "start": 59298, "end": 59435}, {"filename": "/assets/icons/mouse.png", "start": 59435, "end": 59577}, {"filename": "/assets/icons/mouse_shadow.png", "start": 59577, "end": 59697}, {"filename": "/assets/icons/mouse_with_shadow.png", "start": 59697, "end": 59860}, {"filename": "/assets/icons/music.png", "start": 59860, "end": 59988}, {"filename": "/assets/icons/play.png", "start": 59988, "end": 60133}, {"filename": "/assets/icons/tile.png", "start": 60133, "end": 60270}, {"filename": "/assets/icons/undefined.png", "start": 60270, "end": 60422}, {"filename": "/assets/logo.aseprite", "start": 60422, "end": 60822}, {"filename": "/assets/logo.png", "start": 60822, "end": 61450}, {"filename": "/assets/logo_small.png", "start": 61450, "end": 61702}, {"filename": "/assets/logo_small_nobg.png", "start": 61702, "end": 61967}], "remote_package_size": 61967});
 
   })();
 
-// end include: /tmp/tmpuf3l4hml.js
-// include: /tmp/tmp9pkgrrrf.js
+// end include: /tmp/tmp7n36d6af.js
+// include: /tmp/tmp04ta5ohq.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /tmp/tmp9pkgrrrf.js
-// include: /tmp/tmpakxcjbum.js
+  // end include: /tmp/tmp04ta5ohq.js
+// include: /tmp/tmpnmohavay.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /tmp/tmpakxcjbum.js
+  // end include: /tmp/tmpnmohavay.js
 
 
 var arguments_ = [];
