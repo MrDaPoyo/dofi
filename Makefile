@@ -25,12 +25,13 @@ all: $(BIN)
 $(BIN): $(SRC)
 	mkdir -p $(OUTPUT_DIR)
 	$(CC) $(CFLAGS) -o $(OUTPUT_DIR)/$(BIN) $(SRC) $(LIBS)
-	cp -r $(ASSETS) $(OUTPUT_DIR)/assets
+	cp -r $(ASSETS) $(OUTPUT_DIR)
 
 run: $(BIN)
-	$(RUN)
+	cd $(OUTPUT_DIR) && $(RUN)
 
 clean:
 	rm -f $(BIN) $(BIN).exe
+	rm -rf $(OUTPUT_DIR)
 
 .PHONY: all run clean
