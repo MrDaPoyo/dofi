@@ -21,4 +21,4 @@ emcc ../src/**/*.c \
     -DPLATFORM_WEB \
     -o ../out/index.html
 
-emrun --no_browser ../out/index.html
+emrun --no_browser --serve_root ../out ../out/index.html

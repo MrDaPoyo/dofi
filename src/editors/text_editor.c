@@ -20,7 +20,7 @@ void RenderLine(const char* str, int index) {
 
     int y = index * fontSize + GAP * (index + 1) + navY;
 
-    if (!index % 2) {
+    if (index % 2) {
         DrawRectangle(0, y - 1, GetScreenWidth(), fontSize + GAP, Fade(systemPalette[1], 1));
     }
 
