@@ -19,6 +19,11 @@ emcc ../src/**/*.c \
     -s INITIAL_MEMORY=128MB \
     -s ASSERTIONS \
     -DPLATFORM_WEB \
-    -o ../out/index.html
+    -o ../out/index.html \
+    -Oz \
+    -g0 \
+    -flto
 
-emrun --no_browser --serve_root ../out ../out/index.html
+cp ../src/assets/favicon.ico ../out
+
+emrun --no_browser --serve_root ../out ../out

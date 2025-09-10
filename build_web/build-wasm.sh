@@ -19,4 +19,9 @@ emcc ../src/**/*.c \
     -s INITIAL_MEMORY=128MB \
     -s ASSERTIONS \
     -DPLATFORM_WEB \
-    -o ../out/index.html
+    -o ../out/index.html \
+    -Oz \
+    -g0 \
+    -flto
+
+cp ../src/assets/favicon.ico ../out
