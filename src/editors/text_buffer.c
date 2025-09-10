@@ -139,3 +139,38 @@ struct TextEditor removeCharacter(struct TextEditor* editor) {
     editor->buffer = buffer;
     return *editor;
 }
+
+char* GetLineText(struct TextBuffer buffer, size_t lineIndex) {
+    size_t currentLine = 0;
+    size_t startIndex = 0;
+    size_t endIndex = 0;
+
+    for (size_t i = 0; buffer.buffer[i] != '\0'; i++) {
+        if (currentLine == lineIndex) {
+            startIndex = i;
+            break;
+        }
+        if (buffer.buffer[i] == '\n') {
+            currentLine++;
+        }
+    }
+
+    if (currentLine != lineIndex) {
+        return NULL;
+    }
+
+    for (endIndex = startIndex;
+         buffer.buffer[endIndex] != '\0' && buffer.buffer[endIndex] != '\n';
+         endIndex++);
+
+    size_t lineLength = endIndex - startIndex;
+    char* lineText = malloc(lineLength + 1);
+    if (!lineText) return NULL;
+
+    for (size_t i = 0; i < lineLength; i++) {
+        lineText[i] = buffer.buffer[startIndex + i];
+    }
+    lineText[lineLength] = '\0';
+
+    return lineText;
+}

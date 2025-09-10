@@ -8,24 +8,54 @@
 #include "text_buffer.h"
 
 #include <string.h>
+#include <math.h>
+#include <stdlib.h>
 
 #define VISIBLE_LINES (14 + 1)
 #define CURSOR_SCROLL_GAP 2
 #define GAP 2
-
-int fontSize = 5;
+#define FONT_SIZE 5
+#define FONT_WIDTH 4
 
 void RenderLine(const char* str, int index) {
     int navY = GetNavHeight();
 
-    int y = index * fontSize + GAP * (index + 1) + navY;
+    int y = index * FONT_SIZE + GAP * (index + 1) + navY;
 
     if (index % 2) {
-        DrawRectangle(0, y - 1, GetScreenWidth(), fontSize + GAP, Fade(systemPalette[1], 1));
+        DrawRectangle(0, y - 1, GetScreenWidth(), FONT_SIZE + GAP, systemPalette[1]);
     }
 
     RenderString(str, GAP, y);
 };
+
+void RenderStatBar(struct TextEditor editor) {
+    DrawRectangle(0, HEIGHT - (FONT_SIZE + GAP) * 2, GetScreenWidth(), (FONT_SIZE + GAP) * 2, systemPalette[2]);
+    char buffer[64];
+    sprintf(buffer, "line: %li; char: %li", editor.cursorLine, editor.cursorChar);
+    Vector2 vec = { GAP, HEIGHT - FONT_SIZE };
+    DrawTextEx(GeneralFont, buffer, vec, FONT_SIZE, 1, systemPalette[0]);
+}
+
+void RenderCursor(struct TextEditor editor) {
+    int navY = GetNavHeight();
+
+    const size_t lineIndex = editor.cursorLine - editor.scrollOffsetY;
+
+    char* line = GetLineText(editor.buffer, lineIndex);
+
+    int y = lineIndex * FONT_SIZE + GAP * (lineIndex + 1) + navY;
+    int x = GAP + FONT_WIDTH * strlen(line) - editor.scrollOffsetX * FONT_WIDTH;
+
+    Color cursorColor = systemPalette[2];
+
+    if (fmod(GetTime(), 1.0) < 0.5)
+        cursorColor = systemPalette[3];
+
+    DrawRectangle(x, y, 3, FONT_SIZE, cursorColor);
+
+    free(line);
+}
 
 struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y_index) {
     struct LineCollection result = { .count = 0 };
@@ -47,7 +77,8 @@ struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y
             currentLine++;
             lineStart = &work_buffer[i + 1];
 
-            if (c == '\0') break;
+            if (c == '\0')
+                break;
         }
     }
     return result;
@@ -64,11 +95,13 @@ void RenderBuffer(const struct TextBuffer buffer, size_t y_index) {
     for (int i = 0; i < lc.count; i++) {
         const char* start = lc.lines[i];
         const char* end = start;
-        while (*end != '\n' && *end != '\0') end++;
+        while (*end != '\n' && *end != '\0')
+            end++;
 
         unsigned long len = end - start;
         char temp[1025]; // max 1024 chars per line
-        if (len >= sizeof(temp)) len = sizeof(temp) - 1;
+        if (len >= sizeof(temp))
+            len = sizeof(temp) - 1;
         memcpy(temp, start, len);
         temp[len] = '\0';
 
@@ -132,6 +165,9 @@ void RenderTextEditor(void) {
         }
         pressedKey = GetCharPressed();
     }
+
+    RenderCursor(*editor);
+    RenderStatBar(*editor);
 }
 
 // there's a 14 line limit btw

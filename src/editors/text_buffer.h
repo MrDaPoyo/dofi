@@ -20,5 +20,6 @@ struct TextBuffer appendCharacter(struct TextBuffer buffer, char character);
 struct TextEditor insertCharacter(struct TextEditor* editor, char character);
 struct TextEditor removeCharacter(struct TextEditor* editor);
 size_t getIndexFromEditorBuffer(struct TextEditor* editor);
+char* GetLineText(struct TextBuffer buffer, size_t lineIndex);
 
 #endif
