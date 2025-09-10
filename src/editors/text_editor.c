@@ -30,11 +30,11 @@ void RenderLine(const char* str, int index) {
 };
 
 void RenderStatBar(struct TextEditor editor) {
-    DrawRectangle(0, HEIGHT - (FONT_SIZE + GAP) * 2, GetScreenWidth(), (FONT_SIZE + GAP) * 2, systemPalette[2]);
+    DrawRectangle(0, HEIGHT - FONT_SIZE - GAP, GetScreenWidth(), FONT_SIZE + GAP, systemPalette[2]);
     char buffer[64];
+
     sprintf(buffer, "line: %li; char: %li", editor.cursorLine, editor.cursorChar);
-    Vector2 vec = { GAP, HEIGHT - FONT_SIZE };
-    DrawTextEx(GeneralFont, buffer, vec, FONT_SIZE, 1, systemPalette[0]);
+    RenderString(buffer, GAP / 2, HEIGHT - FONT_SIZE - GAP / 2);
 }
 
 void RenderCursor(struct TextEditor editor) {
