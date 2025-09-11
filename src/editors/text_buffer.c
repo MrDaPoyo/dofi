@@ -30,6 +30,7 @@ struct TextBuffer createBuffer(size_t bufferSize) {
         .buffer = newBuffer,
         .bufferSize = bufferSize,
         .totalChars = 0,
+        .totalLines = 0,
     };
     printf("Buffer created size: %li \n", bufferSize);
     return newTextBuffer;
@@ -120,6 +121,9 @@ struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
     buffer.totalChars++;
     buffer.buffer[buffer.totalChars] = '\0';
 
+    if (character == '\n') {
+        buffer.totalLines++;
+    }
     editor->buffer = buffer;
 
     return *editor;
@@ -171,6 +175,9 @@ struct TextEditor removeCharacter(struct TextEditor* editor) {
         else editor->cursorChar = 0;
     }
 
+    if (deleted == '\n') {
+        buffer.totalLines--;
+    }
     editor->buffer = buffer;
     return *editor;
 }

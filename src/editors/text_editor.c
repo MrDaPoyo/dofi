@@ -11,18 +11,19 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define VISIBLE_LINES (14 + 1)
+#define VISIBLE_LINES 14
 #define CURSOR_SCROLL_GAP 2
 #define GAP 2
 #define FONT_SIZE 5
 #define FONT_WIDTH 4
+#define LINE_CHAR_WIDTH (WIDTH /(FONT_WIDTH + GAP))
 
-void RenderLine(const char* str, int index) {
+void RenderLine(const char* str, int index, size_t realIndex) {
     int navY = GetNavHeight();
 
     int y = index * FONT_SIZE + GAP * (index + 1) + navY;
 
-    if (index % 2) {
+    if (realIndex % 2) {
         DrawRectangle(0, y - 1, GetScreenWidth(), FONT_SIZE + GAP, systemPalette[1]);
     }
 
@@ -33,7 +34,7 @@ void RenderStatBar(struct TextEditor editor) {
     DrawRectangle(0, HEIGHT - FONT_SIZE - GAP, GetScreenWidth(), FONT_SIZE + GAP, systemPalette[2]);
     char buffer[64];
 
-    sprintf(buffer, "line: %li; char: %li", editor.cursorLine, editor.cursorChar);
+    sprintf(buffer, "line: %li/%li; char: %li; scroll %li/%li;", editor.cursorLine + 1, editor.buffer.totalLines + 1, editor.cursorChar, editor.scrollOffsetX, editor.scrollOffsetY);
     RenderString(buffer, GAP / 2, HEIGHT - FONT_SIZE - GAP / 2);
 }
 
@@ -42,7 +43,7 @@ void RenderCursor(struct TextEditor editor) {
 
     const size_t lineIndex = editor.cursorLine - editor.scrollOffsetY;
 
-    int x = GAP + editor.cursorChar * FONT_WIDTH - editor.scrollOffsetX * FONT_WIDTH;
+    int x = GAP + (editor.cursorChar - editor.scrollOffsetX) * FONT_WIDTH;
     int y = lineIndex * FONT_SIZE + GAP * (lineIndex + 1) + navY;
 
     Color cursorColor = systemPalette[2];
@@ -56,7 +57,6 @@ void RenderCursor(struct TextEditor editor) {
 struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y_index) {
     struct LineCollection result = { .count = 0 };
     const char* work_buffer = buffer->buffer;
-    const int maxLines = 14;
 
     const char* lineStart = work_buffer;
     size_t currentLine = 0;
@@ -65,7 +65,7 @@ struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y
         char c = work_buffer[i];
 
         if (c == '\n' || c == '\0') {
-            if (currentLine >= y_index && result.count < maxLines) {
+            if (currentLine >= y_index && result.count < VISIBLE_LINES) {
                 result.lines[result.count] = lineStart;
                 result.count++;
             }
@@ -85,11 +85,28 @@ size_t retrieveLinesCount(struct TextBuffer buffer) {
     return lines.count;
 }
 
-void RenderBuffer(const struct TextBuffer buffer, size_t y_index) {
+void RenderBuffer(struct TextEditor editor) {
+    struct TextBuffer buffer = editor.buffer;
+    size_t y_index = editor.scrollOffsetY;
+    size_t x_index = editor.scrollOffsetX;
+
     struct LineCollection lc = retrieveAllLines(&buffer, y_index);
 
     for (int i = 0; i < lc.count; i++) {
-        const char* start = lc.lines[i];
+        const char* line = lc.lines[i];
+        if (line == NULL)
+            continue;
+
+        const char* line_end = line;
+        while (*line_end != '\n' && *line_end != '\0')
+            line_end++;
+
+        size_t line_len = line_end - line;
+
+        if (x_index > line_len)
+            x_index = line_len;
+
+        const char* start = line + x_index;
         const char* end = start;
         while (*end != '\n' && *end != '\0')
             end++;
@@ -101,9 +118,10 @@ void RenderBuffer(const struct TextBuffer buffer, size_t y_index) {
         memcpy(temp, start, len);
         temp[len] = '\0';
 
-        RenderLine(temp, i);
+        RenderLine(temp, i, i + y_index);
     }
 }
+
 
 struct TextEditor editors[10];
 struct TextEditor* editor = &editors[0];
@@ -129,8 +147,6 @@ void PrintBufferLength(void) {
 char pressedKey;
 
 void RenderTextEditor(void) {
-    RenderBuffer(editor->buffer, editor->scrollOffsetY);
-
     pressedKey = GetCharPressed();
     if (IsKeyPressed(KEY_RIGHT)) {
         if (editor->cursorChar < editor->buffer.totalChars && editor->cursorChar < strlen(GetLineText(editor->buffer, editor->cursorLine))) {
@@ -147,11 +163,17 @@ void RenderTextEditor(void) {
     if (IsKeyPressed(KEY_LEFT)) {
         if (editor->cursorChar > 0) {
             editor->cursorChar--;
-        } else {
+        } else if (editor->cursorLine > 0) {
             char* line = GetLineText(editor->buffer, editor->cursorLine - 1);
-            editor->cursorChar = line == NULL ? 0 : strlen(line);
-            editor->cursorLine--;
-            free(line);
+            if (line) {
+                editor->cursorLine--;
+                editor->cursorChar = strlen(line);
+                free(line);
+            } else {
+                editor->cursorChar = 0;
+            }
+        } else {
+            editor->cursorChar = 0;
         }
     }
     if (IsKeyPressed(KEY_DOWN)) {
@@ -198,8 +220,24 @@ void RenderTextEditor(void) {
             editor->cursorChar++;
         }
         pressedKey = GetCharPressed();
+
+        if (editor->cursorChar >= editor->scrollOffsetX + LINE_CHAR_WIDTH - GAP) {
+            editor->scrollOffsetX = editor->cursorChar - (LINE_CHAR_WIDTH - GAP) + 1;
+        } else if (editor->cursorChar < editor->scrollOffsetX + GAP) {
+            if (editor->cursorChar > GAP)
+                editor->scrollOffsetX = editor->cursorChar - GAP;
+            else
+                editor->scrollOffsetX = 0;
+        }
+
+        if (editor->cursorLine >= editor->scrollOffsetY + VISIBLE_LINES - GAP && editor->scrollOffsetY < editor->buffer.totalLines) {
+            editor->scrollOffsetY++;
+        } else if (editor->cursorLine < editor->scrollOffsetY + GAP && editor->scrollOffsetY > 0) {
+            editor->scrollOffsetY--;
+        }
     }
 
+    RenderBuffer(*editor);
     RenderCursor(*editor);
     RenderStatBar(*editor);
 }

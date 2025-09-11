@@ -12,6 +12,7 @@ struct TextBuffer
     char* buffer;
     size_t bufferSize;
     size_t totalChars;
+    size_t totalLines;
 };
 
 struct TextBuffer createBuffer(size_t bufferSize);

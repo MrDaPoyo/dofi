@@ -3,13 +3,15 @@
 
 #include "../fonts.h"
 
+#include <stddef.h>
+
 void RenderTextEditor(void);
 void RenderSpriteEditor(void);
 void RenderMapEditor(void);
 void RenderSoundEditor(void);
 void RenderPlayEditor(void);
 
-void RenderLine(const char *str, int index);
+void RenderLine(const char *str, int index, size_t realIndex);
 
 // TEXT EDITOR STUFF
 extern const char *testString;
