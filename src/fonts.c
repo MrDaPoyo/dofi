@@ -6,9 +6,9 @@ Font GeneralFont;
 
 void LoadFonts(void)
 {
-    if (FileExists("assets/fonts/pico-8.ttf"))
+    if (FileExists("assets/fonts/dofi.ttf"))
     {
-        GeneralFont = LoadFont("assets/fonts/pico-8.ttf");
+        GeneralFont = LoadFont("assets/fonts/dofi.ttf");
     }
     else
     {

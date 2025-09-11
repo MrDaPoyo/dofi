@@ -1,0 +1,359 @@
+# PixelForge Font File
+format_version: 1.0
+
+line_gap: 1
+
+space_width: 2
+
+creator_name: Unknown
+font_family_name: dofi
+font_sub_family_name: Regular
+version: Version 1.0
+font_url: 
+license: 
+license_url: 
+
+last_exported_path: 
+
+num_glyphs: 68
+glyphs:
+	33:
+		advance: 2
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 2, 0 3, 0 4, 
+	34:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 3, 0 4, 2 3, 2 4, 
+	35:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 2, 0 4, 1 1, 1 3, 2 0, 2 2, 2 4, 
+	36:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 3, 0 4, 1 0, 1 1, 1 2, 1 3, 1 4, 2 1, 2 2, 2 4, 
+	37:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 4, 1 2, 2 0, 2 3, 2 4, 
+	38:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 2, 1 3, 1 4, 2 0, 2 1, 2 2, 
+	39:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 1 3, 1 4, 
+	40:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 2, 0 3, 1 0, 1 4, 
+	41:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 4, 1 1, 1 2, 1 3, 
+	42:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 3, 1 2, 1 4, 2 3, 
+	43:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 1 1, 1 2, 1 3, 2 2, 
+	44:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 1 1, 
+	45:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 1 2, 2 2, 
+	46:
+		advance: 2
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 
+	47:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 1 1, 1 2, 1 3, 2 4, 
+	48:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	49:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 3, 1 0, 1 1, 1 2, 1 3, 1 4, 2 0, 
+	50:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 4, 1 0, 1 2, 1 4, 2 0, 2 2, 2 3, 2 4, 
+	51:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 2, 0 4, 1 0, 1 2, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	52:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 0 3, 0 4, 1 2, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	53:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 3, 0 4, 1 0, 1 2, 1 4, 2 0, 2 1, 2 2, 2 4, 
+	54:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 2, 1 4, 2 0, 2 1, 2 2, 2 4, 
+	55:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 4, 1 2, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	56:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 2, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	57:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 0 3, 0 4, 1 2, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	58:
+		advance: 2
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 3, 
+	59:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 1 1, 1 3, 
+	60:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 1 1, 1 2, 1 3, 2 0, 2 1, 2 3, 2 4, 
+	61:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 3, 1 1, 1 3, 2 1, 2 3, 
+	62:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 3, 0 4, 1 1, 1 2, 1 3, 2 2, 
+	63:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 4, 1 0, 1 2, 1 4, 2 2, 2 3, 
+	64:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 2 0, 2 2, 2 3, 
+	91:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 
+	92:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 3, 0 4, 1 2, 2 0, 2 1, 
+	93:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 1 0, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	94:
+		advance: 5
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 3, 1 4, 3 3, 
+	95:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 1 1, 2 1, 
+	96:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 4, 1 3, 
+	97:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 2, 1 4, 2 0, 2 1, 2 2, 2 3, 
+	98:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 2, 1 4, 2 0, 2 1, 2 3, 
+	99:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 2 0, 2 1, 2 3, 
+	100:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 2 1, 2 2, 2 3, 
+	101:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 2, 1 4, 2 0, 2 4, 
+	102:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 2, 1 4, 2 2, 2 4, 
+	103:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 2 0, 2 1, 2 2, 2 4, 
+	104:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 2, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	105:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 4, 1 0, 1 1, 1 2, 1 3, 1 4, 2 0, 2 4, 
+	106:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 4, 1 0, 1 4, 2 0, 2 1, 2 2, 2 3, 
+	107:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 2, 2 0, 2 1, 2 3, 2 4, 
+	108:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 2 0, 
+	109:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 3, 1 4, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	110:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 3, 1 4, 2 0, 2 1, 2 2, 2 3, 
+	111:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 4, 2 0, 2 1, 2 2, 2 3, 
+	112:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 2, 1 4, 2 2, 2 3, 
+	113:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 2, 0 3, 0 4, 1 1, 1 4, 2 0, 2 2, 2 3, 2 4, 
+	114:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 2, 1 4, 2 0, 2 1, 2 3, 
+	115:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 3, 1 0, 1 2, 1 4, 2 1, 2 2, 2 4, 
+	116:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 4, 1 0, 1 1, 1 2, 1 3, 1 4, 2 4, 
+	117:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 2 1, 2 2, 2 3, 2 4, 
+	118:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 1, 0 2, 0 3, 0 4, 1 0, 2 1, 2 2, 2 3, 2 4, 
+	119:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 2, 0 3, 0 4, 1 0, 1 1, 2 0, 2 1, 2 2, 2 3, 2 4, 
+	120:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 3, 0 4, 1 1, 1 2, 2 0, 2 1, 2 3, 2 4, 
+	121:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 0 3, 0 4, 1 0, 1 1, 1 2, 2 3, 2 4, 
+	122:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 1, 0 4, 1 0, 1 2, 1 4, 2 0, 2 3, 2 4, 
+	123:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 1 0, 1 1, 1 2, 1 3, 1 4, 2 0, 2 4, 
+	124:
+		advance: 3
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 1 0, 1 1, 1 2, 1 3, 1 4, 
+	125:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 0, 0 4, 1 0, 1 1, 1 2, 1 3, 1 4, 2 2, 
+	126:
+		advance: 4
+		auto_update_advance: true
+		auto_advance_amount: 1
+		pixels: 0 2, 1 3, 2 2, 
