@@ -42,14 +42,7 @@ void RenderCursor(struct TextEditor editor) {
 
     const size_t lineIndex = editor.cursorLine - editor.scrollOffsetY;
 
-    char* line = GetLineText(editor.buffer, lineIndex);
-    int x;
-    if (strlen(line) == 0) {
-        x = GAP;
-    } else {
-        x = GAP + FONT_WIDTH * strlen(line) - editor.scrollOffsetX * FONT_WIDTH;
-    }
-
+    int x = GAP + editor.cursorChar * FONT_WIDTH - editor.scrollOffsetX * FONT_WIDTH;
     int y = lineIndex * FONT_SIZE + GAP * (lineIndex + 1) + navY;
 
     Color cursorColor = systemPalette[2];
@@ -58,8 +51,6 @@ void RenderCursor(struct TextEditor editor) {
         cursorColor = systemPalette[3];
 
     DrawRectangle(x, y, 3, FONT_SIZE, cursorColor);
-
-    free(line);
 }
 
 struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y_index) {
@@ -142,13 +133,27 @@ void RenderTextEditor(void) {
 
     pressedKey = GetCharPressed();
     if (IsKeyPressed(KEY_RIGHT)) {
-        if (editor->cursorChar < editor->buffer.totalChars) {
+        if (editor->cursorChar < editor->buffer.totalChars && editor->cursorChar < strlen(GetLineText(editor->buffer, editor->cursorLine))) {
             editor->cursorChar++;
+        } else {
+            char* line = GetLineText(editor->buffer, editor->cursorLine + 1);
+            if (line != NULL) {
+                editor->cursorChar = 0;
+                editor->cursorLine++;
+            }
+            free(line);
         }
     }
     if (IsKeyPressed(KEY_LEFT)) {
         if (editor->cursorChar > 0) {
             editor->cursorChar--;
+        } else {
+            char* line = GetLineText(editor->buffer, editor->cursorLine - 1);
+            if (line != NULL) {
+                editor->cursorChar = 0;
+                editor->cursorLine--;
+            }
+            free(line);
         }
     }
     if (IsKeyPressed(KEY_DOWN)) {

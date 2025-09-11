@@ -140,6 +140,7 @@ struct TextEditor removeCharacter(struct TextEditor* editor) {
     return *editor;
 }
 
+// ALWAYS REMEMBER TO FREE UP THIS FUNCTION'S RETURNED CHAR
 char* GetLineText(struct TextBuffer buffer, size_t lineIndex) {
     size_t currentLine = 0;
     size_t startIndex = 0;
@@ -167,8 +168,12 @@ char* GetLineText(struct TextBuffer buffer, size_t lineIndex) {
     char* lineText = malloc(lineLength + 1);
     if (!lineText) return NULL;
 
+    int index = 0;
     for (size_t i = 0; i < lineLength; i++) {
-        lineText[i] = buffer.buffer[startIndex + i];
+        if (buffer.buffer[startIndex + i] != '\n') {
+            lineText[i] = buffer.buffer[startIndex + index];
+            index++;
+        }
     }
     lineText[lineLength] = '\0';
 
