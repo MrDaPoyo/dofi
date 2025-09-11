@@ -150,7 +150,7 @@ void RenderTextEditor(void) {
         } else {
             char* line = GetLineText(editor->buffer, editor->cursorLine - 1);
             if (line != NULL) {
-                editor->cursorChar = 0;
+                editor->cursorChar = strlen(line);
                 editor->cursorLine--;
             }
             free(line);
