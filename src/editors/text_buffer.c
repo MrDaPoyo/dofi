@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 size_t retrieveUsedBufferSize() {
     size_t totalBufferSize = 0;
@@ -126,56 +127,88 @@ struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
 
 struct TextEditor removeCharacter(struct TextEditor* editor) {
     struct TextBuffer buffer = checkBufferSpace(editor->buffer);
-    size_t position = getIndexFromEditorBuffer(editor);
 
-    if (position < buffer.totalChars) {
-        for (size_t i = position; i < buffer.totalChars - 1; i++) {
-            buffer.buffer[i] = buffer.buffer[i + 1];
+    size_t index = getIndexFromEditorBuffer(editor);
+
+    if (index == 0) {
+        editor->buffer = buffer;
+        return *editor;
+    }
+
+    if (index > buffer.totalChars) index = buffer.totalChars;
+
+    size_t delPos = index - 1;
+
+    char deleted = buffer.buffer[delPos];
+
+    size_t prevLineLen = 0;
+    if (deleted == '\n') {
+        size_t prevStart = delPos;
+        while (prevStart > 0 && buffer.buffer[prevStart - 1] != '\n') {
+            prevStart--;
         }
-        buffer.buffer[buffer.totalChars - 1] = '\0';
+        prevLineLen = delPos - prevStart;
+    }
+
+    for (size_t i = delPos; i + 1 < buffer.totalChars; i++) {
+        buffer.buffer[i] = buffer.buffer[i + 1];
+    }
+
+    if (buffer.totalChars > 0) {
         buffer.totalChars--;
+        buffer.buffer[buffer.totalChars] = '\0';
+    }
+
+    if (deleted == '\n') {
+        if (editor->cursorLine > 0) {
+            editor->cursorLine--;
+            editor->cursorChar = prevLineLen;
+        } else {
+            editor->cursorChar = 0;
+        }
+    } else {
+        if (editor->cursorChar > 0) editor->cursorChar--;
+        else editor->cursorChar = 0;
     }
 
     editor->buffer = buffer;
     return *editor;
 }
 
-// ALWAYS REMEMBER TO FREE UP THIS FUNCTION'S RETURNED CHAR
+
+// ALWAYS REMEMBER TO FREE THIS FUNCTION'S RETURNED CHAR
 char* GetLineText(struct TextBuffer buffer, size_t lineIndex) {
     size_t currentLine = 0;
     size_t startIndex = 0;
-    size_t endIndex = 0;
 
-    for (size_t i = 0; buffer.buffer[i] != '\0'; i++) {
-        if (currentLine == lineIndex) {
-            startIndex = i;
-            break;
+    if (lineIndex == 0) {
+        startIndex = 0;
+    } else {
+        for (size_t i = 0; buffer.buffer[i] != '\0'; i++) {
+            if (buffer.buffer[i] == '\n') {
+                currentLine++;
+                if (currentLine == lineIndex) {
+                    startIndex = i + 1;
+                    break;
+                }
+            }
         }
-        if (buffer.buffer[i] == '\n') {
-            currentLine++;
-        }
+        if (currentLine != lineIndex) return NULL;
     }
 
-    if (currentLine != lineIndex) {
-        return NULL;
+    size_t endIndex = startIndex;
+    while (buffer.buffer[endIndex] != '\0' && buffer.buffer[endIndex] != '\n') {
+        endIndex++;
     }
-
-    for (endIndex = startIndex;
-         buffer.buffer[endIndex] != '\0' && buffer.buffer[endIndex] != '\n';
-         endIndex++);
 
     size_t lineLength = endIndex - startIndex;
-    char* lineText = malloc(lineLength + 1);
+
+    char* lineText = (char*)malloc(lineLength + 1);
     if (!lineText) return NULL;
 
-    int index = 0;
-    for (size_t i = 0; i < lineLength; i++) {
-        if (buffer.buffer[startIndex + i] != '\n') {
-            lineText[i] = buffer.buffer[startIndex + index];
-            index++;
-        }
+    if (lineLength > 0) {
+        memcpy(lineText, buffer.buffer + startIndex, lineLength);
     }
     lineText[lineLength] = '\0';
-
     return lineText;
 }

@@ -149,10 +149,8 @@ void RenderTextEditor(void) {
             editor->cursorChar--;
         } else {
             char* line = GetLineText(editor->buffer, editor->cursorLine - 1);
-            if (line != NULL) {
-                editor->cursorChar = strlen(line);
-                editor->cursorLine--;
-            }
+            editor->cursorChar = line == NULL ? 0 : strlen(line);
+            editor->cursorLine--;
             free(line);
         }
     }
@@ -186,6 +184,9 @@ void RenderTextEditor(void) {
     }
     if (IsKeyPressed(KEY_ENTER)) {
         pressedKey = '\n';
+    }
+    if (IsKeyPressed(KEY_BACKSPACE)) {
+        *editor = removeCharacter(editor);
     }
 
     if (pressedKey != 0) {
