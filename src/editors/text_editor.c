@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 #define VISIBLE_LINES 14
-#define CURSOR_SCROLL_GAP 2
+#define CURSOR_SCROLL_GAP 1
 #define GAP 2
 #define FONT_SIZE 5
 #define FONT_WIDTH 4
@@ -34,7 +34,7 @@ void RenderStatBar(struct TextEditor editor) {
     DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_SIZE + GAP) + 1, GetScreenWidth(), HEIGHT - NAVBAR_HEIGHT - VISIBLE_LINES * (FONT_SIZE + GAP), systemPalette[2]);
     char buffer[64];
 
-    sprintf(buffer, "line: %li/%li; char: %li; scroll %li/%li;", editor.cursorLine + 1, editor.buffer.totalLines + 1, editor.cursorChar, editor.scrollOffsetX, editor.scrollOffsetY);
+    sprintf(buffer, "line: %li/%li;char: %li;scroll %li/%li;", editor.cursorLine + 1, editor.buffer.totalLines + 1, editor.cursorChar, editor.scrollOffsetX, editor.scrollOffsetY);
     RenderString(buffer, GAP / 2, HEIGHT - FONT_SIZE - GAP / 2);
     const float progress = (float)editor.buffer.totalChars / MAX_TOTAL_BUFFER_SIZE * WIDTH;
     DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_SIZE + GAP) + 1, progress, 2, systemPalette[3]);
@@ -224,22 +224,33 @@ void RenderTextEditor(void) {
         } else {
             editor->cursorChar++;
         }
-        pressedKey = GetCharPressed();
+    }
 
-        if (editor->cursorChar >= editor->scrollOffsetX + LINE_CHAR_WIDTH - GAP) {
-            editor->scrollOffsetX = editor->cursorChar - LINE_CHAR_WIDTH + GAP + 1;
-        } else if (editor->cursorChar < editor->scrollOffsetX + GAP) {
-            if (editor->cursorChar > GAP)
-                editor->scrollOffsetX = editor->cursorChar - GAP;
-            else
-                editor->scrollOffsetX = 0;
+    pressedKey = GetCharPressed();
+    int pressedButton = GetKeyPressed();
+
+    if (pressedButton != 0) {
+        size_t scrollX = editor->scrollOffsetX;
+        size_t scrollY = editor->scrollOffsetY;
+        size_t x = editor->cursorChar;
+        size_t y = editor->cursorLine;
+        size_t totalLines = VISIBLE_LINES;
+        const int width = LINE_CHAR_WIDTH;
+
+        if (x >= scrollX + width - GAP) {
+            scrollX = x - width + GAP + 1;
+        } else if (x < scrollX + GAP) {
+            scrollX = (x > GAP) ? x - GAP : 0;
         }
 
-        if (editor->cursorLine >= editor->scrollOffsetY + VISIBLE_LINES && editor->scrollOffsetY < editor->buffer.totalLines) {
-            editor->scrollOffsetY++;
-        } else if (editor->cursorLine < editor->scrollOffsetY) {
-            editor->scrollOffsetY--;
+        if (y >= scrollY + totalLines - CURSOR_SCROLL_GAP) {
+            scrollY = y - totalLines + CURSOR_SCROLL_GAP + 1;
+        } else if (y < scrollY - CURSOR_SCROLL_GAP) {
+            scrollY = y > CURSOR_SCROLL_GAP ? y - CURSOR_SCROLL_GAP : 0;
         }
+
+        editor->scrollOffsetX = scrollX;
+        editor->scrollOffsetY = scrollY;
     }
 
     RenderBuffer(*editor);
