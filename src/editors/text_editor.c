@@ -157,8 +157,31 @@ void RenderTextEditor(void) {
         }
     }
     if (IsKeyPressed(KEY_DOWN)) {
-        if (editor->cursorLine < retrieveLinesCount(editor->buffer)) {
+        if (editor->cursorLine < retrieveLinesCount(editor->buffer) - 1) {
             editor->cursorLine++;
+
+            char* line = GetLineText(editor->buffer, editor->cursorLine);
+            if (line != NULL) {
+                size_t lineLen = strlen(line);
+                if (editor->cursorChar > lineLen) {
+                    editor->cursorChar = lineLen;
+                }
+            }
+            free(line);
+        }
+    }
+    if (IsKeyPressed(KEY_UP)) {
+        if (editor->cursorLine > 0) {
+            editor->cursorLine--;
+
+            char* line = GetLineText(editor->buffer, editor->cursorLine);
+            if (line != NULL) {
+                size_t lineLen = strlen(line);
+                if (editor->cursorChar > lineLen) {
+                    editor->cursorChar = lineLen;
+                }
+            }
+            free(line);
         }
     }
     if (IsKeyPressed(KEY_ENTER)) {
