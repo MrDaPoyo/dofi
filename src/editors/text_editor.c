@@ -127,7 +127,6 @@ void RenderBuffer(struct TextEditor editor) {
 }
 
 
-
 struct TextEditor editors[10];
 struct TextEditor* editor = &editors[0];
 
@@ -227,31 +226,29 @@ void RenderTextEditor(void) {
     }
 
     pressedKey = GetCharPressed();
-    int pressedButton = GetKeyPressed();
 
-    if (pressedButton != 0) {
-        size_t scrollX = editor->scrollOffsetX;
-        size_t scrollY = editor->scrollOffsetY;
-        size_t x = editor->cursorChar;
-        size_t y = editor->cursorLine;
-        size_t totalLines = VISIBLE_LINES;
-        const int width = LINE_CHAR_WIDTH;
+    size_t scrollX = editor->scrollOffsetX;
+    size_t scrollY = editor->scrollOffsetY;
+    size_t X = editor->cursorChar;
+    size_t Y = editor->cursorLine;
 
-        if (x >= scrollX + width - GAP) {
-            scrollX = x - width + GAP + 1;
-        } else if (x < scrollX + GAP) {
-            scrollX = (x > GAP) ? x - GAP : 0;
-        }
+    size_t viewWidth  = LINE_CHAR_WIDTH;
+    size_t viewHeight = VISIBLE_LINES;
 
-        if (y >= scrollY + totalLines - CURSOR_SCROLL_GAP) {
-            scrollY = y - totalLines + CURSOR_SCROLL_GAP + 1;
-        } else if (y < scrollY - CURSOR_SCROLL_GAP) {
-            scrollY = y > CURSOR_SCROLL_GAP ? y - CURSOR_SCROLL_GAP : 0;
-        }
-
-        editor->scrollOffsetX = scrollX;
-        editor->scrollOffsetY = scrollY;
+    if (X < scrollX) {
+        scrollX = X;
+    } else if (viewWidth <= scrollX + X) {
+        scrollX = X - viewWidth + 1;
     }
+
+    if (Y < scrollY) {
+        scrollY = Y;
+    } else if (Y >= scrollY + viewHeight) {
+        scrollY = Y - viewHeight + 1;
+    }
+
+    editor->scrollOffsetX = scrollX;
+    editor->scrollOffsetY = scrollY;
 
     RenderBuffer(*editor);
     RenderCursor(*editor);
