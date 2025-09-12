@@ -153,8 +153,45 @@ void PrintBufferLength(void) {
 char pressedKey;
 
 void RenderTextEditor(void) {
+    static float keyRepeatDelay = 0.3f;
+    static float keyRepeatInterval = 0.05f;
+    static float keyTimer = 0.0f;
+    static int keyPressed = 0;
+
+    float deltaTime = GetFrameTime();
     pressedKey = GetCharPressed();
-    if (IsKeyPressed(KEY_RIGHT)) {
+
+    int currentKey = 0;
+    if (IsKeyDown(KEY_RIGHT))
+        currentKey = KEY_RIGHT;
+    else if (IsKeyDown(KEY_LEFT))
+        currentKey = KEY_LEFT;
+    else if (IsKeyDown(KEY_DOWN))
+        currentKey = KEY_DOWN;
+    else if (IsKeyDown(KEY_UP))
+        currentKey = KEY_UP;
+    else if (IsKeyDown(KEY_BACKSPACE))
+        currentKey = KEY_BACKSPACE;
+    else {
+        keyPressed = 0;
+        keyTimer = 0.0f;
+    }
+
+    if (currentKey != 0) {
+        if (currentKey != keyPressed) {
+            keyPressed = currentKey;
+            keyTimer = keyRepeatDelay;
+        } else {
+            keyTimer -= deltaTime;
+            if (keyTimer > 0.0f) {
+                currentKey = 0;
+            } else {
+                keyTimer = keyRepeatInterval;
+            }
+        }
+    }
+
+    if (currentKey == KEY_RIGHT) {
         if (editor->cursorChar < editor->buffer.totalChars && editor->cursorChar < strlen(GetLineText(editor->buffer, editor->cursorLine))) {
             editor->cursorChar++;
         } else {
@@ -165,8 +202,7 @@ void RenderTextEditor(void) {
             }
             free(line);
         }
-    }
-    if (IsKeyPressed(KEY_LEFT)) {
+    } else if (currentKey == KEY_LEFT) {
         if (editor->cursorChar > 0) {
             editor->cursorChar--;
         } else if (editor->cursorLine > 0) {
@@ -181,8 +217,7 @@ void RenderTextEditor(void) {
         } else {
             editor->cursorChar = 0;
         }
-    }
-    if (IsKeyPressed(KEY_DOWN)) {
+    } else if (currentKey == KEY_DOWN) {
         if (editor->cursorLine < editor->buffer.totalLines) {
             editor->cursorLine++;
 
@@ -195,8 +230,7 @@ void RenderTextEditor(void) {
             }
             free(line);
         }
-    }
-    if (IsKeyPressed(KEY_UP)) {
+    } else if (currentKey == KEY_UP) {
         if (editor->cursorLine > 0) {
             editor->cursorLine--;
 
@@ -209,12 +243,12 @@ void RenderTextEditor(void) {
             }
             free(line);
         }
+    } else if (currentKey == KEY_BACKSPACE) {
+        *editor = removeCharacter(editor);
     }
+
     if (IsKeyPressed(KEY_ENTER)) {
         pressedKey = '\n';
-    }
-    if (IsKeyPressed(KEY_BACKSPACE)) {
-        *editor = removeCharacter(editor);
     }
     if (IsKeyPressed(KEY_HOME)) {
         editor->cursorChar = 0;
@@ -222,7 +256,7 @@ void RenderTextEditor(void) {
     }
     if (IsKeyPressed(KEY_END)) {
         editor->cursorChar = strlen(GetLineText(editor->buffer, editor->cursorLine));
-        editor->scrollOffsetX = editor->cursorChar > LINE_CHAR_WIDTH ? LINE_CHAR_WIDTH + editor ->cursorChar : 0;
+        editor->scrollOffsetX = editor->cursorChar > LINE_CHAR_WIDTH ? LINE_CHAR_WIDTH + editor->cursorChar : 0;
     }
 
     if (pressedKey != 0) {
@@ -236,19 +270,17 @@ void RenderTextEditor(void) {
         }
     }
 
-    pressedKey = GetCharPressed();
-
     size_t scrollX = editor->scrollOffsetX;
     size_t scrollY = editor->scrollOffsetY;
     size_t X = editor->cursorChar;
     size_t Y = editor->cursorLine;
 
-    size_t viewWidth  = LINE_CHAR_WIDTH;
+    size_t viewWidth = LINE_CHAR_WIDTH;
     size_t viewHeight = VISIBLE_LINES;
 
     if (X < scrollX) {
         scrollX = X;
-    } else if (viewWidth <= scrollX + X) {
+    } else if (X >= scrollX + viewWidth) {
         scrollX = X - viewWidth + 1;
     }
 
