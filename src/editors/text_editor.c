@@ -7,6 +7,7 @@
 #include "text_editor.h"
 #include "text_buffer.h"
 
+#include <ctype.h>
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
@@ -16,7 +17,7 @@
 #define GAP 2
 #define FONT_SIZE 5
 #define FONT_WIDTH 4
-#define LINE_CHAR_WIDTH (WIDTH /(FONT_WIDTH + GAP))
+#define LINE_CHAR_WIDTH ((WIDTH / FONT_WIDTH) - 2)
 
 void RenderLine(const char* str, int index, size_t realIndex) {
     int navY = GetNavHeight();
@@ -214,8 +215,17 @@ void RenderTextEditor(void) {
     if (IsKeyPressed(KEY_BACKSPACE)) {
         *editor = removeCharacter(editor);
     }
+    if (IsKeyPressed(KEY_HOME)) {
+        editor->cursorChar = 0;
+        editor->scrollOffsetX = 0;
+    }
+    if (IsKeyPressed(KEY_END)) {
+        editor->cursorChar = strlen(GetLineText(editor->buffer, editor->cursorLine));
+        editor->scrollOffsetX = editor->cursorChar > LINE_CHAR_WIDTH ? LINE_CHAR_WIDTH + editor ->cursorChar : 0;
+    }
 
     if (pressedKey != 0) {
+        pressedKey = tolower(pressedKey);
         *editor = insertCharacter(editor, pressedKey);
         if (pressedKey == '\n') {
             editor->cursorChar = 0;
