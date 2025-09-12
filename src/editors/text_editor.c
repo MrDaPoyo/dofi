@@ -108,10 +108,11 @@ void RenderBuffer(struct TextEditor editor) {
 
         size_t line_len = line_end - line;
 
-        if (x_index > line_len)
-            x_index = line_len;
+        size_t current_x_index = x_index;
+        if (current_x_index > line_len)
+            current_x_index = line_len;
 
-        const char* start = line + x_index;
+        const char* start = line + current_x_index;
         const char* end = start;
         while (*end != '\n' && *end != '\0')
             end++;
