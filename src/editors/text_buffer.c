@@ -38,23 +38,24 @@ struct TextBuffer createBuffer(size_t bufferSize) {
 
 struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBufferSize) {
     char* newBuffer = malloc(newBufferSize);
-    for (unsigned int i = 0; i < buffer.bufferSize && i < newBufferSize; i++) {
-        newBuffer[i] = buffer.buffer[i];
-    }
-    newBuffer[0] = '\0';
+
+    size_t copyLen = buffer.totalChars < newBufferSize - 1 ? buffer.totalChars : newBufferSize - 1;
+    memcpy(newBuffer, buffer.buffer, copyLen);
+
+    newBuffer[copyLen] = '\0';
 
     free(buffer.buffer);
     buffer.buffer = newBuffer;
     buffer.bufferSize = newBufferSize;
-    if (buffer.totalChars > buffer.bufferSize)
-        buffer.totalChars = buffer.bufferSize;
+    buffer.totalChars = copyLen;
+
     return buffer;
-};
+}
 
 struct TextBuffer checkBufferSpace(struct TextBuffer buffer) {
     const size_t availableBufferSize = retrieveAvailableBufferSize();
 
-    if (buffer.totalChars + 2 >= buffer.bufferSize) {
+    if (buffer.totalChars + buffer.totalLines + 10 >= buffer.bufferSize) {
         if (buffer.bufferSize + BUFFER_SIZE_INCREMENT <= availableBufferSize) {
             buffer = modifyBufferCapacity(buffer, buffer.bufferSize + BUFFER_SIZE_INCREMENT);
         } else if (availableBufferSize > buffer.bufferSize) {
@@ -112,19 +113,21 @@ struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
     struct TextBuffer buffer = checkBufferSpace(editor->buffer);
     const size_t position = getIndexFromEditorBuffer(editor);
 
-    // this just shifts the chars so that i can make room for the inserted char
-    for (size_t i = buffer.totalChars; i > position; i--) {
-        buffer.buffer[i] = buffer.buffer[i - 1];
-    }
+    if (retrieveAvailableBufferSize() > 2) {
+        // this just shifts the chars so that i can make room for the inserted char
+        for (size_t i = buffer.totalChars; i > position; i--) {
+            buffer.buffer[i] = buffer.buffer[i - 1];
+        }
 
-    buffer.buffer[position] = character;
-    buffer.totalChars++;
-    buffer.buffer[buffer.totalChars] = '\0';
+        buffer.buffer[position] = character;
+        buffer.totalChars++;
+        buffer.buffer[buffer.totalChars] = '\0';
 
-    if (character == '\n') {
-        buffer.totalLines++;
+        if (character == '\n') {
+            buffer.totalLines++;
+        }
+        editor->buffer = buffer;
     }
-    editor->buffer = buffer;
 
     return *editor;
 }

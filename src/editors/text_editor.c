@@ -35,7 +35,7 @@ void RenderStatBar(struct TextEditor editor) {
     DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_SIZE + GAP) + 1, GetScreenWidth(), HEIGHT - NAVBAR_HEIGHT - VISIBLE_LINES * (FONT_SIZE + GAP), systemPalette[2]);
     char buffer[64];
 
-    sprintf(buffer, "line: %li/%li;char: %li;scroll %li/%li;", editor.cursorLine + 1, editor.buffer.totalLines + 1, editor.cursorChar, editor.scrollOffsetX, editor.scrollOffsetY);
+    sprintf(buffer, "pos: %li/%li;scroll %li/%li;", editor.cursorChar + 1, editor.cursorLine + 1, editor.scrollOffsetX, editor.scrollOffsetY);
     RenderString(buffer, GAP / 2, HEIGHT - FONT_SIZE - GAP / 2);
     const float progress = (float)editor.buffer.totalChars / MAX_TOTAL_BUFFER_SIZE * WIDTH;
     DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_SIZE + GAP) + 1, progress, 2, systemPalette[3]);
