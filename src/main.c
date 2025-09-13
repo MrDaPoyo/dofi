@@ -35,7 +35,7 @@ int main() {
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
 
-    SetExitKey(KEY_F11);
+    SetExitKey(KEY_F10);
     InitAudioDevice();
 
     RenderIntro();
@@ -92,6 +92,7 @@ int main() {
 
         EndTextureMode();
 
+        SetTextureFilter(gRenderTex.texture, TEXTURE_FILTER_POINT);
         DrawTexturePro(gRenderTex.texture,
             (Rectangle){ 0, 0, (float)gRenderTex.texture.width, -(float)gRenderTex.texture.height },
             (Rectangle){ 0, 0, WIDTH * SCALE, HEIGHT * SCALE },

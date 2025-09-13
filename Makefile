@@ -33,6 +33,5 @@ run: $(BIN)
 
 clean:
 	rm -f $(BIN) $(BIN).exe
-	rm -rf $(OUTPUT_DIR)
 
 .PHONY: all run clean

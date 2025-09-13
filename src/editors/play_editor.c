@@ -1,5 +1,4 @@
 #include "editors.h"
-#include "text_editor.h"
 #include "../display.h"
 #include "../lua_utils.h"
 
@@ -10,8 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define WIDTH 128
+#define HEIGHT 128
+#define SCALE 4
+
 static lua_State* gLuaVM = NULL;
 static bool gScriptLoaded = false;
+static RenderTexture2D gRenderTex;
+static bool gRenderTexInit = false;
 
 extern Color framebuffer[WIDTH][HEIGHT];
 
@@ -52,7 +57,7 @@ static void EnsureScriptLoaded(void) {
     }
 
     char* script = NULL;
-    if (!LoadEntireFile("assets/examples/gradient.lua", &script)) {
+    if (!LoadEntireFile("assets/examples/check_pixels.lua", &script)) {
         fprintf(stderr, "[play] Failed to load script file.\n");
         return;
     }
@@ -85,22 +90,36 @@ static void UpdateLua(void) {
 static void DrawLua(void) {
     if (!gScriptLoaded) return;
     CallLuaFunctionSafe(gLuaVM, "draw");
+}
 
-    for (int x = 0; x < WIDTH; x++) {
-        for (int y = 0; y < HEIGHT; y++) {
-            Color c = framebuffer[x][y];
-            if (c.a != 0) {
-                DrawPixel(x, y, c);
-            }
-        }
+static void InitRenderTexture(void) {
+    if (!gRenderTexInit) {
+        gRenderTex = LoadRenderTexture(WIDTH, HEIGHT);
+        SetTextureFilter(gRenderTex.texture, TEXTURE_FILTER_POINT);
+        gRenderTexInit = true;
     }
 }
 
 void RenderPlayEditor(void) {
     EnsureScriptLoaded();
+    InitRenderTexture();
 
-    ClearBackground(BLACK);
+    for (int x = 0; x < WIDTH; x++)
+        for (int y = 0; y < HEIGHT; y++)
+            framebuffer[x][y] = (Color){0,0,0,255};
 
     UpdateLua();
     DrawLua();
+
+    Image img = {
+        .data = framebuffer,
+        .width = WIDTH,
+        .height = HEIGHT,
+        .mipmaps = 1,
+        .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+    };
+    UpdateTexture(gRenderTex.texture, img.data);
+
+    ClearBackground(BLACK);
+    DrawTextureEx(gRenderTex.texture, (Vector2){0,0}, 0, SCALE, WHITE);
 }
