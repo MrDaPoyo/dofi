@@ -6,4 +6,5 @@ src/dofi
 out/*
 raylib/
 emsdk/
+src/lua/*.o
 build_web/build-wasm-serve.sh
