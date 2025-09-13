@@ -77,7 +77,11 @@ int main() {
 
         if (currentSuperTab == SUPER_CLI) {
             RenderCLI();
+        } else if (currentEditorTab == EDITOR_PLAY) {
+            HideNavbar();
+            RenderPlayEditor();
         } else {
+            ShowNavbar();
             RenderEditors();
             DrawTextureEx(cursorTexture,
                 (Vector2){ mousePos.x / (float)SCALE, mousePos.y / (float)SCALE },
@@ -124,66 +128,65 @@ void RenderCLI() {
 }
 
 void RenderEditors(void) {
-    if (displayNavbar) {
-        int navH = NAVBAR_HEIGHT;
-        int btnSize = NAVBAR_BUTTON_SIZE;
-        int gap = NAVBAR_BUTTON_GAP;
+    int navH = NAVBAR_HEIGHT;
+    int btnSize = NAVBAR_BUTTON_SIZE;
+    int gap = NAVBAR_BUTTON_GAP;
 
-        // navbar
-        DrawRectangle(0, 0, WIDTH, navH, NavbarBGColor);
+    // navbar
+    DrawRectangle(0, 0, WIDTH, navH, NavbarBGColor);
 
-        // buttons
-        for (int i = 0; i < EDITOR_COUNT; i++) {
-            int x = i * (btnSize + gap);
+    // buttons
+    for (int i = 0; i < EDITOR_COUNT; i++) {
+        int x = i * (btnSize + gap);
 
-            Rectangle btn;
-            if (i == EDITOR_PLAY) {
-                btn = (Rectangle){ (float)(WIDTH - gap - btnSize), 2.0f, (float)btnSize, (float)btnSize };
-            } else {
-                btn = (Rectangle){ (float)(gap + x), 2.0f, (float)btnSize, (float)btnSize };
-            }
-
-            DrawRectangleRec(btn, (i == (int)currentEditorTab) ? (Color){ 255, 169, 133, 255 } : systemPalette[3]);
-
-            Vector2 m = GetMousePositionForEditors();
-            Vector2 mLog = (Vector2){ m.x / (float)SCALE, m.y / (float)SCALE };
-            if (CheckCollisionPointRec(mLog, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                currentEditorTab = (EditorTab)i;
-            }
-            Texture2D icon;
-            if (i == EDITOR_TEXT)
-                icon = iconCode;
-            else if (i == EDITOR_SPRITE)
-                icon = iconSprite;
-            else if (i == EDITOR_MAP)
-                icon = iconMap;
-            else if (i == EDITOR_SOUND)
-                icon = iconMusic;
-            else if (i == EDITOR_PLAY)
-                icon = iconPlay;
-            else
-                icon = iconUndefined;
-
-            {
-                float iconSize = (float)(btnSize - 4);
-                float dstX;
-
-                if (i == EDITOR_PLAY) {
-                    dstX = (float)(WIDTH - gap - btnSize) + 2.0f;
-                } else {
-                    dstX = (float)(gap + x) + 2.0f;
-                }
-
-                float dstY = (float)btn.y + ((float)btn.height - iconSize) * 0.5f;
-                DrawTexturePro(
-                    icon,
-                    (Rectangle){ 0, 0, icon.width, icon.height },
-                    (Rectangle){ dstX, dstY, iconSize, iconSize },
-                    (Vector2){ 0, 0 },
-                    0.0f,
-                    WHITE);
-            }
+        Rectangle btn;
+        if (i == EDITOR_PLAY) {
+            btn = (Rectangle){ (float)(WIDTH - gap - btnSize), 2.0f, (float)btnSize, (float)btnSize };
+        } else {
+            btn = (Rectangle){ (float)(gap + x), 2.0f, (float)btnSize, (float)btnSize };
         }
+
+        DrawRectangleRec(btn, (i == (int)currentEditorTab) ? (Color){ 255, 169, 133, 255 } : systemPalette[3]);
+
+        Vector2 m = GetMousePositionForEditors();
+        Vector2 mLog = (Vector2){ m.x / (float)SCALE, m.y / (float)SCALE };
+        if (CheckCollisionPointRec(mLog, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            currentEditorTab = (EditorTab)i;
+        }
+        Texture2D icon;
+        if (i == EDITOR_TEXT)
+            icon = iconCode;
+        else if (i == EDITOR_SPRITE)
+            icon = iconSprite;
+        else if (i == EDITOR_MAP)
+            icon = iconMap;
+        else if (i == EDITOR_SOUND)
+            icon = iconMusic;
+        else if (i == EDITOR_PLAY)
+            icon = iconPlay;
+        else
+            icon = iconUndefined;
+
+        {
+            float iconSize = (float)(btnSize - 4);
+            float dstX;
+
+            if (i == EDITOR_PLAY) {
+                dstX = (float)(WIDTH - gap - btnSize) + 2.0f;
+            } else {
+                dstX = (float)(gap + x) + 2.0f;
+            }
+
+            float dstY = (float)btn.y + ((float)btn.height - iconSize) * 0.5f;
+            DrawTexturePro(
+                icon,
+                (Rectangle){ 0, 0, icon.width, icon.height },
+                (Rectangle){ dstX, dstY, iconSize, iconSize },
+                (Vector2){ 0, 0 },
+                0.0f,
+                WHITE);
+        }
+    }
 
     int editorY = NAVBAR_HEIGHT;
     int editorH = GetEditorCanvasHeight();
@@ -191,8 +194,6 @@ void RenderEditors(void) {
     DrawRectangle(0, editorY, WIDTH, editorH, EditorBGColor);
 
     BeginScissorMode(0, editorY, WIDTH, editorH);
-
-    }
 
     if (currentEditorTab == EDITOR_TEXT)
         RenderTextEditor();
@@ -203,9 +204,5 @@ void RenderEditors(void) {
     if (currentEditorTab == EDITOR_SOUND)
         RenderSoundEditor();
 
-    if (currentEditorTab == EDITOR_PLAY) {
-        BeginScissorMode(0, 0, WIDTH, HEIGHT);
-        RenderPlayEditor();
-    }
     EndScissorMode();
 }

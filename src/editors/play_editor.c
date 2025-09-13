@@ -97,10 +97,6 @@ static void DrawLua(void) {
 }
 
 void RenderPlayEditor(void) {
-    if (displayNavbar) {
-        HideNavbar();
-    }
-
     EnsureScriptLoaded();
 
     ClearBackground(BLACK);
