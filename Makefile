@@ -13,10 +13,10 @@ ASSETS = src/assets
 OUTPUT_DIR = out
 
 ifeq ($(OS),Windows_NT)
-	LIBS = -lraylib -lopengl32 -lgdi32 -lwinmm
+	LIBS = -lraylib -lopengl32 -lgdi32 -lwinmm -llua5.4
 	RUN = .\$(BIN).exe
 else
-	LIBS = -lraylib -lm -ldl -lpthread -lGL -lX11
+	LIBS = -lraylib -lm -ldl -lpthread -lGL -lX11 -llua5.4
 	RUN = ./$(BIN)
 endif
 

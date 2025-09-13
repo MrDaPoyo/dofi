@@ -7,9 +7,12 @@ shopt -s globstar
 
 mkdir -p ../out
 
-emcc ../src/**/*.c \
+SRC_FILES=(../src/**/*.c)
+
+emcc "${SRC_FILES[@]}" \
     -I../src \
     -I../raylib/src \
+    -I../src/lua \
     ../raylib/src/libraylib.web.a \
     -s USE_GLFW=3 \
     -s ASYNCIFY \

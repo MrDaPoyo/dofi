@@ -153,6 +153,10 @@ void PrintBufferLength(void) {
 char pressedKey;
 
 void RenderTextEditor(void) {
+    if (!displayNavbar) {
+        ShowNavbar();
+    }
+
     static float keyRepeatDelay = 0.3f;
     static float keyRepeatInterval = 0.05f;
     static float keyTimer = 0.0f;

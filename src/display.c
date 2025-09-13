@@ -30,6 +30,12 @@ int GetEditorCanvasWidth(void)
     return WIDTH;
 }
 
-void RenderCLI(void);
-void RenderEditors(void);
-void switchSuperTab(void);
+bool displayNavbar = false;
+
+void HideNavbar(void) {
+    displayNavbar = false;
+}
+
+void ShowNavbar(void) {
+    displayNavbar = true;
+}

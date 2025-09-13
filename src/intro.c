@@ -1,9 +1,7 @@
 #include "colors.h"
 #include "raylib.h"
-#include "fonts.h"
 #include "display.h"
-
-#include <stdio.h>
+#include "intro.h"
 
 #define INTRO_TIME 1.75f // seconds
 #define TILE_SIZE 4
