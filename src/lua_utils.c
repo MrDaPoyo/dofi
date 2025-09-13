@@ -26,30 +26,12 @@ void RunLuaScriptLoop(lua_State* L, const char* script) {
         lua_pop(L, 1);
         return;
     }
-
     if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
         printf("Error running Lua script: %s\n", lua_tostring(L, -1));
         lua_pop(L, 1);
         return;
     }
-
     CallLuaFunction(L, "init");
-
-    SetTargetFPS(FPS);
-    CallLuaFunction(L, "update");
-
-    BeginDrawing();
-    ClearBackground(BLACK);
-
-    CallLuaFunction(L, "draw");
-
-    for (int x = 0; x < WIDTH; x++) {
-        for (int y = 0; y < HEIGHT; y++) {
-            DrawPixel(x, y, framebuffer[x][y]);
-        }
-    }
-
-    EndDrawing();
 }
 
 void AnnihilateLuaState(lua_State* L) {
