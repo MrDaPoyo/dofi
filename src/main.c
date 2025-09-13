@@ -202,9 +202,10 @@ void RenderEditors(void) {
         RenderMapEditor();
     if (currentEditorTab == EDITOR_SOUND)
         RenderSoundEditor();
-    if (currentEditorTab == EDITOR_PLAY)
-        RenderPlayEditor();
 
-    if (currentEditorTab != EDITOR_PLAY)
-        EndScissorMode();
+    if (currentEditorTab == EDITOR_PLAY) {
+        BeginScissorMode(0, 0, WIDTH, HEIGHT);
+        RenderPlayEditor();
+    }
+    EndScissorMode();
 }
