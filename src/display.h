@@ -41,7 +41,7 @@ extern EditorTab currentEditorTab;
 void HideNavbar(void);
 void ShowNavbar(void);
 
-void switchSuperTab(void);
+void SwitchSuperTab(void);
 void RenderCLI(void);
 void RenderEditors(void);
 

@@ -1,4 +1,5 @@
 #include "editors.h"
+#include "text_editor.h"
 #include "../display.h"
 #include "../lua_utils.h"
 
@@ -32,6 +33,7 @@ static void CallLuaFunctionSafe(lua_State* L, const char* funcName) {
     }
 }
 
+/*
 static bool LoadEntireFile(const char* path, char** outBuf) {
     *outBuf = NULL;
     FILE* f = fopen(path, "rb");
@@ -48,6 +50,7 @@ static bool LoadEntireFile(const char* path, char** outBuf) {
     *outBuf = buf;
     return true;
 }
+*/
 
 static void EnsureScriptLoaded(void) {
     if (gScriptLoaded) return;
@@ -57,10 +60,15 @@ static void EnsureScriptLoaded(void) {
     }
 
     char* script = NULL;
-    if (!LoadEntireFile("assets/examples/check_pixels.lua", &script)) {
+
+    /*
+    if (!LoadEntireFile("assets/examples/gradient.lua", &script)) {
         fprintf(stderr, "[play] Failed to load script file.\n");
         return;
     }
+    */
+
+    script = RetrieveAllCodeFromTextEditors(editors);
 
     if (luaL_loadstring(gLuaVM, script) != LUA_OK) {
         fprintf(stderr, "[lua] load error: %s\n", lua_tostring(gLuaVM, -1));
@@ -75,8 +83,6 @@ static void EnsureScriptLoaded(void) {
         free(script);
         return;
     }
-
-    free(script);
 
     CallLuaFunctionSafe(gLuaVM, "init");
     gScriptLoaded = true;
@@ -118,6 +124,7 @@ void RenderPlayEditor(void) {
         .mipmaps = 1,
         .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
     };
+
     UpdateTexture(gRenderTex.texture, img.data);
 
     ClearBackground(BLACK);

@@ -6,5 +6,6 @@
 lua_State *NewLuaState();
 void AnnihilateLuaState(lua_State *L);
 void RunLuaScriptLoop(lua_State* L, const char* script);
+char* CheckLuaString(lua_State* L, const char* code);
 
 #endif // DOFI_LUA_H

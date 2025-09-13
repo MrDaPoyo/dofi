@@ -64,7 +64,7 @@ int main() {
                 ShowNavbar();
                 currentEditorTab = EDITOR_TEXT;
             } else {
-                switchSuperTab();
+                SwitchSuperTab();
             }
         }
 
@@ -112,7 +112,7 @@ int main() {
     return 0;
 }
 
-void switchSuperTab() {
+void SwitchSuperTab() {
     if (currentSuperTab == SUPER_CLI)
         currentSuperTab = SUPER_EDITORS;
     else

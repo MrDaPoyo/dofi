@@ -11,7 +11,7 @@ void RenderMapEditor(void);
 void RenderSoundEditor(void);
 void RenderPlayEditor(void);
 
-void RenderLine(const char *str, int index, size_t realIndex);
+void RenderLine(char *str, int index, size_t realIndex);
 
 // TEXT EDITOR STUFF
 extern const char *testString;

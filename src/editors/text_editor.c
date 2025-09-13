@@ -19,7 +19,7 @@
 #define FONT_WIDTH 4
 #define LINE_CHAR_WIDTH ((WIDTH / FONT_WIDTH) - 2)
 
-void RenderLine(const char* str, int index, size_t realIndex) {
+void RenderLine(char* str, int index, size_t realIndex) {
     int navY = GetNavHeight();
 
     int y = index * FONT_SIZE + GAP * (index + 1) + navY;
@@ -132,10 +132,60 @@ void RenderBuffer(struct TextEditor editor) {
 struct TextEditor editors[10];
 struct TextEditor* editor = &editors[0];
 
+int LoadEntireFile(const char* path, char** outBuf) {
+    *outBuf = NULL;
+    FILE* f = fopen(path, "rb");
+    if (!f) return false;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    if (sz < 0) { fclose(f); return false; }
+    rewind(f);
+    char* buf = (char*)malloc((size_t)sz + 1);
+    if (!buf) { fclose(f); return false; }
+    size_t rd = fread(buf, 1, (size_t)sz, f);
+    fclose(f);
+    buf[rd] = '\0';
+
+    char* src = buf;
+    char* dst = buf;
+    while (*src) {
+        if (*src != '\r')
+            *dst++ = *src;
+        src++;
+    }
+    *dst = '\0';
+
+    *outBuf = buf;
+    return true;
+}
+
 void InitTextEditors(void) {
-    for (size_t i = 0; i < sizeof(editors) / sizeof(editors[0]); i++) {
+    editors[0] = (struct TextEditor){
+        .buffer = createBuffer(1024),
+        .cursorChar = 0,
+        .cursorLine = 0,
+        .scrollOffsetX = 0,
+        .scrollOffsetY = 0,
+    };
+
+    if (LoadEntireFile("assets/examples/gradient.lua", &editors[0].buffer.buffer)) {
+        editors[0].buffer.totalChars = strlen(editors[0].buffer.buffer);
+
+        size_t lines = 0;
+        for (char* p = editors[0].buffer.buffer; *p; p++) {
+            if (*p == '\n')
+                lines++;
+        }
+        if (editors[0].buffer.totalChars > 0 &&
+            editors[0].buffer.buffer[editors[0].buffer.totalChars - 1] != '\n') {
+            lines++;
+            }
+        editors[0].buffer.totalLines = lines;
+    }
+
+    for (size_t i = 1; i < sizeof(editors) / sizeof(editors[0]); i++) {
         editors[i] = (struct TextEditor){
-            .buffer = createBuffer(0), // ts makes a buffer with zero bytes, but that's expanded when the buffer's first character is appended
+            .buffer = createBuffer(0),
             .cursorChar = 0,
             .cursorLine = 0,
             .scrollOffsetX = 0,
