@@ -59,8 +59,6 @@ int main() {
     HideNavbar();
 
     while (!WindowShouldClose()) {
-        Vector2 mousePos = GetMousePositionForEditors();
-
         if (IsKeyPressed(KEY_ESCAPE)) {
             if (currentEditorTab == EDITOR_PLAY) {
                 ShowNavbar();
@@ -81,6 +79,7 @@ int main() {
             HideNavbar();
             RenderPlayEditor();
         } else {
+            const Vector2 mousePos = GetMousePositionForEditors();
             ShowNavbar();
             RenderEditors();
             DrawTextureEx(cursorTexture,
