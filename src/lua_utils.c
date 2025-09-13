@@ -1,6 +1,5 @@
 #include "lua_utils.h"
 #include "raylib.h"
-#include "lua/lua_utils.h"
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 #include "display.h"
@@ -9,7 +8,7 @@
 
 Color framebuffer[WIDTH][HEIGHT];
 
-void CallLuaFunction(lua_State *L, const char *funcName) {
+void CallLuaFunction(lua_State* L, const char* funcName) {
     lua_getglobal(L, funcName);
     if (lua_isfunction(L, -1)) {
         if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
@@ -37,31 +36,27 @@ void RunLuaScriptLoop(lua_State* L, const char* script) {
     CallLuaFunction(L, "init");
 
     SetTargetFPS(FPS);
-    while (!WindowShouldClose()) {
-        CallLuaFunction(L, "update");
+    CallLuaFunction(L, "update");
 
-        BeginDrawing();
-        ClearBackground(BLACK);
+    BeginDrawing();
+    ClearBackground(BLACK);
 
-        CallLuaFunction(L, "draw");
+    CallLuaFunction(L, "draw");
 
-        for (int x = 0; x < WIDTH; x++) {
-            for (int y = 0; y < HEIGHT; y++) {
-                DrawPixel(x, y, framebuffer[x][y]);
-            }
+    for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+            DrawPixel(x, y, framebuffer[x][y]);
         }
-
-        EndDrawing();
-
-        if (IsKeyPressed(KEY_ESCAPE)) break;
     }
+
+    EndDrawing();
 }
 
-void AnnihilateLuaState(lua_State *L) {
+void AnnihilateLuaState(lua_State* L) {
     lua_close(L);
 }
 
-int pset(lua_State *L) {
+int pset(lua_State* L) {
     int x = luaL_checkinteger(L, 1);
     int y = luaL_checkinteger(L, 2);
     int r = luaL_checkinteger(L, 3);
@@ -70,15 +65,15 @@ int pset(lua_State *L) {
 
     if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT &&
         r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
-        framebuffer[x][y] = (Color){r, g, b, 255};
+        framebuffer[x][y] = (Color){ r, g, b, 255 };
         return 0;
     }
 
     return 0;
 }
 
-lua_State *NewLuaState() {
-    lua_State *L = luaL_newstate();
+lua_State* NewLuaState() {
+    lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
     lua_newtable(L);

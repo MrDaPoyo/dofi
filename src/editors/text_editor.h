@@ -23,6 +23,7 @@ extern struct TextEditor editors[TOTAL_TEXT_EDITORS];
 extern struct TextEditor* editor;
 
 void InitTextEditors(void);
+char* RetrieveAllCodeFromTextEditors(struct TextEditor editor[TOTAL_TEXT_EDITORS]);
 struct TextEditor createTextEditor(size_t startingBufferSize);
 
 #endif

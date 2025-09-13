@@ -150,6 +150,29 @@ void PrintBufferLength(void) {
     }
 }
 
+// FREE THE RETURNED VALUE FROM THIS FUNCTIOn, YOU SON OF A LOTUS BISCOFF BISCUIT!!!! :333 >:D --poyo
+char* RetrieveAllCodeFromTextEditors(struct TextEditor editors[TOTAL_TEXT_EDITORS]) {
+    size_t totalBufferSize = 0;
+
+    for (size_t i = 0; i < TOTAL_TEXT_EDITORS; i++) {
+        totalBufferSize += editors[i].buffer.bufferSize + 1;
+    }
+    totalBufferSize += 1;
+
+    char* buffer = malloc(totalBufferSize);
+    if (!buffer) return NULL;
+
+    buffer[0] = '\0';
+
+    for (size_t i = 0; i < TOTAL_TEXT_EDITORS; i++) {
+        strcat(buffer, editors[i].buffer.buffer);
+        strcat(buffer, "\n");
+    }
+
+    return buffer;
+}
+
+
 char pressedKey;
 
 void RenderTextEditor(void) {

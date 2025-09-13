@@ -184,7 +184,6 @@ void RenderEditors(void) {
                     WHITE);
             }
         }
-    }
 
     int editorY = NAVBAR_HEIGHT;
     int editorH = GetEditorCanvasHeight();
@@ -192,6 +191,8 @@ void RenderEditors(void) {
     DrawRectangle(0, editorY, WIDTH, editorH, EditorBGColor);
 
     BeginScissorMode(0, editorY, WIDTH, editorH);
+
+    }
 
     if (currentEditorTab == EDITOR_TEXT)
         RenderTextEditor();
@@ -204,5 +205,6 @@ void RenderEditors(void) {
     if (currentEditorTab == EDITOR_PLAY)
         RenderPlayEditor();
 
-    EndScissorMode();
+    if (currentEditorTab != EDITOR_PLAY)
+        EndScissorMode();
 }
