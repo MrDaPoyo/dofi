@@ -109,7 +109,6 @@ static void EnsureScriptLoaded(void) {
 
     CallLuaFunctionSafe(gLuaVM, "init");
     gScriptLoaded = true;
-    free(script);
 }
 
 static void UpdateLua(void) {

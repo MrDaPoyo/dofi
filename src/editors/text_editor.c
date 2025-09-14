@@ -165,20 +165,15 @@ void InitTextEditors(void) {
         .scrollOffsetY = 0,
     };
 
-    if (LoadEntireFile("assets/examples/gradient.lua", &editors[0].buffer.buffer)) {
-        editors[0].buffer.totalChars = strlen(editors[0].buffer.buffer);
-
-        size_t lines = 0;
-        for (char* p = editors[0].buffer.buffer; *p; p++) {
-            if (*p == '\n')
-                lines++;
+    char* tempString = NULL;
+    if (LoadEntireFile("assets/examples/gradient.lua", &tempString)) {
+        for (int i = strlen(tempString); i > 0; i--) {
+            char c = tempString[i - 1];
+            insertCharacter(&editors[0], c);
         }
-        if (editors[0].buffer.totalChars > 0 &&
-            editors[0].buffer.buffer[editors[0].buffer.totalChars - 1] != '\n') {
-            lines++;
-            }
-        editors[0].buffer.totalLines = lines;
+        free(tempString);
     }
+
 
     for (size_t i = 1; i < sizeof(editors) / sizeof(editors[0]); i++) {
         editors[i] = (struct TextEditor){
@@ -199,39 +194,25 @@ void PrintBufferLength(void) {
 
 // FREE THE RETURNED VALUE FROM THIS FUNCTIOn, YOU SON OF A LOTUS BISCOFF BISCUIT!!!! :333 >:D --poyo
 char* RetrieveAllCodeFromTextEditors(struct TextEditor editors[TOTAL_TEXT_EDITORS]) {
-    size_t needed = 0;
-    for (size_t i = 0; i < TOTAL_TEXT_EDITORS; i++) {
-        const struct TextBuffer *tb = &editors[i].buffer;
-        size_t len = tb->totalChars;
-        if (tb->buffer) {
-            size_t realLen = strlen(tb->buffer);
-            if (realLen > len) len = realLen;
-        }
-        if (SIZE_MAX - needed < len + 1) {
-            return NULL;
-        }
-        needed += len + 1;
+    size_t needed = 1;
+    for (int i = 0; i < TOTAL_TEXT_EDITORS; i++) {
+        needed += editors[i].buffer.bufferSize;
     }
-    if (needed == SIZE_MAX) return NULL;
-    needed += 1;
 
-    char *buffer = (char*)malloc(needed);
-    if (!buffer) return NULL;
+    char* tempBuf = malloc(needed + 1);
+    size_t index = 0;
 
-    char *dst = buffer;
-    for (size_t i = 0; i < TOTAL_TEXT_EDITORS; i++) {
-        const struct TextBuffer *tb = &editors[i].buffer;
-        if (tb->buffer && tb->buffer[0] != '\0') {
-            size_t len = tb->totalChars;
-            size_t realLen = strlen(tb->buffer);
-            if (realLen > len) len = realLen;
-            memcpy(dst, tb->buffer, len);
-            dst += len;
+    for (int i = 0; i < TOTAL_TEXT_EDITORS; i++) {
+        for (size_t j = 0; j < editors[i].buffer.totalChars; j++) {
+            tempBuf[index] = editors[i].buffer.buffer[j];
+            index++;
         }
-        *dst++ = '\n';
+        tempBuf[index] = '\n';
+        index++;
     }
-    *dst = '\0';
-    return buffer;
+    tempBuf[index] = '\0';
+
+    return tempBuf;
 }
 
 
