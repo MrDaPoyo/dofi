@@ -13,10 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define WIDTH 128
-#define HEIGHT 128
-#define SCALE 4
-
 static lua_State* gLuaVM = NULL;
 bool gScriptLoaded = false;
 RenderTexture2D playRenderTex;
@@ -80,7 +76,12 @@ static void EnsureScriptLoaded(void) {
     }
 
     char* scriptRaw = RetrieveAllCodeFromTextEditors(editors);
-    char* script = strdup(scriptRaw);
+    if (!scriptRaw) {
+        snprintf(gLastError, sizeof(gLastError), "allocation failure while retrieving code");
+        isErrorValidated = true;
+        return;
+    }
+    char* script = scriptRaw;
 
     if (luaL_loadstring(gLuaVM, script) != LUA_OK) {
         const char* err = lua_tostring(gLuaVM, -1);

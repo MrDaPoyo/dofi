@@ -57,6 +57,7 @@ int main() {
 
     // initialize uhhhhhhh editors
     InitTextEditors();
+    ResetPlayEditor();
     HideNavbar();
 
     while (!WindowShouldClose()) {

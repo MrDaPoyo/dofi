@@ -11,6 +11,8 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #define VISIBLE_LINES 14
 #define CURSOR_SCROLL_FONT_GAP 1
@@ -197,23 +199,38 @@ void PrintBufferLength(void) {
 
 // FREE THE RETURNED VALUE FROM THIS FUNCTIOn, YOU SON OF A LOTUS BISCOFF BISCUIT!!!! :333 >:D --poyo
 char* RetrieveAllCodeFromTextEditors(struct TextEditor editors[TOTAL_TEXT_EDITORS]) {
-    size_t totalBufferSize = 0;
-
+    size_t needed = 0;
     for (size_t i = 0; i < TOTAL_TEXT_EDITORS; i++) {
-        totalBufferSize += editors[i].buffer.bufferSize + 1;
+        const struct TextBuffer *tb = &editors[i].buffer;
+        size_t len = tb->totalChars;
+        if (tb->buffer) {
+            size_t realLen = strlen(tb->buffer);
+            if (realLen > len) len = realLen;
+        }
+        if (SIZE_MAX - needed < len + 1) {
+            return NULL;
+        }
+        needed += len + 1;
     }
-    totalBufferSize += 1;
+    if (needed == SIZE_MAX) return NULL;
+    needed += 1;
 
-    char* buffer = malloc(totalBufferSize);
+    char *buffer = (char*)malloc(needed);
     if (!buffer) return NULL;
 
-    buffer[0] = '\0';
-
+    char *dst = buffer;
     for (size_t i = 0; i < TOTAL_TEXT_EDITORS; i++) {
-        strcat(buffer, editors[i].buffer.buffer);
-        strcat(buffer, "\n");
+        const struct TextBuffer *tb = &editors[i].buffer;
+        if (tb->buffer && tb->buffer[0] != '\0') {
+            size_t len = tb->totalChars;
+            size_t realLen = strlen(tb->buffer);
+            if (realLen > len) len = realLen;
+            memcpy(dst, tb->buffer, len);
+            dst += len;
+        }
+        *dst++ = '\n';
     }
-
+    *dst = '\0';
     return buffer;
 }
 

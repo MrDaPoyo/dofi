@@ -23,8 +23,22 @@ struct TextBuffer createBuffer(size_t bufferSize) {
     if (availableBufferSize < bufferSize) {
         bufferSize = availableBufferSize;
     }
+    if (bufferSize == 0) {
+        bufferSize = 1;
+    }
 
-    char* newBuffer = malloc(bufferSize);
+    char* newBuffer = (char*)malloc(bufferSize);
+    if (!newBuffer) {
+        static char dummy = '\0';
+        struct TextBuffer failed = {
+            .buffer = &dummy,
+            .bufferSize = 1,
+            .totalChars = 0,
+            .totalLines = 0,
+        };
+        fprintf(stderr, "createBuffer: allocation failed for %zu bytes\n", bufferSize);
+        return failed;
+    }
     newBuffer[0] = '\0';
     const struct TextBuffer newTextBuffer = {
         .buffer = newBuffer,
@@ -37,14 +51,25 @@ struct TextBuffer createBuffer(size_t bufferSize) {
 };
 
 struct TextBuffer modifyBufferCapacity(struct TextBuffer buffer, size_t newBufferSize) {
-    char* newBuffer = malloc(newBufferSize);
+    if (newBufferSize == 0) newBufferSize = 1;
+    char* newBuffer = (char*)malloc(newBufferSize);
+    if (!newBuffer) {
+        fprintf(stderr, "modifyBufferCapacity: allocation failed for %zu bytes\n", newBufferSize);
+        return buffer;
+    }
 
-    size_t copyLen = buffer.totalChars < newBufferSize - 1 ? buffer.totalChars : newBufferSize - 1;
-    memcpy(newBuffer, buffer.buffer, copyLen);
-
+    size_t maxCopy = (newBufferSize > 0) ? newBufferSize - 1 : 0;
+    size_t copyLen = buffer.totalChars < maxCopy ? buffer.totalChars : maxCopy;
+    if (copyLen > 0 && buffer.buffer) {
+        memcpy(newBuffer, buffer.buffer, copyLen);
+    }
     newBuffer[copyLen] = '\0';
 
-    free(buffer.buffer);
+    if (buffer.buffer && buffer.bufferSize > 0 && buffer.buffer != newBuffer) {
+        if (!(buffer.bufferSize == 1 && buffer.buffer[0] == '\0' && buffer.totalChars == 0)) {
+            free(buffer.buffer);
+        }
+    }
     buffer.buffer = newBuffer;
     buffer.bufferSize = newBufferSize;
     buffer.totalChars = copyLen;
