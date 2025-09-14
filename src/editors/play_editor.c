@@ -18,12 +18,23 @@
 #define SCALE 4
 
 static lua_State* gLuaVM = NULL;
-static bool gScriptLoaded = false;
-static RenderTexture2D gRenderTex;
-static bool gRenderTexInit = false;
-static char gLastError[256] = {0};
+bool gScriptLoaded = false;
+RenderTexture2D playRenderTex;
+bool gRenderTexInit = false;
+char gLastError[256] = {0};
 bool isPlaying = false;
 bool isErrorValidated = false;
+
+void ResetPlayEditor(void) {
+    gScriptLoaded = false;
+    isErrorValidated = false;
+    hasCodeChanged = false;
+
+    if (gLuaVM) {
+        lua_close(gLuaVM);
+        gLuaVM = NULL;
+    }
+}
 
 static void CallLuaFunctionSafe(lua_State* L, const char* funcName) {
     lua_getglobal(L, funcName);
@@ -57,6 +68,10 @@ static bool LoadEntireFile(const char* path, char** outBuf) {
 */
 
 static void EnsureScriptLoaded(void) {
+    if (hasCodeChanged) {
+        ResetPlayEditor();
+    }
+
     if (gScriptLoaded) return;
     if (isErrorValidated) return;
 
@@ -64,16 +79,8 @@ static void EnsureScriptLoaded(void) {
         gLuaVM = NewLuaState();
     }
 
-    char* script = NULL;
-
-    /*
-    if (!LoadEntireFile("assets/examples/gradient.lua", &script)) {
-        fprintf(stderr, "[play] Failed to load script file.\n");
-        return;
-    }
-    */
-
-    script = RetrieveAllCodeFromTextEditors(editors);
+    char* scriptRaw = RetrieveAllCodeFromTextEditors(editors);
+    char* script = strdup(scriptRaw);
 
     if (luaL_loadstring(gLuaVM, script) != LUA_OK) {
         const char* err = lua_tostring(gLuaVM, -1);
@@ -90,6 +97,7 @@ static void EnsureScriptLoaded(void) {
     if (lua_pcall(gLuaVM, 0, 0, 0) != LUA_OK) {
         const char* err = lua_tostring(gLuaVM, -1);
         fprintf(stderr, "[lua] runtime error: %s\n", err);
+        isErrorValidated = true;
         if (err) {
             snprintf(gLastError, sizeof(gLastError), "%s", err);
         }
@@ -100,6 +108,7 @@ static void EnsureScriptLoaded(void) {
 
     CallLuaFunctionSafe(gLuaVM, "init");
     gScriptLoaded = true;
+    free(script);
 }
 
 static void UpdateLua(void) {
@@ -114,8 +123,8 @@ static void DrawLua(void) {
 
 static void InitRenderTexture(void) {
     if (!gRenderTexInit) {
-        gRenderTex = LoadRenderTexture(WIDTH, HEIGHT);
-        SetTextureFilter(gRenderTex.texture, TEXTURE_FILTER_POINT);
+        playRenderTex = LoadRenderTexture(WIDTH, HEIGHT);
+        SetTextureFilter(playRenderTex.texture, TEXTURE_FILTER_POINT);
         gRenderTexInit = true;
     }
 }
@@ -139,10 +148,10 @@ void RenderPlayEditor(void) {
         .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
     };
  
-    UpdateTexture(gRenderTex.texture, img.data);
+    UpdateTexture(playRenderTex.texture, img.data);
  
     ClearBackground(BLACK);
-    DrawTextureEx(gRenderTex.texture, (Vector2){0,0}, 0, SCALE, WHITE);
+    DrawTextureEx(playRenderTex.texture, (Vector2){0,0}, 0, SCALE, WHITE);
 
     if (!gScriptLoaded && gLastError[0] != '\0') {
         DrawRectangle(0, 0, WIDTH, NAVBAR_HEIGHT, systemPalette[2]);

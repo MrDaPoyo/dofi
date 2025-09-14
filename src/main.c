@@ -7,6 +7,7 @@
 #include "editors/text_editor.h"
 #include "intro.h"
 #include "audio.h"
+#include "editors/play_editor.h"
 
 SuperTab currentSuperTab = SUPER_CLI;
 EditorTab currentEditorTab = EDITOR_TEXT;

@@ -219,6 +219,7 @@ char* RetrieveAllCodeFromTextEditors(struct TextEditor editors[TOTAL_TEXT_EDITOR
 
 
 char pressedKey;
+bool hasCodeChanged = false;
 
 void RenderTextEditor(void) {
     if (!displayNavbar) {
@@ -317,6 +318,7 @@ void RenderTextEditor(void) {
         }
     } else if (currentKey == KEY_BACKSPACE) {
         *editor = removeCharacter(editor);
+        hasCodeChanged = true;
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
@@ -334,6 +336,7 @@ void RenderTextEditor(void) {
     if (pressedKey != 0) {
         pressedKey = tolower(pressedKey);
         *editor = insertCharacter(editor, pressedKey);
+        hasCodeChanged = true;
         if (pressedKey == '\n') {
             editor->cursorChar = 0;
             editor->cursorLine++;
