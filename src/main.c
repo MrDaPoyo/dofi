@@ -30,7 +30,7 @@ int main() {
     NavbarBGColor = systemPalette[2];
     NavbarBorderColor = systemPalette[3];
     EditorBGColor = systemPalette[0];
-    CliBGColor = systemPalette[5];
+    CliBGColor = systemPalette[1];
     CliTextColor = systemPalette[4];
 
     InitWindow(WIDTH * SCALE, HEIGHT * SCALE, "Dofi v0.0");
@@ -124,7 +124,7 @@ void RenderCLI() {
         HideNavbar();
     }
     DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
-    DrawText("CLI Mode (ESC = Switch)", 2, 5, 5, YELLOW);
+
 }
 
 void RenderEditors(void) {

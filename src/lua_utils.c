@@ -40,7 +40,6 @@ char* CheckLuaString(lua_State* L, const char* code) {
 void RunLuaScriptLoop(lua_State* L, const char* script) {
     const char* error = CheckLuaString(L, script);
     if (error) {
-        // AppendCLILine(error); TODO
         currentSuperTab = SUPER_CLI;
         currentEditorTab = EDITOR_TEXT;
         return;

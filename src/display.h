@@ -17,6 +17,7 @@ int GetScaledEditorHeight(void);
 #define NAVBAR_HEIGHT 16
 #define NAVBAR_BUTTON_SIZE 12
 #define NAVBAR_BUTTON_GAP 2
+#define LINE_CHAR_WIDTH (WIDTH / (FONT_WIDTH + FONT_GAP / 2) - 2)
 
 extern bool displayNavbar;
 extern Color framebuffer[WIDTH][HEIGHT];

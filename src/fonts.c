@@ -36,74 +36,65 @@ bool IsReservedKeyword(const char* word) {
     return false;
 }
 
-bool IsComment(const char* string) {
-    const size_t len = strlen(string);
-    char* tempBuffer = malloc(len + 1);
-    if (!tempBuffer) return false;
-
-    strcpy(tempBuffer, string);
-    trim(tempBuffer);
-
-    bool isComment = tempBuffer[0] == '-' && tempBuffer[1] == '-';
-    free(tempBuffer);
-
-    return isComment;
+int IsComment(const char* line) {
+    // empty line
+    if (*line == '\0' || *line == '\n') {
+        return -1;
+    }
+    // start at the 2nd char
+    size_t index = 1;
+    const char* current = line + 1;
+    // walk until end of string or end of line
+    while (*current != '\0' && *current != '\n') {
+        const char* prev = current - 1;
+        // check for "--"
+        if (*prev == '-' && *current == '-') {
+            return index;
+        }
+        ++current;
+        ++index;
+    }
+    return -1;
 }
 
 void RenderString(char* str, int x, int y) {
     int offsetX = 0;
-
     char buf[256]; // temp buf for single words
 
-    bool isComment = IsComment(str);
+    const int commentPos = IsComment(str); // -1 if no comment
+    long int index = 0;
 
     while (*str) {
         int i = 0;
+
         while (*str && *str != ' ' && i < (int)(sizeof(buf) - 1)) {
             buf[i++] = *str++;
+            index++;
         }
         buf[i] = '\0';
 
-        if (!isComment) {
-            bool isKeyword = IsReservedKeyword(buf);
+        bool inComment = (commentPos >= 0 && index > commentPos);
 
-            for (int j = 0; j < i; j++) {
-                char c[2] = { buf[j], '\0' };
-                Vector2 pos = (Vector2){ (float)(x + offsetX), (float)y };
-                DrawTextPro(
-                    GeneralFont,
-                    c,
-                    pos,
-                    (Vector2){ 0, 0 },
-                    0.0f,
-                    FONT_HEIGHT,
-                    FONT_SPACING,
-                    isKeyword ? systemPalette[2] : systemPalette[4] // Orange / White
-                    );
-                offsetX += FONT_SPACING + FONT_WIDTH;
-            }
-        } else {
-            for (int j = 0; j < i; j++) {
-                char c[2] = { buf[j], '\0' };
-                Vector2 pos = (Vector2){ (float)(x + offsetX), (float)y };
-                DrawTextPro(
-                    GeneralFont,
-                    c,
-                    pos,
-                    (Vector2){ 0, 0 },
-                    0.0f,
-                    FONT_HEIGHT,
-                    FONT_SPACING,
-                    systemPalette[6] // Grey
-                    );
-                offsetX += FONT_SPACING + FONT_WIDTH;
-            }
+        for (int j = 0; j < i; j++) {
+            char c[2] = { buf[j], '\0' };
+            Vector2 pos = (Vector2){ (float)(x + offsetX), (float)y };
+            DrawTextPro(
+                GeneralFont,
+                c,
+                pos,
+                (Vector2){ 0, 0 },
+                0.0f,
+                FONT_HEIGHT,
+                FONT_SPACING,
+                inComment ? systemPalette[6] : IsReservedKeyword(buf) ? systemPalette[2] : systemPalette[4] // Grey. Orange, White.
+            );
+            offsetX += FONT_SPACING + FONT_WIDTH;
         }
 
         if (*str == ' ') {
-            ;
             offsetX += FONT_SPACING + FONT_WIDTH;
             str++;
+            index++;
         }
     }
 }

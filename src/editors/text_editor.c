@@ -14,7 +14,6 @@
 
 #define VISIBLE_LINES 14
 #define CURSOR_SCROLL_FONT_GAP 1
-#define LINE_CHAR_WIDTH (WIDTH / (FONT_WIDTH + FONT_GAP / 2) - 2)
 
 void RenderLine(char* str, int index, size_t realIndex) {
     int navY = GetNavHeight();
