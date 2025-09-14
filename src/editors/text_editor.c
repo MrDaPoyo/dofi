@@ -13,48 +13,44 @@
 #include <stdlib.h>
 
 #define VISIBLE_LINES 14
-#define CURSOR_SCROLL_GAP 1
-#define GAP 2
-#define FONT_SIZE 5
-#define FONT_WIDTH 4
-#define LINE_CHAR_WIDTH ((WIDTH / FONT_WIDTH) - 2)
+#define CURSOR_SCROLL_FONT_GAP 1
+#define LINE_CHAR_WIDTH (WIDTH / (FONT_WIDTH + FONT_GAP / 2) - 2)
 
 void RenderLine(char* str, int index, size_t realIndex) {
     int navY = GetNavHeight();
 
-    int y = index * FONT_SIZE + GAP * (index + 1) + navY;
+    int y = index * FONT_HEIGHT + FONT_GAP * (index + 1) + navY;
 
     if (realIndex % 2) {
-        DrawRectangle(0, y - 1, GetScreenWidth(), FONT_SIZE + GAP, systemPalette[1]);
+        DrawRectangle(0, y - 1, GetScreenWidth(), FONT_HEIGHT + FONT_GAP, systemPalette[1]);
     }
 
-    RenderString(str, GAP, y);
+    RenderString(str, FONT_GAP, y);
 };
 
 void RenderStatBar(struct TextEditor editor) {
-    DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_SIZE + GAP) + 1, GetScreenWidth(), HEIGHT - NAVBAR_HEIGHT - VISIBLE_LINES * (FONT_SIZE + GAP), systemPalette[2]);
+    DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_HEIGHT + FONT_GAP) + 1, GetScreenWidth(), HEIGHT - NAVBAR_HEIGHT - VISIBLE_LINES * (FONT_HEIGHT + FONT_GAP), systemPalette[2]);
     char buffer[64];
 
     sprintf(buffer, "pos: %li/%li;scroll %li/%li;", editor.cursorChar + 1, editor.cursorLine + 1, editor.scrollOffsetX, editor.scrollOffsetY);
-    RenderString(buffer, GAP / 2, HEIGHT - FONT_SIZE - GAP / 2);
+    RenderString(buffer, FONT_GAP / 2, HEIGHT - FONT_HEIGHT - FONT_GAP / 2);
     const float progress = (float)editor.buffer.totalChars / MAX_TOTAL_BUFFER_SIZE * WIDTH;
-    DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_SIZE + GAP) + 1, progress, 2, systemPalette[3]);
+    DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_HEIGHT + FONT_GAP) + 1, progress, 2, systemPalette[3]);
 }
 
 void RenderCursor(struct TextEditor editor) {
     int navY = GetNavHeight();
-
     const size_t lineIndex = editor.cursorLine - editor.scrollOffsetY;
 
-    int x = GAP + (editor.cursorChar - editor.scrollOffsetX) * FONT_WIDTH;
-    int y = lineIndex * FONT_SIZE + GAP * (lineIndex + 1) + navY;
+    int cellWidth = FONT_WIDTH + FONT_SPACING;
+    int x = FONT_SPACING + (editor.cursorChar - editor.scrollOffsetX) * cellWidth + 1;
+    int y = lineIndex * FONT_HEIGHT + FONT_GAP * (lineIndex + 1) + navY;
 
     Color cursorColor = systemPalette[2];
-
     if (fmod(GetTime(), 1.0) < 0.5)
         cursorColor = systemPalette[3];
 
-    DrawRectangle(x, y, 3, FONT_SIZE, cursorColor);
+    DrawRectangle(x, y, FONT_WIDTH, FONT_HEIGHT, cursorColor);
 }
 
 struct LineCollection retrieveAllLines(const struct TextBuffer* buffer, size_t y_index) {

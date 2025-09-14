@@ -83,10 +83,10 @@ glyphs:
 		auto_advance_amount: 1
 		pixels: 0 2, 1 2, 2 2, 
 	46:
-		advance: 2
+		advance: 3
 		auto_update_advance: true
 		auto_advance_amount: 1
-		pixels: 0 0, 
+		pixels: 1 0, 
 	47:
 		advance: 4
 		auto_update_advance: true
@@ -201,7 +201,7 @@ glyphs:
 		advance: 5
 		auto_update_advance: true
 		auto_advance_amount: 1
-		pixels: 0 3, 1 4, 3 3, 
+		pixels: 0 3, 1 4, 2 4, 3 3, 
 	95:
 		advance: 4
 		auto_update_advance: true
