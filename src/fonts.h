@@ -13,6 +13,6 @@ extern Font GeneralFont;
 void LoadFonts(void);
 void UnloadFonts(void);
 
-void RenderString(const char *str, int x, int y);
+void RenderString(char *str, int x, int y);
 
 #endif

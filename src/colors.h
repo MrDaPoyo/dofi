@@ -4,6 +4,6 @@
 #include "raylib.h"
 
 extern const Color palette[16];
-extern const Color systemPalette[6];
+extern const Color systemPalette[7];
 
 #endif
