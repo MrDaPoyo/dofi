@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include "../lua/lua.h"
 
-bool isPlaying = false;
+extern bool isPlaying;
+extern bool isErrorValidated;
 extern lua_State LuaVM;
 
 #endif //DOFI_PLAY_EDITOR_H

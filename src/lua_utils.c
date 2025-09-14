@@ -3,8 +3,7 @@
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 #include "display.h"
-#include "cli.h"
-
+#include "editors/play_editor.h"
 #include <string.h>
 
 #define FPS 60
@@ -25,7 +24,6 @@ void CallLuaFunction(lua_State* L, const char* funcName) {
 
 char* CheckLuaString(lua_State* L, const char* code) {
     if (!code) return strdup("No code provided");
-
     if (luaL_loadstring(L, code) != LUA_OK) {
         const char* err = lua_tostring(L, -1);
         char* result = strdup(err ? err : "Unknown Lua error :P womp womp");
@@ -40,8 +38,7 @@ char* CheckLuaString(lua_State* L, const char* code) {
 void RunLuaScriptLoop(lua_State* L, const char* script) {
     const char* error = CheckLuaString(L, script);
     if (error) {
-        currentSuperTab = SUPER_CLI;
-        currentEditorTab = EDITOR_TEXT;
+        isPlaying = false;
         return;
     }
     if (luaL_loadstring(L, script) != LUA_OK) {

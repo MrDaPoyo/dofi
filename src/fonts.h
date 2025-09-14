@@ -14,5 +14,6 @@ void LoadFonts(void);
 void UnloadFonts(void);
 
 void RenderString(char *str, int x, int y);
+void RenderStringWrap(char* str, int x, int y);
 
 #endif

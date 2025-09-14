@@ -1,5 +1,8 @@
+#include "play_editor.h"
+
 #include "editors.h"
 #include "text_editor.h"
+#include "../colors.h"
 #include "../display.h"
 #include "../lua_utils.h"
 
@@ -18,8 +21,9 @@ static lua_State* gLuaVM = NULL;
 static bool gScriptLoaded = false;
 static RenderTexture2D gRenderTex;
 static bool gRenderTexInit = false;
-
-extern Color framebuffer[WIDTH][HEIGHT];
+static char gLastError[256] = {0};
+bool isPlaying = false;
+bool isErrorValidated = false;
 
 static void CallLuaFunctionSafe(lua_State* L, const char* funcName) {
     lua_getglobal(L, funcName);
@@ -54,6 +58,7 @@ static bool LoadEntireFile(const char* path, char** outBuf) {
 
 static void EnsureScriptLoaded(void) {
     if (gScriptLoaded) return;
+    if (isErrorValidated) return;
 
     if (!gLuaVM) {
         gLuaVM = NewLuaState();
@@ -71,14 +76,23 @@ static void EnsureScriptLoaded(void) {
     script = RetrieveAllCodeFromTextEditors(editors);
 
     if (luaL_loadstring(gLuaVM, script) != LUA_OK) {
-        fprintf(stderr, "[lua] load error: %s\n", lua_tostring(gLuaVM, -1));
+        const char* err = lua_tostring(gLuaVM, -1);
+        fprintf(stderr, "[lua] load error: %s\n", err);
+        isErrorValidated = true;
+        if (err) {
+            snprintf(gLastError, sizeof(gLastError), "%s", err);
+        }
         lua_pop(gLuaVM, 1);
         free(script);
         return;
     }
 
     if (lua_pcall(gLuaVM, 0, 0, 0) != LUA_OK) {
-        fprintf(stderr, "[lua] runtime error: %s\n", lua_tostring(gLuaVM, -1));
+        const char* err = lua_tostring(gLuaVM, -1);
+        fprintf(stderr, "[lua] runtime error: %s\n", err);
+        if (err) {
+            snprintf(gLastError, sizeof(gLastError), "%s", err);
+        }
         lua_pop(gLuaVM, 1);
         free(script);
         return;
@@ -109,14 +123,14 @@ static void InitRenderTexture(void) {
 void RenderPlayEditor(void) {
     EnsureScriptLoaded();
     InitRenderTexture();
-
+    
     for (int x = 0; x < WIDTH; x++)
         for (int y = 0; y < HEIGHT; y++)
             framebuffer[x][y] = (Color){0,0,0,255};
 
     UpdateLua();
     DrawLua();
-
+    
     Image img = {
         .data = framebuffer,
         .width = WIDTH,
@@ -124,9 +138,17 @@ void RenderPlayEditor(void) {
         .mipmaps = 1,
         .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
     };
-
+ 
     UpdateTexture(gRenderTex.texture, img.data);
-
+ 
     ClearBackground(BLACK);
     DrawTextureEx(gRenderTex.texture, (Vector2){0,0}, 0, SCALE, WHITE);
+
+    if (!gScriptLoaded && gLastError[0] != '\0') {
+        DrawRectangle(0, 0, WIDTH, NAVBAR_HEIGHT, systemPalette[2]);
+        RenderString("error detected!!", FONT_SPACING, NAVBAR_HEIGHT / 2 - FONT_HEIGHT / 2);
+        char shortErr[256];
+        snprintf(shortErr, sizeof(shortErr), "%s", gLastError);
+        RenderStringWrap(shortErr, FONT_SPACING, NAVBAR_HEIGHT + FONT_GAP);
+    }
 }
