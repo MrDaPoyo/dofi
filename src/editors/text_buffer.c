@@ -13,6 +13,14 @@ size_t retrieveUsedBufferSize() {
     return totalBufferSize;
 }
 
+bool isThereEnoughSpaceForAnotherChar() {
+    size_t totalBufferSize = 0;
+    for (unsigned int i = 0; i < TOTAL_TEXT_EDITORS; i++) {
+        totalBufferSize += editors[i].buffer.totalChars;
+    }
+    return totalBufferSize < MAX_TOTAL_BUFFER_SIZE;
+}
+
 size_t retrieveAvailableBufferSize() {
     return MAX_TOTAL_BUFFER_SIZE - retrieveUsedBufferSize();
 }
@@ -135,6 +143,9 @@ size_t getIndexFromEditorBuffer(struct TextEditor* editor) {
 }
 
 struct TextEditor insertCharacter(struct TextEditor* editor, char character) {
+    if (!isThereEnoughSpaceForAnotherChar())
+        return *editor;
+
     struct TextBuffer buffer = checkBufferSpace(editor->buffer);
     const size_t position = getIndexFromEditorBuffer(editor);
 

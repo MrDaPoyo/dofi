@@ -335,7 +335,11 @@ void RenderTextEditor(void) {
     }
     if (IsKeyPressed(KEY_END)) {
         editor->cursorChar = strlen(GetLineText(editor->buffer, editor->cursorLine));
-        editor->scrollOffsetX = editor->cursorChar > LINE_CHAR_WIDTH ? LINE_CHAR_WIDTH + editor->cursorChar : 0;
+        if (editor->cursorChar < editor->scrollOffsetX) {
+            editor->scrollOffsetX = editor->cursorChar;
+        } else if (editor->cursorChar >= editor->scrollOffsetX + LINE_CHAR_WIDTH) {
+            editor->scrollOffsetX = editor->cursorChar - LINE_CHAR_WIDTH + 1;
+        }
     }
 
     if (pressedKey != 0 && pressedKey != (char)KEY_TAB) {
