@@ -243,6 +243,8 @@ void RenderTextEditor(void) {
         currentKey = KEY_UP;
     else if (IsKeyDown(KEY_BACKSPACE))
         currentKey = KEY_BACKSPACE;
+    else if (IsKeyDown(KEY_TAB))
+        currentKey = KEY_TAB;
     else {
         keyPressed = 0;
         keyTimer = 0.0f;
@@ -317,6 +319,11 @@ void RenderTextEditor(void) {
     } else if (currentKey == KEY_BACKSPACE) {
         *editor = removeCharacter(editor);
         hasCodeChanged = true;
+    } else if (currentKey == KEY_TAB) {
+        for (int i = 0; i < 4; i++) {
+            insertCharacter(editor, ' ');
+            editor->cursorChar++;
+        }
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
@@ -331,7 +338,7 @@ void RenderTextEditor(void) {
         editor->scrollOffsetX = editor->cursorChar > LINE_CHAR_WIDTH ? LINE_CHAR_WIDTH + editor->cursorChar : 0;
     }
 
-    if (pressedKey != 0) {
+    if (pressedKey != 0 && pressedKey != (char)KEY_TAB) {
         pressedKey = tolower(pressedKey);
         *editor = insertCharacter(editor, pressedKey);
         hasCodeChanged = true;

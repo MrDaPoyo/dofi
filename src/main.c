@@ -9,7 +9,7 @@
 #include "audio.h"
 #include "editors/play_editor.h"
 
-SuperTab currentSuperTab = SUPER_CLI;
+SuperTab currentSuperTab = SUPER_EDITORS;
 EditorTab currentEditorTab = EDITOR_TEXT;
 
 #define SCALED_NAV_HEIGHT (NAVBAR_HEIGHT * SCALE)
@@ -65,9 +65,9 @@ int main() {
             if (currentEditorTab == EDITOR_PLAY) {
                 ShowNavbar();
                 currentEditorTab = EDITOR_TEXT;
-            } else {
+            } /* else {
                 SwitchSuperTab();
-            }
+            } temporary till CLI is done */
         }
 
         BeginDrawing();
