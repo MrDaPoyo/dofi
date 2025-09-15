@@ -1,11 +1,54 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
+<!--
+MADE BY SIR POYO THE GREATEST COOKIE EATER THAT'S EVER LIVED :DDDD
+--------------------------------------------------------------------------
+
+               .;+.                  ..+X;.
+              X&..&.               .X&.  ;X
+             ;&.  :X              ;&:.   .&.
+            .&:    +;           .$$.     .&.
+            ;&.    .$;xX$$X$$&&&&+.      :$.
+            $;                           +X
+          ..&.                    .... . +X.
+         .&$$:   ...+xXXX$&&&&&&&&&&&&&+x&&X
+          $&&&&&&&&&&&x:&&&&&&&&&&&&x:$&&&&x
+           &..X&&&&x.$&&;&&$....&X.+&&&&.x&.
+          .&. .$&:+&&$.$&&&.    +&$&&X;x&&X                      ..x.
+          .&.    .......                 +X                    .&&x.&..
+         :&&.        .$    .;x..  .$;   .$$.           .x$X;. .&$x.$. ;$;.
+        .$&X&+.      .x&:;X&;.xX$X;. .:$&XXX.       .:&+.  X&..X+.X$&X...&.
+       .x$xxX+&&.       ...        .x&$XX+:&X       $:.;$&&&&&&X ;+.. .;&.
+        .$&+XX..+&x.             .x&;.:xX$&X&$x+++:&$&x;.;+xX$&..&+:&
+      ..&$&&&.XX.:X$&$.        .&+x...:;&$$XxxX&;&&;&&x:.    +X.++.&.+..
+     .&&.+&:.x&&$+x:++&$.   ..&;;xX++X&X:;XX+;$x&$;.        .&..$.;&;;X&.
+   .;&Xxx:&.;x::&&$++&$$&. .;x+&;:x$&X.+++..:X&:X.$;:.......x$x&$x&    ;$
+   +$.xX::&X..+;:.x&&&XxX&.:X.;&;$&X.;$x..;XX.&.&. ...::::....  .x:x  :&:
+  +$;+Xx+x&X+.:;:;x;X$&&;+&$x+.+XX+XxX$X;.:;.:$ .&X.   +$&.   ;+;;&X&&+.
+ .;&X.:x&&&x$xXXxX+:x;;+;:;.;$$XX.;:+X;xXXXXX;&&&$&;$.     .    :+  .&.
+ .&x      :X&X..:..XXxx++.&x;.:X$++;XX;.+xX::.&Xx&:x$x.   :+  :&&&..&.
+.xX        .&$X+++..+XX&&x&:;;+.:X;;xXXxxXX$$&&&&x.  .x&X;:::+$..X:.
+:&.        .x&X;::X&X+;;Xx&:;:++x+XX;;:;:;+&.  .       +;....&.;;.
+;x         ..      .x&+$+x&++X;x;.;:..::..x&x          ..
+.&.             ...  +&Xx:&$:.+..XXXx:..+;X;$.
+ .$X.       ..  xXXX..&$XxXX;;xx..+$x+xx..;;&+
+   .:X$X.   ;&+. Xx$$x$..+xx..;.+;xx..++..  :X
+       .;    $&+ xX.:+...:.:+:.....
+       .&;..+&..+:
+         .x;.
+-->
 <head>
     <meta charset="utf-8">
     <title>Dofi :D</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <link href="/index.js" rel="preload" as="script">
     <style>
+        @font-face {
+            font-family: 'Dofi';
+            src: url("/dofi.ttf") format("truetype");
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -19,14 +62,36 @@
             flex-direction: column;
         }
 
+        * {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
+            color: cornsilk;
+        }
+
+        h1, h2, h3, h4, h5, h6, button, summary, code {
+            font-family: 'Dofi', sans-serif;
+        }
+
+        code {
+            background-color: #3C4867;
+        }
+
+        a {
+            color: lightblue;
+        }
+
+        ul, li {
+            list-style: conic-gradient(cornsilk, white, navajowhite);
+        }
+
         #canvas {
             display: none;
             background-color: black;
+            margin-inline: auto;
         }
 
-        #playButton {
+        button {
             background: #222;
-            color: white;
             font-size: 1.5rem;
             padding: 1rem 2rem;
             border: 2px solid white;
@@ -35,13 +100,123 @@
             transition: background 0.2s;
         }
 
-        #playButton:hover {
+        button:hover {
             background: #444;
+        }
+
+        .infodump {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 1vh;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 3rem;
+            left: 3rem;
+            background: #111;
+            width: max-content;
+            max-width: 25vw;
+            padding: 1rem;
+            border: 1px solid #555;
+            border-radius: 8px;
+            z-index: 1000;
+            max-height: 75vh;
+            scroll-behavior: smooth;
+            overflow-y: auto;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .relative {
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .dropdown-content {
+                left: 1rem;
+                right: 1rem;
+                max-width: 100vw;
+                top: 2.5rem;
+                border-radius: 6px;
+            }
         }
     </style>
 </head>
+
 <body>
-<button id="playButton">Boot Dofi</button>
+<div class="infodump">
+    <div class="relative">
+        <button id="infodump-toggle">?</button>
+        <div id="infodump-dropdown" class="dropdown-content">
+            <h2>dum dum - dofi user manual(s)</h2>
+            <hr>
+            <p>Welcome to dofi! Dofi is an <a href="https://github.com/mrdapoyo/dofi">open source</a> fantasy console written in the C programming language, bundled w/ a few quirky features.</p>
+            <hr>
+            <details>
+                <summary>lil list the creator (poyo) made for you :d!</summary>
+                <ul>
+                    <li>128x128px-sized <small>smol</small> screen!</li>
+                    <li>it runs lua!</li>
+                    <li>it has a cute<sup>(aww)</sup> lil editor that supports the following:
+                        <ul>
+                            <li>commenting</li>
+                            <li>colours on keywords</li>
+                            <li>bi-directional scrolling</li>
+                            <li>a max of 65536 characters and newlines :P</li>
+                        </ul>
+                    </li>
+                </ul>
+            </details>
+            <hr>
+            <details>
+                <summary>getting started >:d</summary>
+                <p>so you wanna get started, huh?<br>...</p>
+                <h3>that's great!!!</h3>
+                <p>good news are, it's quite simple! when you first boot dofi, you are shown a boilerplate code with the three main functions:</p>
+                <details>
+                    <summary><code>init()</code></summary>
+                    ran once only when a game has been booted. use it for initializing variables!
+                </details>
+                <details>
+                    <summary><code>update()</code></summary>
+                    ran 60 times per second, it is mainly used for performing the logic behind your games!
+                </details>
+                <details>
+                    <summary><code>draw()</code></summary>
+                    as the name suggests, everything output-related should go here.<br>try using <code>gfx.pset(x, y, r, g, b)</code>!
+                </details>
+            </details>
+            <hr>
+            <details>
+                <summary>executing code</summary>
+                <p>To execute your very own (and possibly working) code, just click the play button! It'll let you know if there are any syntax errors :3</p>
+            </details>
+        </div>
+    </div>
+    <script>
+        const dropdownButton = document.getElementById("infodump-toggle");
+        const dropdown = document.getElementById("infodump-dropdown");
+
+        function toggleDropdown() {
+            dropdown.classList.toggle("show");
+        }
+
+        dropdownButton.addEventListener("click", toggleDropdown);
+
+        window.addEventListener("click", function (e) {
+            if (!dropdownButton.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove("show");
+            }
+        });
+    </script>
+</div>
+
+<button id="playButton">boot dofi :3<br><small>(enables audio)</small></button>
 <canvas id="canvas"></canvas>
 
 <script>

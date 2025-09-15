@@ -28,5 +28,6 @@ emcc "${SRC_FILES[@]}" \
     -flto
 
 cp ../src/assets/favicon.ico ../out
+cp ../src/assets/fonts/dofi.ttf ../out
 
 emrun --no_browser --serve_root ../out ../out

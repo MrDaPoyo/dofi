@@ -28,3 +28,4 @@ emcc "${SRC_FILES[@]}" \
     -flto
 
 cp ../src/assets/favicon.ico ../out
+cp ../src/assets/fonts/dofi.ttf ../out
