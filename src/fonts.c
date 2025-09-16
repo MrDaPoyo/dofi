@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include "editors/text_buffer.h"
 
 Font GeneralFont;
 const char* ReservedKeywords[] = { "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while" };
@@ -39,24 +40,66 @@ bool IsReservedKeyword(const char* word) {
 }
 
 int IsComment(const char* line) {
-    // empty line
-    if (*line == '\0' || *line == '\n') {
-        return -1;
-    }
-    // start at the 2nd char
-    size_t index = 1;
-    const char* current = line + 1;
-    // walk until end of string or end of line
-    while (*current != '\0' && *current != '\n') {
-        const char* prev = current - 1;
-        // check for "--"
-        if (*prev == '-' && *current == '-') {
-            return index;
+    if (line == NULL) return -1;
+    if (*line == '\0' || *line == '\n') return -1;
+
+    for (int i = 1; line[i] != '\0' && line[i] != '\n'; i++) {
+        if (line[i - 1] == '-' && line[i] == '-') {
+            return i - 1; // index of first '-'
         }
-        ++current;
-        ++index;
     }
     return -1;
+}
+
+void RenderTextEditorString(char* str, size_t length, int scrollX, int y) {
+    if (!str || length == 0) return;
+
+    int offsetX = 0;
+    char buf[256];
+    const int commentPos = IsComment(str);
+    size_t pos = 0;
+    long int index = 0;
+
+    int baseX = FONT_GAP + -(FONT_WIDTH + FONT_SPACING) * scrollX;
+    y = y * FONT_HEIGHT + FONT_GAP * (y + 1) + NAVBAR_HEIGHT;
+    length += scrollX + FONT_GAP;
+
+    if (y % 2) {
+        DrawRectangle(0, y  - 1, GetScreenWidth(), FONT_HEIGHT + FONT_GAP, systemPalette[1]);
+    }
+
+    while (pos < length && str[pos] != '\0') {
+        int i = 0;
+        while (pos < length && str[pos] != '\0' && str[pos] != ' ' && i < (int)(sizeof(buf) - 1)) {
+            buf[i++] = str[pos++];
+            index++;
+        }
+        buf[i] = '\0';
+
+        bool inComment = (commentPos >= 0 && index > commentPos);
+
+        for (int j = 0; j < i; j++) {
+            char c[2] = { buf[j], '\0' };
+            Vector2 drawPos = (Vector2){ (float)(baseX + offsetX), (float)y };
+            DrawTextPro(
+                GeneralFont,
+                c,
+                drawPos,
+                (Vector2){ 0, 0 },
+                0.0f,
+                FONT_HEIGHT,
+                FONT_SPACING,
+                inComment ? systemPalette[6] : IsReservedKeyword(buf) ? systemPalette[2] : systemPalette[4]
+            );
+            offsetX += FONT_SPACING + FONT_WIDTH;
+        }
+
+        if (pos < length && str[pos] == ' ') {
+            offsetX += FONT_SPACING + FONT_WIDTH;
+            pos++;
+            index++;
+        }
+    }
 }
 
 void RenderString(char* str, int x, int y) {

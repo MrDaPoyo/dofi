@@ -17,18 +17,6 @@
 #define VISIBLE_LINES 14
 #define CURSOR_SCROLL_FONT_GAP 1
 
-void RenderLine(char* str, int index, size_t realIndex) {
-    int navY = GetNavHeight();
-
-    int y = index * FONT_HEIGHT + FONT_GAP * (index + 1) + navY;
-
-    if (realIndex % 2) {
-        DrawRectangle(0, y - 1, GetScreenWidth(), FONT_HEIGHT + FONT_GAP, systemPalette[1]);
-    }
-
-    RenderString(str, FONT_GAP, y);
-};
-
 void RenderStatBar(struct TextEditor editor) {
     DrawRectangle(0, NAVBAR_HEIGHT + VISIBLE_LINES * (FONT_HEIGHT + FONT_GAP) + 1, GetScreenWidth(), HEIGHT - NAVBAR_HEIGHT - VISIBLE_LINES * (FONT_HEIGHT + FONT_GAP), systemPalette[2]);
     char buffer[64];
@@ -88,7 +76,6 @@ size_t retrieveLinesCount(struct TextBuffer buffer) {
 void RenderBuffer(struct TextEditor editor) {
     struct TextBuffer buffer = editor.buffer;
     size_t y_index = editor.scrollOffsetY;
-    size_t x_index = editor.scrollOffsetX;
 
     struct LineCollection lc = retrieveAllLines(&buffer, y_index);
 
@@ -104,24 +91,13 @@ void RenderBuffer(struct TextEditor editor) {
             line_end++;
 
         size_t line_len = line_end - line;
-
-        size_t current_x_index = x_index;
-        if (current_x_index > line_len)
-            current_x_index = line_len;
-
-        const char* start = line + current_x_index;
-        const char* end = start;
-        while (*end != '\n' && *end != '\0')
-            end++;
-
-        unsigned long len = end - start;
         char temp[1025]; // max 1024 chars per line
-        if (len >= sizeof(temp))
-            len = sizeof(temp) - 1;
-        memcpy(temp, start, len);
-        temp[len] = '\0';
+        if (line_len >= sizeof(temp))
+            line_len = sizeof(temp) - 1;
+        memcpy(temp, line, line_len);
+        temp[line_len] = '\0';
 
-        RenderLine(temp, i, i + y_index);
+        RenderTextEditorString(temp, LINE_CHAR_WIDTH, editor.scrollOffsetX, i);
     }
 }
 
