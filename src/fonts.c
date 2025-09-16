@@ -60,7 +60,7 @@ void RenderTextEditorString(char* str, size_t length, int scrollX, int y) {
     size_t pos = 0;
     long int index = 0;
 
-    int baseX = FONT_GAP + -(FONT_WIDTH + FONT_SPACING) * scrollX;
+    int baseX = FONT_SPACING + -(FONT_WIDTH + FONT_SPACING) * scrollX;
     y = y * FONT_HEIGHT + FONT_GAP * (y + 1) + NAVBAR_HEIGHT;
     length += scrollX + FONT_GAP;
 

@@ -1,7 +1,8 @@
--- welcome to dofi!
+--welcome to dofi!
 -------------------
--- this is an example script.
--- try executing it! (esc to exit)
+--this is an example script,
+--try executing it (play button)!
+--(esc to exit)
 
 function init()
     width = 128

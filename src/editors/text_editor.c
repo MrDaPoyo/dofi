@@ -32,7 +32,7 @@ void RenderCursor(struct TextEditor editor) {
     const size_t lineIndex = editor.cursorLine - editor.scrollOffsetY;
 
     int cellWidth = FONT_WIDTH + FONT_SPACING;
-    int x = FONT_SPACING + (editor.cursorChar - editor.scrollOffsetX) * cellWidth + 1;
+    int x = FONT_SPACING + (editor.cursorChar - editor.scrollOffsetX) * cellWidth;
     int y = lineIndex * FONT_HEIGHT + FONT_GAP * (lineIndex + 1) + navY;
 
     Color cursorColor = systemPalette[2];
