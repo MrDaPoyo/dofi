@@ -12,7 +12,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <ctype.h>
+#include <string.h>
 
 #define VISIBLE_LINES 14
 #define CURSOR_SCROLL_FONT_GAP 1
@@ -108,13 +109,20 @@ struct TextEditor* editor = &editors[0];
 int LoadEntireFile(const char* path, char** outBuf) {
     *outBuf = NULL;
     FILE* f = fopen(path, "rb");
-    if (!f) return false;
+    if (!f)
+        return false;
     fseek(f, 0, SEEK_END);
     long sz = ftell(f);
-    if (sz < 0) { fclose(f); return false; }
+    if (sz < 0) {
+        fclose(f);
+        return false;
+    }
     rewind(f);
     char* buf = (char*)malloc((size_t)sz + 1);
-    if (!buf) { fclose(f); return false; }
+    if (!buf) {
+        fclose(f);
+        return false;
+    }
     size_t rd = fread(buf, 1, (size_t)sz, f);
     fclose(f);
     buf[rd] = '\0';
@@ -149,7 +157,6 @@ void InitTextEditors(void) {
         }
         free(tempString);
     }
-
 
     for (size_t i = 1; i < sizeof(editors) / sizeof(editors[0]); i++) {
         editors[i] = (struct TextEditor){
@@ -318,15 +325,24 @@ void RenderTextEditor(void) {
         }
     }
 
-    if (pressedKey != 0 && pressedKey != (char)KEY_TAB) {
+    if (pressedKey != 0) {
         pressedKey = tolower(pressedKey);
-        *editor = insertCharacter(editor, pressedKey);
-        hasCodeChanged = true;
-        if (pressedKey == '\n') {
-            editor->cursorChar = 0;
-            editor->cursorLine++;
-        } else {
-            editor->cursorChar++;
+
+        if (isalnum(pressedKey) ||
+            strchr("/*><_-'\\+", pressedKey) ||
+            pressedKey == '\n' ||
+            pressedKey == '\t' ||
+            pressedKey == ' ')
+        {
+            *editor = insertCharacter(editor, pressedKey);
+            hasCodeChanged = true;
+
+            if (pressedKey == '\n') {
+                editor->cursorChar = 0;
+                editor->cursorLine++;
+            } else {
+                editor->cursorChar++;
+            }
         }
     }
 
