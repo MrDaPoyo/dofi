@@ -126,7 +126,6 @@ void RenderCLI() {
         HideNavbar();
     }
     DrawRectangle(0, 0, WIDTH, HEIGHT, CliBGColor);
-
 }
 
 void RenderEditors(void) {
