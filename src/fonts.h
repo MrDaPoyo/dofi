@@ -8,7 +8,6 @@
 
 #include "raylib.h"
 #include <stddef.h>
-#include <stdlib.h>
 
 extern Font GeneralFont;
 
