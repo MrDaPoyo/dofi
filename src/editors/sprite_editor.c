@@ -9,6 +9,7 @@
 
 struct Spritesheet spritesheet;
 struct Sprite CurrentSprite;
+Color CurrentColor;
 bool spriteEditorInitialized = false;
 
 struct CursorPixel {
@@ -25,7 +26,7 @@ static struct Sprite InitSprite(void) {
 
     for (size_t y = 0; y < MAX_SPRITE_HEIGHT; y++) {
         for (size_t x = 0; x < MAX_SPRITE_WIDTH; x++) {
-            s.data[y][x] = (Color){ 0, 0, 255, 255 };
+            s.data[y][x] = (Color){ 0, 0, 0, 255 };
         }
     }
     return s;
@@ -84,40 +85,89 @@ struct Sprite* SetSpritePixel(struct Sprite* sprite, size_t x, size_t y, Color c
     return sprite;
 }
 
-struct CursorPixel getRelativePixel(Vector2 mousePos, size_t editorWidth) {
+struct CursorPixel getRelativePixel(Vector2 mousePos, size_t regionWidth, int offsetX, int offsetY) {
     float logicalX = mousePos.x / (float)SCALE;
     float logicalY = mousePos.y / (float)SCALE;
 
-    float localX = logicalX - (float)DRAWING_EDITOR_X;
-    float localY = logicalY - (float)DRAWING_EDITOR_Y;
+    float localX = logicalX - (float)offsetX;
+    float localY = logicalY - (float)offsetY;
 
-    struct CursorPixel cursor = { 0, 0, 0 };
+    struct CursorPixel cursor = { regionWidth, regionWidth, 0 };
 
     if (localX < 0 || localY < 0) {
-        cursor.x = cursor.y = editorWidth;
-        cursor.index = 0;
         return cursor;
     }
 
     float spritePixelSize = (float)EDITOR_SCALE;
-    float spriteDrawWidth = (float)editorWidth * spritePixelSize;
-    float spriteDrawHeight = (float)editorWidth * spritePixelSize;
+    float spriteDrawWidth = (float)regionWidth * spritePixelSize;
+    float spriteDrawHeight = (float)regionWidth * spritePixelSize;
 
     if (localX >= spriteDrawWidth || localY >= spriteDrawHeight) {
-        cursor.x = cursor.y = editorWidth;
-        cursor.index = 0;
         return cursor;
     }
 
     size_t px = (size_t)floorf(localX / spritePixelSize);
     size_t py = (size_t)floorf(localY / spritePixelSize);
-    if (px >= editorWidth) px = editorWidth - 1;
-    if (py >= editorWidth) py = editorWidth - 1;
+
+    if (px >= regionWidth) px = regionWidth - 1;
+    if (py >= regionWidth) py = regionWidth - 1;
 
     cursor.x = px;
     cursor.y = py;
-    cursor.index = py * editorWidth + px;
+    cursor.index = py * regionWidth + px;
     return cursor;
+}
+
+bool colorsEqual(Color a, Color b) {
+    return (a.r == b.r) &&
+           (a.g == b.g) &&
+           (a.b == b.b) &&
+           (a.a == b.a);
+}
+
+void renderColorPalette() {
+    size_t paletteSize = sizeof(palette) / sizeof(palette[0]);
+    size_t gridSize = (size_t)sqrt((double)paletteSize);
+
+    int paletteX = DRAWING_EDITOR_X + (int)(CurrentSprite.width * EDITOR_SCALE) + 10;
+    int paletteY = DRAWING_EDITOR_Y;
+
+    Vector2 mouse = GetMousePositionForEditors();
+    struct CursorPixel paletteCursor = getRelativePixel(mouse, gridSize, paletteX, paletteY);
+
+    if (paletteCursor.x < gridSize && paletteCursor.y < gridSize && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        size_t index = paletteCursor.index;
+        if (index < paletteSize) {
+            CurrentColor = palette[index];
+        }
+    }
+
+    size_t index = 0;
+    for (size_t y = 0; y < gridSize; y++) {
+        for (size_t x = 0; x < gridSize; x++) {
+            if (index >= paletteSize) break;
+
+            Color c = palette[index];
+            DrawRectangle(
+                paletteX + (int)(x * EDITOR_SCALE),
+                paletteY + (int)(y * EDITOR_SCALE),
+                EDITOR_SCALE,
+                EDITOR_SCALE,
+                c
+            );
+
+            if (colorsEqual(CurrentColor, c))
+                DrawRectangleLines(
+                    paletteX + (int)(x * EDITOR_SCALE),
+                    paletteY + (int)(y * EDITOR_SCALE),
+                    EDITOR_SCALE,
+                    EDITOR_SCALE,
+                    systemPalette[2]
+                );
+
+            index++;
+        }
+    }
 }
 
 
@@ -128,16 +178,19 @@ void RenderSpriteEditor(void) {
 
     if (!spriteEditorInitialized) {
         CurrentSprite = InitSprite();
+        CurrentColor = palette[0];
         spriteEditorInitialized = true;
     }
 
     renderImageEditor(CurrentSprite);
+    renderColorPalette(CurrentSprite);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         Vector2 mouse = GetMousePositionForEditors();
-        const struct CursorPixel pixelCursor = getRelativePixel(mouse, CurrentSprite.width);
+        struct CursorPixel pixelCursor = getRelativePixel(mouse, CurrentSprite.width, DRAWING_EDITOR_X, DRAWING_EDITOR_Y);
+
         if (pixelCursor.x < CurrentSprite.width && pixelCursor.y < CurrentSprite.height) {
-            SetSpritePixel(&CurrentSprite, pixelCursor.x, pixelCursor.y, RED);
+            SetSpritePixel(&CurrentSprite, pixelCursor.x, pixelCursor.y, CurrentColor);
         }
     }
 }
