@@ -8,13 +8,14 @@
 #include "intro.h"
 #include "audio.h"
 #include "editors/play_editor.h"
+#include "main.h"
 
 SuperTab currentSuperTab = SUPER_EDITORS;
 EditorTab currentEditorTab = EDITOR_TEXT;
 
 #define SCALED_NAV_HEIGHT (NAVBAR_HEIGHT * SCALE)
 
-static inline Vector2 GetMousePositionForEditors(void) {
+Vector2 GetMousePositionForEditors(void) {
     Vector2 m = GetMousePosition();
     return m;
 }
