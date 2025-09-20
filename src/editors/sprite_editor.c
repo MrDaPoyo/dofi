@@ -144,15 +144,15 @@ void renderColorPalette() {
 
     size_t index = 0;
     size_t y_height = 0;
-    size_t x_height = 0;
+    size_t x_width = 0;
 
     for (y_height = 0; y_height < gridSize; y_height++) {
-        for (x_height = 0; x_height < gridSize; x_height++) {
+        for (x_width = 0; x_width < gridSize; x_width++) {
             if (index >= paletteSize) break;
 
             Color c = palette[index];
             DrawRectangle(
-                paletteX + (int)(x_height * EDITOR_SCALE),
+                paletteX + (int)(x_width * EDITOR_SCALE),
                 paletteY + (int)(y_height * EDITOR_SCALE),
                 EDITOR_SCALE,
                 EDITOR_SCALE,
@@ -161,7 +161,7 @@ void renderColorPalette() {
 
             if (colorsEqual(CurrentColor, c))
                 DrawRectangleLines(
-                    paletteX + (int)(x_height * EDITOR_SCALE),
+                    paletteX + (int)(x_width * EDITOR_SCALE),
                     paletteY + (int)(y_height * EDITOR_SCALE),
                     EDITOR_SCALE,
                     EDITOR_SCALE,
@@ -175,7 +175,7 @@ void renderColorPalette() {
     DrawRectangleLines(
     paletteX,
         paletteY,
-        x_height * EDITOR_SCALE,
+        x_width * EDITOR_SCALE,
         y_height * EDITOR_SCALE,
         systemPalette[2]
         );
