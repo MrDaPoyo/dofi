@@ -28,6 +28,14 @@ struct Spritesheet {
 };
 
 extern struct Sprite CurrentSprite;
+extern struct Spritesheet spritesheet;
+
+static inline struct Sprite* GetSpriteById(int id) {
+    if (id < 0 || id >= (int)TOTAL_MAX_SPRITES) return NULL;
+    int row = id / TOTAL_MAX_SPRITES_SQRT;
+    int col = id % TOTAL_MAX_SPRITES_SQRT;
+    return &spritesheet.sprites[row][col];
+}
 
 void RenderSpriteEditor(void);
 

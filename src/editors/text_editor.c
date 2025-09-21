@@ -131,7 +131,7 @@ int LoadEntireFile(const char* path, char** outBuf) {
     char* dst = buf;
     while (*src) {
         if (*src != '\r')
-            *dst++ = *src;
+            *dst++ = tolower(*src);
         src++;
     }
     *dst = '\0';
@@ -150,7 +150,7 @@ void InitTextEditors(void) {
     };
 
     char* tempString = NULL;
-    if (LoadEntireFile("assets/examples/gradient.lua", &tempString)) {
+    if (LoadEntireFile("assets/examples/sprite.lua", &tempString)) {
         for (int i = strlen(tempString); i > 0; i--) {
             char c = tempString[i - 1];
             insertCharacter(&editors[0], c);

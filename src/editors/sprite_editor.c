@@ -40,6 +40,17 @@ static void InitSpritesheet(struct Spritesheet* sheet) {
             sheet->sprites[row][col] = InitSprite();
         }
     }
+
+    struct Sprite* s0 = &sheet->sprites[0][0];
+    Color Y = (Color){255, 255, 0, 255};
+    Color K = (Color){0, 0, 0, 255};
+    for (size_t y = 0; y < s0->height; y++) {
+        for (size_t x = 0; x < s0->width; x++) {
+            s0->data[y][x] = Y;
+        }
+    }
+    s0->data[2][2] = K; s0->data[2][5] = K;
+    s0->data[5][2] = K; s0->data[5][3] = K; s0->data[5][4] = K; s0->data[5][5] = K;
 }
 
 #define DRAWING_EDITOR_X 2

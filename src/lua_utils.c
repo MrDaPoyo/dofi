@@ -4,6 +4,7 @@
 #include "lua/lauxlib.h"
 #include "display.h"
 #include "editors/play_editor.h"
+#include "editors/sprite_editor.h"
 #include <string.h>
 
 #define FPS 60
@@ -74,6 +75,27 @@ int pset(lua_State* L) {
     return 0;
 }
 
+static int l_sprite(lua_State* L) {
+    int id = luaL_checkinteger(L, 1);
+    int x = luaL_checkinteger(L, 2);
+    int y = luaL_checkinteger(L, 3);
+
+    struct Sprite* s = GetSpriteById(id);
+    if (!s) return 0;
+
+    for (size_t sy = 0; sy < s->height; sy++) {
+        for (size_t sx = 0; sx < s->width; sx++) {
+            int dx = x + (int)sx;
+            int dy = y + (int)sy;
+            if (dx < 0 || dy < 0 || dx >= WIDTH || dy >= HEIGHT) continue;
+            Color c = s->data[sy][sx];
+            if (c.a == 0) continue;
+            framebuffer[dx][dy] = c;
+        }
+    }
+    return 0;
+}
+
 lua_State* NewLuaState() {
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
@@ -81,6 +103,8 @@ lua_State* NewLuaState() {
     lua_newtable(L);
     lua_pushcfunction(L, pset);
     lua_setfield(L, -2, "pset");
+    lua_pushcfunction(L, l_sprite); // gfx.sprite(id,x,y)
+    lua_setfield(L, -2, "sprite");
     lua_setglobal(L, "gfx");
 
     return L;
