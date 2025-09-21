@@ -62,7 +62,7 @@ void InitSpriteEditor() {
     CurrentColor = (Color){255, 255, 255, 255};
 }
 
-#define DRAWING_EDITOR_X 2
+#define DRAWING_EDITOR_X 0
 #define DRAWING_EDITOR_Y (2 + NAVBAR_HEIGHT)
 #define PALETTE_SCALE (EDITOR_SCALE * 2)
 
