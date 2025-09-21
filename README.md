@@ -13,8 +13,11 @@ Dofi has a few quirks built into it:
 - Supports up to 65536 chars + newlines
 - No audio (for now)
 - No input (for now)
+- Cool error screen when something goes wrong (try it yourself!)
+- Custom-made font created using Pixelforge (such a cool piece of software frfr)
 
-To get started, you'll need to download Raylib, compile it and install it following the instructions from their [repository](https://github.com/raysan5/raylib/).
+## Executing Dofi
+To get started, you'll need to download Raylib, compile it for desktop, and install it following the instructions from their [repository](https://github.com/raysan5/raylib/).
 
 After that, feel free to run `make run` and you're set to go!
 
