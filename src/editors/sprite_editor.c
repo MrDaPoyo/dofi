@@ -11,6 +11,8 @@ struct Spritesheet spritesheet;
 struct Sprite CurrentSprite;
 Color CurrentColor;
 bool spriteEditorInitialized = false;
+static int selectedSpriteRow = 0;
+static int selectedSpriteCol = 0;
 
 struct CursorPixel {
     size_t x;
@@ -30,6 +32,14 @@ static struct Sprite InitSprite(void) {
         }
     }
     return s;
+}
+
+static void InitSpritesheet(struct Spritesheet* sheet) {
+    for (size_t row = 0; row < TOTAL_MAX_SPRITES_SQRT; row++) {
+        for (size_t col = 0; col < TOTAL_MAX_SPRITES_SQRT; col++) {
+            sheet->sprites[row][col] = InitSprite();
+        }
+    }
 }
 
 #define DRAWING_EDITOR_X 2
@@ -181,6 +191,54 @@ void renderColorPalette() {
         );
 }
 
+void renderSpritesheet(struct Spritesheet* sheet) {
+    size_t spriteSize = MAX_SPRITE_WIDTH;
+    int spriteDrawSize = (int)(spriteSize * SPRITESHEET_SCALE);
+    Vector2 rawMouse = GetMousePositionForEditors();
+    Vector2 mouse = (Vector2){ rawMouse.x / (float)SCALE, rawMouse.y / (float)SCALE };
+
+    for (size_t row = 0; row < TOTAL_MAX_SPRITES_SQRT; row++) {
+        for (size_t col = 0; col < TOTAL_MAX_SPRITES_SQRT; col++) {
+            int x = SPRITESHEET_X + (int)(col * spriteDrawSize);
+            int y = SPRITESHEET_Y + (int)(row * spriteDrawSize);
+
+            struct Sprite* sprite = &sheet->sprites[row][col];
+
+            DrawRectangle(x, y, spriteDrawSize, spriteDrawSize, BLACK);
+
+            for (size_t sy = 0; sy < sprite->height; sy++) {
+                for (size_t sx = 0; sx < sprite->width; sx++) {
+                    Color c = sprite->data[sy][sx];
+                    DrawRectangle(
+                        x + (int)(sx * SPRITESHEET_SCALE),
+                        y + (int)(sy * SPRITESHEET_SCALE),
+                        SPRITESHEET_SCALE,
+                        SPRITESHEET_SCALE,
+                        c
+                    );
+                }
+            }
+
+            bool hovered = CheckCollisionPointRec(mouse, (Rectangle){x, y, (float)spriteDrawSize, (float)spriteDrawSize});
+            bool isSelected = (int)row == selectedSpriteRow && (int)col == selectedSpriteCol;
+
+            if (hovered) {
+                DrawRectangleLines(x, y, spriteDrawSize, spriteDrawSize, systemPalette[2]);
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    if (sprite->width == 0 || sprite->height == 0 || sprite->width > MAX_SPRITE_WIDTH || sprite->height > MAX_SPRITE_HEIGHT) {
+                        *sprite = InitSprite();
+                    }
+                    selectedSpriteRow = (int)row;
+                    selectedSpriteCol = (int)col;
+                    CurrentSprite = *sprite;
+                }
+            }
+            else if (isSelected) {
+                DrawRectangleLines(x, y, spriteDrawSize, spriteDrawSize, systemPalette[3]);
+            }
+        }
+    }
+}
 
 void RenderSpriteEditor(void) {
     if (!displayNavbar) {
@@ -190,18 +248,23 @@ void RenderSpriteEditor(void) {
     if (!spriteEditorInitialized) {
         CurrentSprite = InitSprite();
         CurrentColor = palette[0];
+        InitSpritesheet(&spritesheet);
         spriteEditorInitialized = true;
     }
 
     renderImageEditor(CurrentSprite);
-    renderColorPalette(CurrentSprite);
+    renderColorPalette();
+    renderSpritesheet(&spritesheet);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        Vector2 mouse = GetMousePositionForEditors();
-        struct CursorPixel pixelCursor = getRelativePixel(mouse, CurrentSprite.width, DRAWING_EDITOR_X, DRAWING_EDITOR_Y, (float)EDITOR_SCALE);
-
+        Vector2 rawMouse = GetMousePositionForEditors();
+        struct CursorPixel pixelCursor = getRelativePixel(rawMouse, CurrentSprite.width, DRAWING_EDITOR_X, DRAWING_EDITOR_Y, (float)EDITOR_SCALE);
         if (pixelCursor.x < CurrentSprite.width && pixelCursor.y < CurrentSprite.height) {
-            SetSpritePixel(&CurrentSprite, pixelCursor.x, pixelCursor.y, CurrentColor);
+            Color* existing = &CurrentSprite.data[pixelCursor.y][pixelCursor.x];
+            if (!colorsEqual(*existing, CurrentColor)) {
+                SetSpritePixel(&CurrentSprite, pixelCursor.x, pixelCursor.y, CurrentColor);
+                spritesheet.sprites[selectedSpriteRow][selectedSpriteCol] = CurrentSprite;
+            }
         }
     }
 }
