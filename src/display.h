@@ -30,8 +30,6 @@ typedef enum {
 typedef enum {
     EDITOR_TEXT,
     EDITOR_SPRITE,
-    EDITOR_MAP,
-    EDITOR_SOUND,
     EDITOR_PLAY,
     EDITOR_COUNT
 } EditorTab;

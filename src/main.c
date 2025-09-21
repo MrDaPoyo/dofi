@@ -162,10 +162,6 @@ void RenderEditors(void) {
             icon = iconCode;
         else if (i == EDITOR_SPRITE)
             icon = iconSprite;
-        else if (i == EDITOR_MAP)
-            icon = iconMap;
-        else if (i == EDITOR_SOUND)
-            icon = iconMusic;
         else if (i == EDITOR_PLAY)
             icon = iconPlay;
         else
@@ -203,10 +199,6 @@ void RenderEditors(void) {
         RenderTextEditor();
     if (currentEditorTab == EDITOR_SPRITE)
         RenderSpriteEditor();
-    if (currentEditorTab == EDITOR_MAP)
-        RenderMapEditor();
-    if (currentEditorTab == EDITOR_SOUND)
-        RenderSoundEditor();
 
     EndScissorMode();
 }
