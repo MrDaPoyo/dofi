@@ -34,6 +34,7 @@ static struct Sprite InitSprite(void) {
 
 #define DRAWING_EDITOR_X 2
 #define DRAWING_EDITOR_Y (2 + NAVBAR_HEIGHT)
+#define PALETTE_SCALE (EDITOR_SCALE * 2)
 
 void renderImageEditor(struct Sprite sprite) {
     DrawRectangle(
@@ -85,7 +86,7 @@ struct Sprite* SetSpritePixel(struct Sprite* sprite, size_t x, size_t y, Color c
     return sprite;
 }
 
-struct CursorPixel getRelativePixel(Vector2 mousePos, size_t regionWidth, int offsetX, int offsetY) {
+struct CursorPixel getRelativePixel(Vector2 mousePos, size_t regionWidth, int offsetX, int offsetY, float pixelSize) {
     float logicalX = mousePos.x / (float)SCALE;
     float logicalY = mousePos.y / (float)SCALE;
 
@@ -98,16 +99,15 @@ struct CursorPixel getRelativePixel(Vector2 mousePos, size_t regionWidth, int of
         return cursor;
     }
 
-    float spritePixelSize = (float)EDITOR_SCALE;
-    float spriteDrawWidth = (float)regionWidth * spritePixelSize;
-    float spriteDrawHeight = (float)regionWidth * spritePixelSize;
+    float spriteDrawWidth = (float)regionWidth * pixelSize;
+    float spriteDrawHeight = (float)regionWidth * pixelSize;
 
     if (localX >= spriteDrawWidth || localY >= spriteDrawHeight) {
         return cursor;
     }
 
-    size_t px = (size_t)floorf(localX / spritePixelSize);
-    size_t py = (size_t)floorf(localY / spritePixelSize);
+    size_t px = (size_t)floorf(localX / pixelSize);
+    size_t py = (size_t)floorf(localY / pixelSize);
 
     if (px >= regionWidth) px = regionWidth - 1;
     if (py >= regionWidth) py = regionWidth - 1;
@@ -129,11 +129,11 @@ void renderColorPalette() {
     size_t paletteSize = sizeof(palette) / sizeof(palette[0]);
     size_t gridSize = (size_t)sqrt((double)paletteSize);
 
-    int paletteX = DRAWING_EDITOR_X + (int)(CurrentSprite.width * EDITOR_SCALE) + 10;
+    int paletteX = WIDTH - DRAWING_EDITOR_X - PALETTE_SCALE * sqrt(sizeof(palette) / sizeof(palette[0]));
     int paletteY = DRAWING_EDITOR_Y;
 
     Vector2 mouse = GetMousePositionForEditors();
-    struct CursorPixel paletteCursor = getRelativePixel(mouse, gridSize, paletteX, paletteY);
+    struct CursorPixel paletteCursor = getRelativePixel(mouse, gridSize, paletteX, paletteY, (float)PALETTE_SCALE);
 
     if (paletteCursor.x < gridSize && paletteCursor.y < gridSize && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         size_t index = paletteCursor.index;
@@ -152,19 +152,19 @@ void renderColorPalette() {
 
             Color c = palette[index];
             DrawRectangle(
-                paletteX + (int)(x_width * EDITOR_SCALE),
-                paletteY + (int)(y_height * EDITOR_SCALE),
-                EDITOR_SCALE,
-                EDITOR_SCALE,
+                paletteX + (int)(x_width * PALETTE_SCALE),
+                paletteY + (int)(y_height * PALETTE_SCALE),
+                PALETTE_SCALE,
+                PALETTE_SCALE,
                 c
             );
 
             if (colorsEqual(CurrentColor, c))
                 DrawRectangleLines(
-                    paletteX + (int)(x_width * EDITOR_SCALE),
-                    paletteY + (int)(y_height * EDITOR_SCALE),
-                    EDITOR_SCALE,
-                    EDITOR_SCALE,
+                    paletteX + (int)(x_width * PALETTE_SCALE),
+                    paletteY + (int)(y_height * PALETTE_SCALE),
+                    PALETTE_SCALE,
+                    PALETTE_SCALE,
                     systemPalette[2]
                 );
 
@@ -175,8 +175,8 @@ void renderColorPalette() {
     DrawRectangleLines(
     paletteX,
         paletteY,
-        x_width * EDITOR_SCALE,
-        y_height * EDITOR_SCALE,
+        (int)x_width * PALETTE_SCALE,
+        (int)y_height * PALETTE_SCALE,
         systemPalette[2]
         );
 }
@@ -198,7 +198,7 @@ void RenderSpriteEditor(void) {
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         Vector2 mouse = GetMousePositionForEditors();
-        struct CursorPixel pixelCursor = getRelativePixel(mouse, CurrentSprite.width, DRAWING_EDITOR_X, DRAWING_EDITOR_Y);
+        struct CursorPixel pixelCursor = getRelativePixel(mouse, CurrentSprite.width, DRAWING_EDITOR_X, DRAWING_EDITOR_Y, (float)EDITOR_SCALE);
 
         if (pixelCursor.x < CurrentSprite.width && pixelCursor.y < CurrentSprite.height) {
             SetSpritePixel(&CurrentSprite, pixelCursor.x, pixelCursor.y, CurrentColor);
