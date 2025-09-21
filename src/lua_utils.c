@@ -27,7 +27,7 @@ char* CheckLuaString(lua_State* L, const char* code) {
     if (!code) return strdup("No code provided");
     if (luaL_loadstring(L, code) != LUA_OK) {
         const char* err = lua_tostring(L, -1);
-        char* result = strdup(err ? err : "Unknown Lua error :P womp womp");
+        char* result = strdup(err ? err : "unknown lua error :P womp womp");
         lua_pop(L, 1);
         return result;
     }
@@ -88,13 +88,16 @@ static int l_sprite(lua_State* L) {
             int dx = x + (int)sx;
             int dy = y + (int)sy;
             if (dx < 0 || dy < 0 || dx >= WIDTH || dy >= HEIGHT) continue;
+
             Color c = s->data[sy][sx];
             if (c.a == 0) continue;
-            framebuffer[dx][dy] = c;
+
+            framebuffer[dy][dx] = c;
         }
     }
     return 0;
 }
+
 
 lua_State* NewLuaState() {
     lua_State* L = luaL_newstate();

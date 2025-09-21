@@ -20,7 +20,11 @@ emcc "${SRC_FILES[@]}" \
     --preload-file ../src/assets@/assets \
     -s TOTAL_STACK=64MB \
     -s INITIAL_MEMORY=128MB \
-    -s ASSERTIONS \
+    -s ASSERTIONS=0 \
+    -s WARN_UNALIGNED=0 \
+    -s EXIT_RUNTIME=0 \
+    -s LLD_REPORT_UNDEFINED=0 \
+    -DNDEBUG \
     -DPLATFORM_WEB \
     -o ../out/index.html \
     -Oz \

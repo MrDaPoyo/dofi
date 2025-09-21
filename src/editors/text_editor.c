@@ -328,11 +328,7 @@ void RenderTextEditor(void) {
     if (pressedKey != 0) {
         pressedKey = tolower(pressedKey);
 
-        if (isalnum(pressedKey) ||
-            strchr("/*><_-'\\+", pressedKey) ||
-            pressedKey == '\n' ||
-            pressedKey == '\t' ||
-            pressedKey == ' ')
+        if (isprint(pressedKey) || pressedKey == '\n' || pressedKey == '\t')
         {
             *editor = insertCharacter(editor, pressedKey);
             hasCodeChanged = true;

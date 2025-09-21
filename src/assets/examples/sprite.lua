@@ -10,6 +10,7 @@ function update()
 end
 
 function draw()
+	-- background pattern
 	for x = 0, W - 1 do
 		for y = 0, H - 1 do
 			local shade = (x + y + t) % 64
@@ -17,9 +18,14 @@ function draw()
 		end
 	end
 
-	local px = math.floor((math.sin(t * 0.04) * 0.5 + 0.5) * (W - 8))
-	local py = math.floor((math.sin(t * 0.07 + 1.2) * 0.5 + 0.5) * (H - 8))
+	-- center of screen
+	local cx, cy = 8, 8
+	local radius = 4
+	local angle = t * 0.05 -- rotation speed
+
+	-- circular motion
+	local px = math.floor(cx + math.cos(angle) * radius)
+	local py = math.floor(cy + math.sin(angle) * radius)
 
 	gfx.sprite(0, px, py)
-	gfx.sprite(0, (px + 4) % (W - 8), (py + 2) % (H - 8))
 end

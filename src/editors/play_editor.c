@@ -33,14 +33,20 @@ void ResetPlayEditor(void) {
 }
 
 static void CallLuaFunctionSafe(lua_State* L, const char* funcName) {
+    if (!L) return;
     lua_getglobal(L, funcName);
-    if (lua_isfunction(L, -1)) {
-        if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
-            printf("[lua] error running %s: %s\n", funcName, lua_tostring(L, -1));
-            lua_pop(L, 1);
+    if (!lua_isfunction(L, -1)) { lua_pop(L, 1); return; }
+    if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+        const char* err = lua_tostring(L, -1);
+        fprintf(stderr, "[lua] runtime error in %s: %s\n", funcName, err ? err : "<unknown>");
+        if (err) {
+            snprintf(gLastError, sizeof(gLastError), "%s", err);
+        } else {
+            snprintf(gLastError, sizeof(gLastError), "runtime error in %s", funcName);
         }
-    } else {
-        lua_pop(L, 1);
+        lua_pop(L, 1); // error message
+        gScriptLoaded = false;
+        isErrorValidated = true;
     }
 }
 
@@ -68,8 +74,8 @@ static void EnsureScriptLoaded(void) {
         ResetPlayEditor();
     }
 
-    if (gScriptLoaded) return;
-    if (isErrorValidated) return;
+    if (gScriptLoaded) return; // already loaded & valid
+    if (isErrorValidated) return; // existing error until code changes
 
     if (!gLuaVM) {
         gLuaVM = NewLuaState();
@@ -108,16 +114,18 @@ static void EnsureScriptLoaded(void) {
     }
 
     CallLuaFunctionSafe(gLuaVM, "init");
-    gScriptLoaded = true;
+    if (!isErrorValidated) {
+        gScriptLoaded = true;
+    }
 }
 
 static void UpdateLua(void) {
-    if (!gScriptLoaded) return;
+    if (!gScriptLoaded || isErrorValidated) return;
     CallLuaFunctionSafe(gLuaVM, "update");
 }
 
 static void DrawLua(void) {
-    if (!gScriptLoaded) return;
+    if (!gScriptLoaded || isErrorValidated) return;
     CallLuaFunctionSafe(gLuaVM, "draw");
 }
 
@@ -137,8 +145,10 @@ void RenderPlayEditor(void) {
         for (int y = 0; y < HEIGHT; y++)
             framebuffer[x][y] = (Color){0,0,0,255};
 
-    UpdateLua();
-    DrawLua();
+    if (!isErrorValidated) {
+        UpdateLua();
+        DrawLua();
+    }
     
     Image img = {
         .data = framebuffer,
@@ -153,9 +163,9 @@ void RenderPlayEditor(void) {
     ClearBackground(BLACK);
     DrawTextureEx(playRenderTex.texture, (Vector2){0,0}, 0, SCALE, WHITE);
 
-    if (!gScriptLoaded && gLastError[0] != '\0') {
+    if ((isErrorValidated || !gScriptLoaded) && gLastError[0] != '\0') {
         DrawRectangle(0, 0, WIDTH, NAVBAR_HEIGHT, systemPalette[2]);
-        RenderString("error detected!!", FONT_SPACING, NAVBAR_HEIGHT / 2 - FONT_HEIGHT / 2);
+        RenderString("error!", FONT_SPACING, NAVBAR_HEIGHT / 2 - FONT_HEIGHT / 2);
         char shortErr[256];
         snprintf(shortErr, sizeof(shortErr), "%s", gLastError);
         RenderStringWrap(shortErr, FONT_SPACING, NAVBAR_HEIGHT + FONT_GAP);

@@ -53,6 +53,15 @@ static void InitSpritesheet(struct Spritesheet* sheet) {
     s0->data[5][2] = K; s0->data[5][3] = K; s0->data[5][4] = K; s0->data[5][5] = K;
 }
 
+void InitSpriteEditor() {
+    if (spriteEditorInitialized) return;
+    spriteEditorInitialized = true;
+
+    InitSpritesheet(&spritesheet);
+    CurrentSprite = InitSprite();
+    CurrentColor = (Color){255, 255, 255, 255};
+}
+
 #define DRAWING_EDITOR_X 2
 #define DRAWING_EDITOR_Y (2 + NAVBAR_HEIGHT)
 #define PALETTE_SCALE (EDITOR_SCALE * 2)

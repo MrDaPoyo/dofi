@@ -38,5 +38,6 @@ static inline struct Sprite* GetSpriteById(int id) {
 }
 
 void RenderSpriteEditor(void);
+void InitSpriteEditor(void);
 
 #endif // DOFI_SPRITE_EDITOR_H

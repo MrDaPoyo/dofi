@@ -8,6 +8,7 @@
 #include "intro.h"
 #include "audio.h"
 #include "editors/play_editor.h"
+#include "editors/sprite_editor.h"
 #include "main.h"
 
 SuperTab currentSuperTab = SUPER_EDITORS;
@@ -58,6 +59,7 @@ int main() {
 
     // initialize uhhhhhhh editors
     InitTextEditors();
+    InitSpriteEditor();
     ResetPlayEditor();
     HideNavbar();
 
