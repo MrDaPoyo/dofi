@@ -3,11 +3,22 @@ Dofi is a silly fantasy console written in C using Raylib.
 https://dofi.poy.ooo
 ---
 
+## Core functionalities
+Dofi has a few quirks built into it:
+
+- 128x128 display
+- Can output just 16 colours
+- Runs Lua
+- Has a tiny sprite editor with a tiny spritesheet and tiny sprites
+- Supports up to 65536 chars + newlines
+- No audio (for now)
+- No input (for now)
+
 To get started, you'll need to download Raylib, compile it and install it following the instructions from their [repository](https://github.com/raysan5/raylib/).
 
 After that, feel free to run `make run` and you're set to go!
 
-PS: If you `cd` into `build_web`, and then run `./build-wasm-serve.sh`, a web version of Dofi will be compiled and served in your browser!
+PS: If you compile Raylib for web, then `cd` into `build_web`, and finally run `./build-wasm-serve.sh`, a web version of Dofi will be compiled and served in your browser!
 
 ---
 

@@ -42,6 +42,9 @@ MADE BY SIR POYO THE GREATEST COOKIE EATER THAT'S EVER LIVED :DDDD
     <meta charset="utf-8">
     <title>Dofi :D</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="lil fantasy console made by poyo">
+    <meta name="author" content="poyo">
     <link href="/index.js" rel="preload" as="script">
     <style>
         @font-face {
@@ -155,10 +158,10 @@ MADE BY SIR POYO THE GREATEST COOKIE EATER THAT'S EVER LIVED :DDDD
         <div id="infodump-dropdown" class="dropdown-content">
             <h2>dum dum - dofi user manual(s)</h2>
             <hr>
-            <p>Welcome to dofi! Dofi is an <a href="https://github.com/mrdapoyo/dofi">open source</a> fantasy console written in the C programming language, bundled w/ a few quirky features.</p>
+            <p>Welcome to Dofi! Dofi is an <a href="https://github.com/mrdapoyo/dofi">open source</a> fantasy console written in the C programming language, bundled w/ a few quirky features.</p>
             <hr>
             <details>
-                <summary>lil list the creator (poyo) made for you :d!</summary>
+                <summary>small list the creator (poyo) made for you :d!</summary>
                 <ul>
                     <li>128x128px-sized <small>smol</small> screen!</li>
                     <li>it runs lua!</li>
@@ -168,6 +171,13 @@ MADE BY SIR POYO THE GREATEST COOKIE EATER THAT'S EVER LIVED :DDDD
                             <li>colours on keywords</li>
                             <li>bi-directional scrolling</li>
                             <li>a max of 65536 characters and newlines :P</li>
+                        </ul>
+                    </li>
+                    <li>it also has a sprite editor!
+                        <ul>
+                            <li>16 colours to choose from</li>
+                            <li>no transparency, at all!</li>
+                            <li>a decently sized spritesheet</li>
                         </ul>
                     </li>
                 </ul>
@@ -189,6 +199,11 @@ MADE BY SIR POYO THE GREATEST COOKIE EATER THAT'S EVER LIVED :DDDD
                 <details>
                     <summary><code>draw()</code></summary>
                     as the name suggests, everything output-related should go here.<br>try using <code>gfx.pset(x, y, r, g, b)</code>!
+                    below there's (another) list showcasing the system functions:
+                    <ul>
+                        <li><code>gfx.pset(x, y, r, g, b)</code><br><p>Sets a determinate pixel on the screen. DO NOT GO OUTTA BOUNDS!!!!</p></li>
+                        <li><code>gfx.sprite(id, x, y)</code>Draws a sprite onto the screen! Make sure it actually exists. x and y are used to determine its position.</li>
+                    </ul>
                 </details>
             </details>
             <hr>
